@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#0a0a0b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Daily Discipline — habit tracker for Harpreet Singh" />
+  <title>Daily Discipline</title>
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --bg-elevated: #121214;
+      --bg-card: #18181b;
+      --bg-card-hover: #1f1f23;
+      --border: #27272a;
+      --border-subtle: #1e1e22;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+      --accent: #22c55e;
+      --accent-dim: rgba(34, 197, 94, 0.15);
+      --accent-glow: rgba(34, 197, 94, 0.35);
+      --gold: #eab308;
+      --gold-dim: rgba(234, 179, 8, 0.15);
+      --danger: #ef4444;
+      --radius: 16px;
+      --radius-sm: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-h: 64px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      -webkit-tap-highlight-color: transparent;
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      min-height: 100dvh;
+      line-height: 1.45;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 8px);
+    }
+
+    /* Header */
+    .header {
+      padding: 20px 20px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(180deg, var(--bg) 70%, transparent);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, var(--accent), #16a34a);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #052e16;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand .sub {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      color: var(--text-muted);
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .icon-btn:active { background: var(--bg-card-hover); color: var(--text); }
+
+    /* Screens */
+    .screen { display: none; padding: 0 20px 24px; flex: 1; }
+    .screen.active { display: block; animation: fadeIn 0.25s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Motivation */
+    .motivation {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(234, 179, 8, 0.08));
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-style: italic;
+      position: relative;
+    }
+
+    .motivation::before {
+      content: '"';
+      font-size: 1.8rem;
+      color: var(--accent);
+      opacity: 0.5;
+      font-style: normal;
+      line-height: 1;
+      margin-right: 4px;
+      vertical-align: -4px;
+    }
+
+    /* Date hero */
+    .date-hero {
+      text-align: center;
+      padding: 8px 0 20px;
+    }
+
+    .date-hero .weekday {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .date-hero .fulldate {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .date-hero .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .date-hero .status-pill.logged {
+      background: var(--accent-dim);
+      border-color: rgba(34, 197, 94, 0.4);
+      color: var(--accent);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+    }
+
+    .status-pill.logged .status-dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+    /* Stats strip */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .stat-card .value.accent { color: var(--accent); }
+    .stat-card .value.gold { color: var(--gold); }
+
+    .stat-card .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    /* Habit cards */
+    .habits { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+    .habit-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: border-color 0.2s, background 0.2s, transform 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .habit-card:active { transform: scale(0.985); }
+
+    .habit-card.done {
+      border-color: rgba(34, 197, 94, 0.45);
+      background: linear-gradient(90deg, var(--accent-dim), var(--bg-card) 60%);
+    }
+
+    .habit-check {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+      background: transparent;
+    }
+
+    .habit-card.done .habit-check {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .habit-check svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: all 0.2s;
+      stroke: #052e16;
+      stroke-width: 3;
+      fill: none;
+    }
+
+    .habit-card.done .habit-check svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .habit-body { flex: 1; min-width: 0; }
+
+    .habit-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+    }
+
+    .habit-hint {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .habit-icon {
+      font-size: 1.35rem;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+
+    .step-input-wrap {
+      margin-top: 10px;
+      display: none;
+    }
+
+    .habit-card.done .step-input-wrap,
+    .habit-card.show-steps .step-input-wrap {
+      display: block;
+    }
+
+    .step-input-wrap label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .step-input-wrap input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .step-input-wrap input:focus {
+      border-color: var(--accent);
+    }
+
+    .step-input-wrap input::placeholder { color: var(--text-dim); }
+
+    /* Buttons */
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card .habit-body { flex: 1; }
+
+    .metric-card .metric-input-wrap {
+      margin-top: 10px;
+    }
+
+    .metric-card .metric-input-wrap label {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-card .metric-input-wrap input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .metric-card .metric-input-wrap input:focus {
+      border-color: var(--accent);
+    }
+
+    .metric-card .metric-input-wrap input::placeholder { color: var(--text-dim); }
+
+    .history-meta {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      width: 100%;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.1s, opacity 0.15s, background 0.15s;
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: linear-gradient(145deg, #22c55e, #16a34a);
+      color: #052e16;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.45;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:active { background: var(--bg-card-hover); }
+
+    .btn-gold {
+      background: linear-gradient(145deg, #eab308, #ca8a04);
+      color: #422006;
+      box-shadow: 0 4px 20px rgba(234, 179, 8, 0.3);
+    }
+
+    .btn-ghost {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 10px;
+    }
+
+    /* Bottom nav */
+    .nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: calc(var(--nav-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: rgba(10, 10, 11, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-dim);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      transition: color 0.15s;
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item.active { color: var(--accent); }
+
+    /* Progress screen */
+    .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      font-weight: 700;
+      margin: 8px 0 12px;
+    }
+
+    .heatmap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 6px;
+    }
+
+    .heat-dot {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.1s;
+    }
+
+    .heat-dot.partial { background: rgba(234, 179, 8, 0.35); border-color: rgba(234, 179, 8, 0.5); }
+    .heat-dot.full { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+    .heat-dot.today { outline: 2px solid var(--text-muted); outline-offset: 1px; }
+    .heat-dot.empty { opacity: 0.4; }
+
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .legend-dots { display: flex; gap: 4px; align-items: center; }
+    .legend-dots .heat-dot { width: 12px; height: 12px; }
+
+    .consistency-ring-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .ring {
+      width: 88px;
+      height: 88px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+
+    .ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+    .ring-fg {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .consistency-info h3 {
+      font-size: 1rem;
+      font-weight: 650;
+      margin-bottom: 4px;
+    }
+
+    .consistency-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .streak-banner {
+      background: linear-gradient(135deg, var(--gold-dim), var(--accent-dim));
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .streak-banner .num {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      background: linear-gradient(135deg, var(--gold), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .streak-banner .lbl {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* History */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .history-item .date-col {
+      min-width: 52px;
+    }
+
+    .history-item .day-num {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .history-item .day-mon {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .history-habits {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+
+    .h-chip {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 0.85rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      opacity: 0.35;
+    }
+
+    .h-chip.on {
+      opacity: 1;
+      background: var(--accent-dim);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .history-score {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .history-score.perfect { color: var(--accent); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    /* Settings */
+    .settings-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .settings-block h3 {
+      font-size: 0.9rem;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+
+    .settings-block p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .settings-block .btn { width: 100%; }
+
+    .file-input-hidden { display: none; }
+
+    /* Wizard overlay */
+    .wizard {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: var(--bg);
+      max-width: 480px;
+      margin: 0 auto;
+      flex-direction: column;
+      padding: 24px 20px calc(24px + var(--safe-bottom));
+    }
+
+    .wizard.open { display: flex; animation: fadeIn 0.3s ease; }
+
+    .wizard-progress {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+
+    .wizard-progress .bar {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .wizard-progress .bar.done { background: var(--accent); }
+    .wizard-progress .bar.current { background: var(--gold); }
+
+    .wizard-step-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .wizard-question {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
+    .wizard-emoji {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    .wizard-body { flex: 1; display: flex; flex-direction: column; }
+
+    .wizard-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: auto;
+    }
+
+    .wizard-choice {
+      padding: 18px 20px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: var(--bg-card);
+      font-size: 1.05rem;
+      font-weight: 600;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.15s;
+    }
+
+    .wizard-choice:active,
+    .wizard-choice.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .wizard-choice.no:active,
+    .wizard-choice.no.selected {
+      border-color: var(--danger);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .wizard-choice .choice-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      background: var(--bg);
+    }
+
+    .wizard-steps-input {
+      margin-top: 16px;
+      display: none;
+    }
+
+    .wizard-steps-input.visible { display: block; }
+
+    .wizard-steps-input label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .wizard-steps-input input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 1.1rem;
+      outline: none;
+    }
+
+    .wizard-steps-input input:focus { border-color: var(--accent); }
+
+    .wizard-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .wizard-nav .btn { flex: 1; }
+
+    .wizard-close {
+      align-self: flex-start;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 0;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 50;
+      white-space: nowrap;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      max-width: calc(100% - 40px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success { border-color: rgba(34, 197, 94, 0.5); color: var(--accent); }
+
+    /* Confirm dialog */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 80;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .modal h3 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-actions .btn { flex: 1; }
+
+    /* Scrollable history cap */
+    #historyList { max-height: none; }
+
+    @media (min-width: 481px) {
+      .app {
+        border-left: 1px solid var(--border-subtle);
+        border-right: 1px solid var(--border-subtle);
+      }
+      .nav {
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="header">
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-mark">DD</div>
+          <div>
+            <h1>Daily Discipline</h1>
+            <div class="sub">Harpreet Singh</div>
+          </div>
+        </div>
+        <button class="icon-btn" id="btnLogTonight" title="Log tonight" aria-label="Log tonight">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- TODAY -->
+    <section class="screen active" id="screen-today" data-screen="today">
+      <div class="motivation" id="motivation"></div>
+
+      <div class="date-hero">
+        <div class="weekday" id="weekday"></div>
+        <div class="fulldate" id="fulldate"></div>
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot"></span>
+          <span id="statusText">Not logged yet</span>
+        </div>
+      </div>
+
+      <div class="stats-strip">
+        <div class="stat-card">
+          <div class="value accent" id="statStreak">0</div>
+          <div class="label">Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="value gold" id="statWeek">0%</div>
+          <div class="label">This week</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="statScore">—</div>
+          <div class="label">Consistency</div>
+        </div>
+      </div>
+
+      <div class="habits" id="habits">
+        <div class="habit-card" data-habit="water" role="button" tabindex="0" aria-pressed="false">
+          <div class="habit-icon">💧</div>
+          <div class="habit-body">
+            <div class="habit-title">3 liters of water</div>
+            <div class="habit-hint">Hydration check</div>
+          </div>
+          <div class="habit-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <div class="habit-card" data-habit="protein" role="button" tabindex="0" aria-pressed="false">
+          <div class="habit-icon">🥩</div>
+          <div class="habit-body">
+            <div class="habit-title">Hit protein intake</div>
+            <div class="habit-hint">Daily protein goal</div>
+          </div>
+          <div class="habit-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <div class="habit-card show-steps" data-habit="steps" role="button" tabindex="0" aria-pressed="false">
+          <div class="habit-icon">👟</div>
+          <div class="habit-body">
+            <div class="habit-title">5,000 steps</div>
+            <div class="habit-hint">Walked enough today</div>
+            <div class="step-input-wrap" id="stepWrap">
+              <label for="stepCount">Actual steps (optional)</label>
+              <input type="number" id="stepCount" inputmode="numeric" min="0" max="100000" placeholder="e.g. 7240" />
+            </div>
+          </div>
+          <div class="habit-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <div class="habit-card" data-habit="workout" role="button" tabindex="0" aria-pressed="false">
+          <div class="habit-icon">💪</div>
+          <div class="habit-body">
+            <div class="habit-title">Worked out</div>
+            <div class="habit-hint">Training session done</div>
+          </div>
+          <div class="habit-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+
+        <div class="habit-card" data-habit="personalDev" role="button" tabindex="0" aria-pressed="false">
+          <div class="habit-icon">📚</div>
+          <div class="habit-body">
+            <div class="habit-title">Personal development</div>
+            <div class="habit-hint">Read, learn, or practice a skill</div>
+          </div>
+          <div class="habit-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+        </div>
+      </div>
+
+      <div class="metric-card" id="caloriesCard">
+        <div class="habit-icon">🔥</div>
+        <div class="habit-body">
+          <div class="habit-title">Calories burned</div>
+          <div class="habit-hint">From WHOOP or your tracker</div>
+          <div class="metric-input-wrap">
+            <label for="caloriesBurned">Today's total (optional)</label>
+            <input type="number" id="caloriesBurned" inputmode="numeric" min="0" max="20000" placeholder="e.g. 480" />
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnSave">Save / Log today</button>
+        <button class="btn btn-gold" id="btnWizard">Log tonight</button>
+      </div>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="screen" id="screen-progress" data-screen="progress">
+      <div class="streak-banner">
+        <div class="num" id="progressStreak">0</div>
+        <div class="lbl">Day streak · all 5 habits</div>
+      </div>
+
+      <div class="consistency-ring-wrap">
+        <div class="ring">
+          <svg viewBox="0 0 100 100">
+            <circle class="ring-bg" cx="50" cy="50" r="42" />
+            <circle class="ring-fg" id="ringFg" cx="50" cy="50" r="42"
+              stroke-dasharray="263.89" stroke-dashoffset="263.89" />
+          </svg>
+          <div class="ring-center" id="ringValue">0%</div>
+        </div>
+        <div class="consistency-info">
+          <h3>Weekly consistency</h3>
+          <p id="weekDetail">No logs this week yet.</p>
+        </div>
+      </div>
+
+      <div class="section-title">Last 30 days</div>
+      <div class="heatmap">
+        <div class="heatmap-grid" id="heatmap"></div>
+        <div class="heatmap-legend">
+          <span>Older</span>
+          <div class="legend-dots">
+            <div class="heat-dot"></div>
+            <div class="heat-dot partial"></div>
+            <div class="heat-dot full"></div>
+            <span style="margin-left:6px">Perfect</span>
+          </div>
+          <span>Today</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="screen" id="screen-history" data-screen="history">
+      <div class="section-title">Past days</div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="screen-settings" data-screen="settings">
+      <div class="section-title">Data</div>
+
+      <div class="settings-block">
+        <h3>Export backup</h3>
+        <p>Download all your habit data as a JSON file. Keep it safe or move to another device.</p>
+        <button class="btn btn-secondary" id="btnExport">Export JSON</button>
+      </div>
+
+      <div class="settings-block">
+        <h3>Import backup</h3>
+        <p>Restore from a previously exported JSON file. This will replace current data.</p>
+        <button class="btn btn-secondary" id="btnImport">Import JSON</button>
+        <input type="file" accept="application/json,.json" class="file-input-hidden" id="importFile" />
+      </div>
+
+      <div class="settings-block">
+        <h3>Storage</h3>
+        <p>Data lives in this browser’s localStorage under key <code style="color:var(--accent);font-size:0.75rem">harpreet-fitness-daily-v1</code>. Clearing site data will wipe logs.</p>
+        <button class="btn btn-ghost" id="btnClear" style="color:var(--danger)">Clear all data…</button>
+      </div>
+    </section>
+
+    <!-- Bottom nav -->
+    <nav class="nav" role="navigation">
+      <button class="nav-item active" data-nav="today" aria-label="Today">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Today
+      </button>
+      <button class="nav-item" data-nav="progress" aria-label="Progress">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Progress
+      </button>
+      <button class="nav-item" data-nav="history" aria-label="History">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        History
+      </button>
+      <button class="nav-item" data-nav="settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Settings
+      </button>
+    </nav>
+  </div>
+
+  <!-- Wizard -->
+  <div class="wizard" id="wizard" role="dialog" aria-modal="true" aria-label="End of day check-in">
+    <button class="wizard-close" id="wizardClose">← Cancel</button>
+    <div class="wizard-progress" id="wizardProgress"></div>
+    <div class="wizard-body">
+      <div class="wizard-step-label" id="wizardStepLabel">Question 1 of 6</div>
+      <div class="wizard-emoji" id="wizardEmoji">💧</div>
+      <div class="wizard-question" id="wizardQuestion"></div>
+      <div class="wizard-steps-input" id="wizardStepsInput">
+        <label for="wizardStepCount">Optional: actual step count</label>
+        <input type="number" id="wizardStepCount" inputmode="numeric" min="0" max="100000" placeholder="e.g. 7240" />
+      </div>
+      <div class="wizard-steps-input" id="wizardCaloriesInput">
+        <label for="wizardCalories">Calories burned (optional)</label>
+        <input type="number" id="wizardCalories" inputmode="numeric" min="0" max="20000" placeholder="e.g. 480" />
+      </div>
+      <div class="wizard-choices" id="wizardChoices">
+        <button class="wizard-choice yes" data-val="yes">
+          <span class="choice-icon">✓</span>
+          <span>Yes</span>
+        </button>
+        <button class="wizard-choice no" data-val="no">
+          <span class="choice-icon">✗</span>
+          <span>No</span>
+        </button>
+      </div>
+      <div class="wizard-nav">
+        <button class="btn btn-secondary" id="wizardBack" style="display:none">Back</button>
+        <button class="btn btn-primary" id="wizardNext" disabled>Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal">
+      <h3 id="modalTitle">Confirm</h3>
+      <p id="modalBody"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'harpreet-fitness-daily-v1';
+  const HABITS = [
+    { id: 'water', label: 'Drank 3 liters of water', emoji: '💧', short: 'Water' },
+    { id: 'protein', label: 'Hit protein intake', emoji: '🥩', short: 'Protein' },
+    { id: 'steps', label: 'Walked 5,000 steps', emoji: '👟', short: 'Steps' },
+    { id: 'workout', label: 'Worked out', emoji: '💪', short: 'Workout' },
+    { id: 'personalDev', label: 'Personal development', emoji: '📚', short: 'Growth' }
+  ];
+
+  const QUOTES = [
+    "Discipline is the bridge between goals and accomplishment.",
+    "You don't have to be extreme — just consistent.",
+    "Small daily wins compound into unstoppable momentum.",
+    "Show up today. Future you is watching.",
+    "Consistency beats intensity when intensity is inconsistent.",
+    "One day at a time. Five habits. Zero excuses.",
+    "The grind doesn't care how you feel — log it anyway.",
+    "Champions are made in the quiet days nobody sees.",
+    "Hydrate. Fuel. Move. Train. Repeat.",
+    "Your only competition is yesterday's version of you."
+  ];
+
+  // ——— State ———
+  let data = load();
+  let todayState = {
+    water: false,
+    protein: false,
+    steps: false,
+    workout: false,
+    personalDev: false,
+    stepCount: null,
+    caloriesBurned: null
+  };
+  let wizard = { step: 0, answers: {}, stepCount: null, caloriesBurned: null };
+  const WIZARD_TOTAL = HABITS.length + 1; // 5 yes/no + calories number
+  let modalCb = null;
+
+  // ——— Storage ———
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { entries: {}, version: 1 };
+      const parsed = JSON.parse(raw);
+      if (!parsed.entries || typeof parsed.entries !== 'object') return { entries: {}, version: 1 };
+      return parsed;
+    } catch (e) {
+      return { entries: {}, version: 1 };
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  // ——— Dates ———
+  function todayKey() {
+    const d = new Date();
+    return formatKey(d);
+  }
+
+  function formatKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function parseKey(key) {
+    const [y, m, d] = key.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function startOfWeek(d) {
+    // Monday start
+    const x = new Date(d);
+    const day = x.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    x.setDate(x.getDate() + diff);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  }
+
+  // ——— Entry helpers ———
+  function isPerfect(entry) {
+    if (!entry) return false;
+    return HABITS.every(h => !!entry[h.id]);
+  }
+
+  function habitCount(entry) {
+    if (!entry) return 0;
+    return HABITS.filter(h => entry[h.id]).length;
+  }
+
+  function getStreak() {
+    let streak = 0;
+    let d = new Date();
+    const key = todayKey();
+    // If today isn't perfect yet, start from yesterday
+    if (!isPerfect(data.entries[key])) {
+      d = addDays(d, -1);
+    }
+    while (true) {
+      const k = formatKey(d);
+      if (isPerfect(data.entries[k])) {
+        streak++;
+        d = addDays(d, -1);
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  function getWeekStats() {
+    const start = startOfWeek(new Date());
+    let possible = 0;
+    let hit = 0;
+    let daysLogged = 0;
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, i);
+      if (d > today) break;
+      possible += HABITS.length;
+      const k = formatKey(d);
+      const e = data.entries[k];
+      if (e) {
+        daysLogged++;
+        hit += habitCount(e);
+      }
+    }
+    const pct = possible === 0 ? 0 : Math.round((hit / possible) * 100);
+    return { pct, hit, possible, daysLogged };
+  }
+
+  // ——— UI: toast / modal ———
+  function toast(msg, success) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (success ? ' success' : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { el.className = 'toast'; }, 2600);
+  }
+
+  function showModal(title, body, onConfirm) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalBody').textContent = body;
+    document.getElementById('modal').classList.add('open');
+    modalCb = onConfirm;
+  }
+
+  document.getElementById('modalCancel').addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('open');
+    modalCb = null;
+  });
+
+  document.getElementById('modalConfirm').addEventListener('click', () => {
+    document.getElementById('modal').classList.remove('open');
+    if (modalCb) modalCb();
+    modalCb = null;
+  });
+
+  // ——— Today screen ———
+  function loadTodayIntoUI() {
+    const key = todayKey();
+    const e = data.entries[key];
+    if (e) {
+      todayState = {
+        water: !!e.water,
+        protein: !!e.protein,
+        steps: !!e.steps,
+        workout: !!e.workout,
+        personalDev: !!e.personalDev,
+        stepCount: e.stepCount != null ? e.stepCount : null,
+        caloriesBurned: e.caloriesBurned != null ? Number(e.caloriesBurned) : null
+      };
+    } else {
+      todayState = { water: false, protein: false, steps: false, workout: false, personalDev: false, stepCount: null, caloriesBurned: null };
+    }
+    syncHabitCards();
+    updateDateHero();
+    updateStatsStrip();
+  }
+
+  function syncHabitCards() {
+    document.querySelectorAll('.habit-card').forEach(card => {
+      const id = card.dataset.habit;
+      const on = !!todayState[id];
+      card.classList.toggle('done', on);
+      card.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    const sc = document.getElementById('stepCount');
+    sc.value = todayState.stepCount != null ? todayState.stepCount : '';
+    const cal = document.getElementById('caloriesBurned');
+    cal.value = todayState.caloriesBurned != null ? todayState.caloriesBurned : '';
+  }
+
+  function updateDateHero() {
+    const now = new Date();
+    const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('weekday').textContent = weekdays[now.getDay()];
+    document.getElementById('fulldate').textContent = months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+
+    const e = data.entries[todayKey()];
+    const pill = document.getElementById('statusPill');
+    const text = document.getElementById('statusText');
+    if (e) {
+      pill.classList.add('logged');
+      const n = habitCount(e);
+      text.textContent = isPerfect(e) ? 'Perfect day logged' : n + '/' + HABITS.length + ' habits logged';
+    } else {
+      pill.classList.remove('logged');
+      text.textContent = 'Not logged yet';
+    }
+  }
+
+  function updateStatsStrip() {
+    document.getElementById('statStreak').textContent = String(getStreak());
+    const week = getWeekStats();
+    document.getElementById('statWeek').textContent = week.pct + '%';
+    document.getElementById('statScore').textContent = week.pct >= 80 ? 'Strong' : week.pct >= 50 ? 'Building' : week.daysLogged ? 'Start' : '—';
+  }
+
+  function setMotivation() {
+    const dayIndex = Math.floor(Date.now() / 86400000) % QUOTES.length;
+    document.getElementById('motivation').textContent = QUOTES[dayIndex];
+  }
+
+  // Habit toggles
+  document.getElementById('habits').addEventListener('click', (ev) => {
+    const card = ev.target.closest('.habit-card');
+    if (!card) return;
+    // Don't toggle when clicking the step input
+    if (ev.target.closest('.step-input-wrap')) return;
+    const id = card.dataset.habit;
+    todayState[id] = !todayState[id];
+    syncHabitCards();
+  });
+
+  document.getElementById('habits').addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+    const card = ev.target.closest('.habit-card');
+    if (!card) return;
+    ev.preventDefault();
+    const id = card.dataset.habit;
+    todayState[id] = !todayState[id];
+    syncHabitCards();
+  });
+
+  document.getElementById('stepCount').addEventListener('input', (ev) => {
+    const v = ev.target.value.trim();
+    todayState.stepCount = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
+  });
+
+  document.getElementById('stepCount').addEventListener('click', (ev) => ev.stopPropagation());
+
+  document.getElementById('caloriesBurned').addEventListener('input', (ev) => {
+    const v = ev.target.value.trim();
+    todayState.caloriesBurned = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
+  });
+
+  function saveToday() {
+    const key = todayKey();
+    const entry = {
+      water: !!todayState.water,
+      protein: !!todayState.protein,
+      steps: !!todayState.steps,
+      workout: !!todayState.workout,
+      personalDev: !!todayState.personalDev,
+      stepCount: todayState.stepCount,
+      caloriesBurned: todayState.caloriesBurned,
+      updatedAt: new Date().toISOString()
+    };
+    data.entries[key] = entry;
+    save();
+    updateDateHero();
+    updateStatsStrip();
+    toast(isPerfect(entry) ? 'Perfect day saved 🔥' : 'Day logged', true);
+  }
+
+  document.getElementById('btnSave').addEventListener('click', saveToday);
+
+  // ——— Navigation ———
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.dataset.screen === name));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.nav === name));
+    if (name === 'progress') renderProgress();
+    if (name === 'history') renderHistory();
+  }
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => showScreen(btn.dataset.nav));
+  });
+
+  // ——— Progress ———
+  function renderProgress() {
+    const streak = getStreak();
+    document.getElementById('progressStreak').textContent = String(streak);
+
+    const week = getWeekStats();
+    const circ = 2 * Math.PI * 42;
+    const offset = circ - (week.pct / 100) * circ;
+    const ring = document.getElementById('ringFg');
+    ring.style.strokeDasharray = String(circ);
+    ring.style.strokeDashoffset = String(offset);
+    document.getElementById('ringValue').textContent = week.pct + '%';
+    document.getElementById('weekDetail').textContent =
+      week.hit + ' of ' + week.possible + ' habit checks this week · ' + week.daysLogged + ' day' + (week.daysLogged === 1 ? '' : 's') + ' logged';
+
+    // Heatmap last 30 days
+    const grid = document.getElementById('heatmap');
+    grid.innerHTML = '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    for (let i = 29; i >= 0; i--) {
+      const d = addDays(today, -i);
+      const k = formatKey(d);
+      const e = data.entries[k];
+      const dot = document.createElement('div');
+      dot.className = 'heat-dot';
+      if (!e) {
+        dot.classList.add('empty');
+        dot.title = k + ': no log';
+      } else {
+        const n = habitCount(e);
+        if (n === HABITS.length) {
+          dot.classList.add('full');
+          dot.title = k + ': ' + HABITS.length + '/' + HABITS.length + ' perfect';
+        } else if (n > 0) {
+          dot.classList.add('partial');
+          dot.title = k + ': ' + n + '/' + HABITS.length;
+        } else {
+          dot.classList.add('empty');
+          dot.title = k + ': 0/' + HABITS.length;
+        }
+      }
+      if (i === 0) dot.classList.add('today');
+      grid.appendChild(dot);
+    }
+  }
+
+  // ——— History ———
+  function renderHistory() {
+    const list = document.getElementById('historyList');
+    const keys = Object.keys(data.entries).sort().reverse();
+    if (keys.length === 0) {
+      list.innerHTML = '<div class="empty-state">No history yet.<br>Log today to get started.</div>';
+      return;
+    }
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    list.innerHTML = keys.slice(0, 60).map(k => {
+      const e = data.entries[k];
+      const d = parseKey(k);
+      const n = habitCount(e);
+      const chips = HABITS.map(h =>
+        '<span class="h-chip' + (e[h.id] ? ' on' : '') + '" title="' + h.short + '">' + h.emoji + '</span>'
+      ).join('');
+      const stepsNote = e.steps && e.stepCount != null
+        ? ' <span style="font-size:0.7rem;color:var(--text-dim)">(' + Number(e.stepCount).toLocaleString() + ' steps)</span>'
+        : '';
+      const calNote = e.caloriesBurned != null
+        ? '<div class="history-meta">🔥 ' + Number(e.caloriesBurned).toLocaleString() + ' cal</div>'
+        : '';
+      return (
+        '<div class="history-item">' +
+          '<div class="date-col">' +
+            '<div class="day-num">' + d.getDate() + '</div>' +
+            '<div class="day-mon">' + months[d.getMonth()] + '</div>' +
+          '</div>' +
+          '<div class="history-habits">' + chips + stepsNote + calNote + '</div>' +
+          '<div class="history-score' + (n === HABITS.length ? ' perfect' : '') + '">' + n + '/' + HABITS.length + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  // ——— Wizard ———
+  function openWizard() {
+    wizard = {
+      step: 0,
+      answers: {
+        water: todayState.water,
+        protein: todayState.protein,
+        steps: todayState.steps,
+        workout: todayState.workout,
+        personalDev: todayState.personalDev
+      },
+      stepCount: todayState.stepCount,
+      caloriesBurned: todayState.caloriesBurned
+    };
+    document.getElementById('wizard').classList.add('open');
+    renderWizardStep();
+  }
+
+  function closeWizard() {
+    document.getElementById('wizard').classList.remove('open');
+  }
+
+  function isCaloriesStep() {
+    return wizard.step === HABITS.length;
+  }
+
+  function renderWizardStep() {
+    const total = WIZARD_TOTAL;
+    const caloriesStep = isCaloriesStep();
+    document.getElementById('wizardStepLabel').textContent =
+      'Question ' + (wizard.step + 1) + ' of ' + total;
+
+    const prog = document.getElementById('wizardProgress');
+    prog.innerHTML = Array.from({ length: total }, (_, i) => {
+      let cls = 'bar';
+      if (i < wizard.step) cls += ' done';
+      if (i === wizard.step) cls += ' current';
+      return '<div class="' + cls + '"></div>';
+    }).join('');
+
+    const stepsInput = document.getElementById('wizardStepsInput');
+    const calInput = document.getElementById('wizardCaloriesInput');
+    const choices = document.getElementById('wizardChoices');
+
+    if (caloriesStep) {
+      document.getElementById('wizardEmoji').textContent = '🔥';
+      document.getElementById('wizardQuestion').textContent = 'Calories burned today?';
+      stepsInput.classList.remove('visible');
+      calInput.classList.add('visible');
+      choices.style.display = 'none';
+      document.getElementById('wizardCalories').value =
+        wizard.caloriesBurned != null ? wizard.caloriesBurned : '';
+      document.getElementById('wizardNext').disabled = false;
+      document.getElementById('wizardNext').textContent = 'Save night log';
+    } else {
+      const h = HABITS[wizard.step];
+      document.getElementById('wizardEmoji').textContent = h.emoji;
+      document.getElementById('wizardQuestion').textContent = h.label + '?';
+      calInput.classList.remove('visible');
+      choices.style.display = '';
+
+      if (h.id === 'steps') {
+        stepsInput.classList.add('visible');
+        document.getElementById('wizardStepCount').value =
+          wizard.stepCount != null ? wizard.stepCount : '';
+      } else {
+        stepsInput.classList.remove('visible');
+      }
+
+      document.querySelectorAll('.wizard-choice').forEach(btn => {
+        const val = btn.dataset.val === 'yes';
+        const ans = wizard.answers[h.id];
+        btn.classList.toggle('selected', ans === true && val || ans === false && !val);
+      });
+
+      const hasAnswer = typeof wizard.answers[h.id] === 'boolean';
+      document.getElementById('wizardNext').disabled = !hasAnswer;
+      document.getElementById('wizardNext').textContent = 'Next';
+    }
+
+    document.getElementById('wizardBack').style.display = wizard.step === 0 ? 'none' : '';
+  }
+
+  document.querySelectorAll('.wizard-choice').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (isCaloriesStep()) return;
+      const h = HABITS[wizard.step];
+      wizard.answers[h.id] = btn.dataset.val === 'yes';
+      renderWizardStep();
+    });
+  });
+
+  document.getElementById('wizardStepCount').addEventListener('input', (ev) => {
+    const v = ev.target.value.trim();
+    wizard.stepCount = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
+  });
+
+  document.getElementById('wizardCalories').addEventListener('input', (ev) => {
+    const v = ev.target.value.trim();
+    wizard.caloriesBurned = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
+  });
+
+  document.getElementById('wizardNext').addEventListener('click', () => {
+    if (wizard.step < WIZARD_TOTAL - 1) {
+      wizard.step++;
+      renderWizardStep();
+    } else {
+      todayState = {
+        water: !!wizard.answers.water,
+        protein: !!wizard.answers.protein,
+        steps: !!wizard.answers.steps,
+        workout: !!wizard.answers.workout,
+        personalDev: !!wizard.answers.personalDev,
+        stepCount: wizard.stepCount,
+        caloriesBurned: wizard.caloriesBurned
+      };
+      saveToday();
+      syncHabitCards();
+      closeWizard();
+      showScreen('today');
+      toast('Night check-in saved', true);
+    }
+  });
+
+  document.getElementById('wizardBack').addEventListener('click', () => {
+    if (wizard.step > 0) {
+      wizard.step--;
+      renderWizardStep();
+    }
+  });
+
+  document.getElementById('wizardClose').addEventListener('click', closeWizard);
+  document.getElementById('btnWizard').addEventListener('click', openWizard);
+  document.getElementById('btnLogTonight').addEventListener('click', openWizard);
+
+  // ——— Export / Import ———
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'harpreet-daily-discipline-' + todayKey() + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('Exported', true);
+  });
+
+  document.getElementById('btnImport').addEventListener('click', () => {
+    document.getElementById('importFile').click();
+  });
+
+  document.getElementById('importFile').addEventListener('change', (ev) => {
+    const file = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== 'object' || !parsed.entries || typeof parsed.entries !== 'object') {
+          toast('Invalid backup file');
+          return;
+        }
+        showModal(
+          'Replace all data?',
+          'Importing will overwrite your current habit logs with the backup file.',
+          () => {
+            data = { entries: parsed.entries, version: parsed.version || 1 };
+            save();
+            loadTodayIntoUI();
+            toast('Import complete', true);
+          }
+        );
+      } catch (err) {
+        toast('Could not read JSON');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('btnClear').addEventListener('click', () => {
+    showModal(
+      'Clear all data?',
+      'This permanently deletes every logged day from this browser. Export a backup first if you might need it.',
+      () => {
+        data = { entries: {}, version: 1 };
+        save();
+        loadTodayIntoUI();
+        toast('All data cleared');
+      }
+    );
+  });
+
+  // ——— Init ———
+  setMotivation();
+  loadTodayIntoUI();
+})();
+  </script>
+</body>
+</html>
