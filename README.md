@@ -23,6 +23,14 @@ Use **`mobile.html`**, the phone-first version (same habits, same data format as
 
 Phone extras: ‹ › day switcher to fix a missed day (or tap a day in History), Yesterday/Today toggle in the wizard (defaults to yesterday before 4am), unsaved edits survive the app being closed, and a one-time banner plus weekly backup reminder.
 
+## Going back to past days
+
+- **Today screen:** tap **‹ / ›** beside the date (or swipe it on the phone, or press ←/→ on a computer) to step through days. **›** stops at today, and future dates can't be opened.
+- **Calendar:** tap the big date to open a month calendar. Any past day can be opened, back to any month.
+- On a past day you'll see a gold **"Viewing Wed Oct 7"** bar with **Jump to today**. Edit the checks or numbers and tap **Save Oct 7**. If you switch days with unsaved changes, the app asks first.
+- **History** lists every logged day plus the days you missed this month (and the last 7 days), shown as *Missed · not logged*. Tap any row to open it. **Progress:** tap any square in the 30-day grid.
+- **Night check-in:** choose **Yesterday**, **Today**, or **📅 Pick** to log any past date.
+
 ## What it tracks
 
 | Habit | Type |

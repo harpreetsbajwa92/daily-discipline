@@ -963,6 +963,77 @@
     /* Scrollable history cap */
     #historyList { max-height: none; }
 
+    /* ——— Day browsing ——— */
+    [hidden] { display: none !important; }
+    .day-nav { display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px; }
+    .day-arrow {
+      width: 52px; min-height: 80px; flex-shrink: 0; display: grid; place-items: center;
+      border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
+    }
+    .day-arrow svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .day-arrow:disabled { opacity: 0.3; cursor: default; }
+    .day-arrow:hover:not(:disabled), .day-pick:hover { border-color: var(--text-dim); }
+    .day-pick {
+      flex: 1; min-width: 0; min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 8px; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border);
+    }
+    .day-pick .weekday, .day-pick .fulldate { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pick-hint { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+    .day-nav.past .day-pick { border-color: rgba(234, 179, 8, 0.55); background: linear-gradient(135deg, var(--gold-dim), var(--bg-card)); }
+    .day-nav.past .weekday { color: var(--gold); }
+    .viewing-bar {
+      display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; margin-bottom: 12px; text-align: left;
+      border-radius: var(--radius-sm); background: var(--gold-dim); border: 1px solid rgba(234, 179, 8, 0.45);
+    }
+    .viewing-bar span { flex: 1; min-width: 0; font-weight: 700; font-size: 0.9rem; color: var(--gold); }
+    .viewing-bar .btn { padding: 10px 16px; font-size: 0.9rem; min-height: 44px; }
+    button.heat-dot { padding: 0; cursor: pointer; }
+    button.heat-dot:hover { transform: scale(1.12); }
+    .heat-dot.sel { box-shadow: 0 0 0 2px var(--gold); }
+    .heatmap-hint { font-size: 0.75rem; color: var(--text-dim); margin-top: 10px; text-align: center; }
+    .heatmap .btn { width: 100%; margin-top: 12px; }
+    button.history-item { width: 100%; text-align: left; cursor: pointer; }
+    button.history-item:hover { border-color: var(--text-dim); }
+    .history-item.cur { border-color: rgba(234, 179, 8, 0.6); }
+    .history-item.missed { background: transparent; border-style: dashed; }
+    .missed-title { font-weight: 600; font-size: 0.9rem; color: #fca5a5; }
+    .history-item.pending .missed-title { color: var(--gold); }
+    .history-log { font-size: 0.85rem; font-weight: 700; color: var(--gold); white-space: nowrap; }
+    .history-group { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 10px 2px 0; }
+    .history-group:first-child { margin-top: 0; }
+    .history-head { display: flex; justify-content: space-between; align-items: baseline; }
+    #historyPick { width: 100%; margin-bottom: 12px; }
+    .wizard-day {
+      display: flex; gap: 4px; padding: 3px; margin-bottom: 22px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .wizard-day button {
+      flex: 1; min-width: 0; min-height: 44px; padding: 0 6px; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+      color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .wizard-day button.active { background: var(--bg-card-hover); color: var(--text); }
+    .cal-overlay { display: none; position: fixed; inset: 0; z-index: 110; background: rgba(0, 0, 0, 0.72); align-items: center; justify-content: center; padding: 16px; }
+    .cal-overlay.open { display: flex; }
+    .cal-panel { width: 100%; max-width: 400px; max-height: 100%; overflow: auto; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .cal-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-top h3 { font-size: 1.05rem; }
+    .cal-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .cal-nav .m { flex: 1; text-align: center; font-size: 1.05rem; font-weight: 700; }
+    .cal-sum { text-align: center; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px; }
+    .cal-head, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+    .cal-head span { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--text-dim); padding-bottom: 4px; }
+    .cal-day { min-height: 44px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; color: var(--text-muted); }
+    .cal-day.blank { background: none; border: 0; }
+    .cal-day.zero { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+    .cal-day.partial { background: rgba(234, 179, 8, 0.25); border-color: rgba(234, 179, 8, 0.45); color: #fde68a; }
+    .cal-day.full { background: var(--accent); border-color: var(--accent); color: #052e16; }
+    .cal-day.today { box-shadow: inset 0 0 0 2px var(--text); }
+    .cal-day.sel { box-shadow: inset 0 0 0 3px var(--gold); }
+    .cal-day:disabled { opacity: 0.22; cursor: default; }
+    .cal-day:hover:not(:disabled):not(.blank) { border-color: var(--text-dim); }
+    .cal-quick { display: flex; gap: 10px; margin-top: 14px; }
+    .cal-quick .btn { flex: 1; }
+
     @media (min-width: 481px) {
       .app {
         border-left: 1px solid var(--border-subtle);
@@ -997,8 +1068,19 @@
       <div class="motivation" id="motivation"></div>
 
       <div class="date-hero">
-        <div class="weekday" id="weekday"></div>
-        <div class="fulldate" id="fulldate"></div>
+        <div class="day-nav" id="dayNav">
+          <button class="day-arrow" id="prevDay" type="button" aria-label="Previous day" title="Previous day (←)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <button class="day-pick" id="dayPick" type="button" aria-haspopup="dialog" title="Open calendar">
+            <span class="weekday" id="weekday"></span>
+            <span class="fulldate" id="fulldate"></span>
+            <span class="pick-hint">📅 Tap for calendar</span>
+          </button>
+          <button class="day-arrow" id="nextDay" type="button" aria-label="Next day" title="Next day (→)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="viewing-bar" id="viewingBar" hidden>
+          <span id="viewingText"></span>
+          <button class="btn btn-gold" id="jumpToday" type="button">Jump to today</button>
+        </div>
         <div class="status-pill" id="statusPill">
           <span class="status-dot"></span>
           <span id="statusText">Not logged yet</span>
@@ -1043,7 +1125,7 @@
           <div class="habit-icon">👟</div>
           <div class="habit-body">
             <div class="habit-title">5,000 steps</div>
-            <div class="habit-hint">Walked enough today</div>
+            <div class="habit-hint">Walked enough that day</div>
             <div class="step-input-wrap" id="stepWrap">
               <label for="stepCount">Actual steps (optional)</label>
               <input type="number" id="stepCount" inputmode="numeric" min="0" max="100000" placeholder="e.g. 7240" />
@@ -1077,7 +1159,7 @@
           <div class="habit-title">Calories burned</div>
           <div class="habit-hint">From WHOOP or your tracker</div>
           <div class="metric-input-wrap">
-            <label for="caloriesBurned">Today's total (optional)</label>
+            <label for="caloriesBurned">Day total (optional)</label>
             <input type="number" id="caloriesBurned" inputmode="numeric" min="0" max="20000" placeholder="e.g. 480" />
           </div>
         </div>
@@ -1114,6 +1196,7 @@
       <div class="section-title">Last 30 days</div>
       <div class="heatmap">
         <div class="heatmap-grid" id="heatmap"></div>
+        <div class="heatmap-hint">Tap any day to view or edit it</div>
         <div class="heatmap-legend">
           <span>Older</span>
           <div class="legend-dots">
@@ -1124,12 +1207,14 @@
           </div>
           <span>Today</span>
         </div>
+        <button class="btn btn-secondary" id="progressPick" type="button">📅 Open full calendar</button>
       </div>
     </section>
 
     <!-- HISTORY -->
     <section class="screen" id="screen-history" data-screen="history">
-      <div class="section-title">Past days</div>
+      <div class="history-head"><div class="section-title">Tap any day to view or edit</div><div class="section-title" id="historySum"></div></div>
+      <button class="btn btn-secondary" id="historyPick" type="button">📅 Pick any date…</button>
       <div class="history-list" id="historyList"></div>
     </section>
 
@@ -1181,6 +1266,11 @@
   <!-- Wizard -->
   <div class="wizard" id="wizard" role="dialog" aria-modal="true" aria-label="End of day check-in">
     <button class="wizard-close" id="wizardClose">← Cancel</button>
+    <div class="wizard-day" id="wizardDay" role="group" aria-label="Which day to log">
+      <button type="button" data-d="y">Yesterday</button>
+      <button type="button" data-d="t">Today</button>
+      <button type="button" data-d="pick" id="wizardPick">📅 Pick date</button>
+    </div>
     <div class="wizard-progress" id="wizardProgress"></div>
     <div class="wizard-body">
       <div class="wizard-step-label" id="wizardStepLabel">Question 1 of 6</div>
@@ -1219,6 +1309,28 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" id="modalCancel">Cancel</button>
         <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar picker -->
+  <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+    <div class="cal-panel">
+      <div class="cal-top">
+        <h3 id="calTitle">Pick a day</h3>
+        <button class="icon-btn" id="calClose" type="button" aria-label="Close calendar">✕</button>
+      </div>
+      <div class="cal-nav">
+        <button class="icon-btn" id="calPrev" type="button" aria-label="Previous month">‹</button>
+        <div class="m" id="calMonth"></div>
+        <button class="icon-btn" id="calNext" type="button" aria-label="Next month">›</button>
+      </div>
+      <div class="cal-sum" id="calSummary"></div>
+      <div class="cal-head" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-quick">
+        <button class="btn btn-secondary" id="calYesterday" type="button">Yesterday</button>
+        <button class="btn btn-primary" id="calToday" type="button">Today</button>
       </div>
     </div>
   </div>
@@ -1265,6 +1377,41 @@
   let wizard = { step: 0, answers: {}, stepCount: null, caloriesBurned: null };
   const WIZARD_TOTAL = HABITS.length + 1; // 5 yes/no + calories number
   let modalCb = null;
+  let selectedDay = todayKey();      // the day shown on the Today screen (any past day or today)
+  let lastToday = selectedDay;
+  const KEY_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const WDS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const FIELDS = ['water', 'protein', 'steps', 'workout', 'personalDev', 'stepCount', 'caloriesBurned'];
+
+  function shiftKey(k, n) { return formatKey(addDays(parseKey(k), n)); }
+  function dayNum(k) { const [y, m, d] = k.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); }
+  function fmtShort(k) { const d = parseKey(k); return WDS[d.getDay()] + ' ' + MONS[d.getMonth()] + ' ' + d.getDate(); }
+  function fmtLong(k) { const d = parseKey(k); return fmtShort(k) + ', ' + d.getFullYear(); }
+  function monDay(k) { const d = parseKey(k); return MONS[d.getMonth()] + ' ' + d.getDate(); }
+  function relLabel(k) {
+    const diff = dayNum(todayKey()) - dayNum(k);
+    const base = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff + ' days ago';
+    const y = parseKey(k).getFullYear();
+    return base + (y !== new Date().getFullYear() ? ' · ' + y : '');
+  }
+  // Older days without personalDev / caloriesBurned load as false / null.
+  function stateFor(k) {
+    const e = data.entries[k];
+    if (!e || typeof e !== 'object') {
+      return { water: false, protein: false, steps: false, workout: false, personalDev: false, stepCount: null, caloriesBurned: null };
+    }
+    return {
+      water: !!e.water, protein: !!e.protein, steps: !!e.steps, workout: !!e.workout, personalDev: !!e.personalDev,
+      stepCount: e.stepCount != null && e.stepCount !== '' ? Number(e.stepCount) : null,
+      caloriesBurned: e.caloriesBurned != null && e.caloriesBurned !== '' ? Number(e.caloriesBurned) : null
+    };
+  }
+  function isDirty() {
+    const base = stateFor(selectedDay);
+    return FIELDS.some(f => todayState[f] !== base[f]);
+  }
 
   // ——— Storage ———
   function load() {
@@ -1398,21 +1545,7 @@
 
   // ——— Today screen ———
   function loadTodayIntoUI() {
-    const key = todayKey();
-    const e = data.entries[key];
-    if (e) {
-      todayState = {
-        water: !!e.water,
-        protein: !!e.protein,
-        steps: !!e.steps,
-        workout: !!e.workout,
-        personalDev: !!e.personalDev,
-        stepCount: e.stepCount != null ? e.stepCount : null,
-        caloriesBurned: e.caloriesBurned != null ? Number(e.caloriesBurned) : null
-      };
-    } else {
-      todayState = { water: false, protein: false, steps: false, workout: false, personalDev: false, stepCount: null, caloriesBurned: null };
-    }
+    todayState = stateFor(selectedDay);
     syncHabitCards();
     updateDateHero();
     updateStatsStrip();
@@ -1432,13 +1565,19 @@
   }
 
   function updateDateHero() {
-    const now = new Date();
-    const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    document.getElementById('weekday').textContent = weekdays[now.getDay()];
-    document.getElementById('fulldate').textContent = months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+    const t = todayKey();
+    const past = selectedDay !== t;
+    document.getElementById('weekday').textContent = relLabel(selectedDay);
+    document.getElementById('fulldate').textContent = fmtShort(selectedDay);
+    document.getElementById('dayPick').setAttribute('aria-label', 'Showing ' + fmtLong(selectedDay) + '. Open calendar.');
+    document.getElementById('dayNav').classList.toggle('past', past);
+    document.getElementById('nextDay').disabled = !past;
+    document.getElementById('viewingBar').hidden = !past;
+    document.getElementById('viewingText').textContent = 'Viewing ' + fmtShort(selectedDay);
+    document.getElementById('btnSave').textContent = past ? 'Save ' + monDay(selectedDay) : 'Save / Log today';
+    document.getElementById('btnWizard').textContent = past ? 'Log ' + fmtShort(selectedDay) + ' step by step' : 'Log tonight';
 
-    const e = data.entries[todayKey()];
+    const e = data.entries[selectedDay];
     const pill = document.getElementById('statusPill');
     const text = document.getElementById('statusText');
     if (e) {
@@ -1447,7 +1586,7 @@
       text.textContent = isPerfect(e) ? 'Perfect day logged' : n + '/' + HABITS.length + ' habits logged';
     } else {
       pill.classList.remove('logged');
-      text.textContent = 'Not logged yet';
+      text.textContent = past ? 'Missed · not logged yet' : 'Not logged yet';
     }
   }
 
@@ -1496,23 +1635,44 @@
     todayState.caloriesBurned = v === '' ? null : Math.max(0, parseInt(v, 10) || 0);
   });
 
-  function saveToday() {
-    const key = todayKey();
-    const entry = {
-      water: !!todayState.water,
-      protein: !!todayState.protein,
-      steps: !!todayState.steps,
-      workout: !!todayState.workout,
-      personalDev: !!todayState.personalDev,
-      stepCount: todayState.stepCount,
-      caloriesBurned: todayState.caloriesBurned,
+  function saveEntry(key, st) {
+    data.entries[key] = Object.assign({}, data.entries[key] || {}, {
+      water: !!st.water,
+      protein: !!st.protein,
+      steps: !!st.steps,
+      workout: !!st.workout,
+      personalDev: !!st.personalDev,
+      stepCount: st.stepCount,
+      caloriesBurned: st.caloriesBurned,
       updatedAt: new Date().toISOString()
-    };
-    data.entries[key] = entry;
+    });
     save();
+    return data.entries[key];
+  }
+
+  function saveToday() {
+    const entry = saveEntry(selectedDay, todayState);
     updateDateHero();
     updateStatsStrip();
-    toast(isPerfect(entry) ? 'Perfect day saved 🔥' : 'Day logged', true);
+    const which = selectedDay === todayKey() ? '' : ' for ' + fmtShort(selectedDay);
+    toast(isPerfect(entry) ? 'Perfect day saved 🔥' + which : 'Day logged' + which, true);
+  }
+
+  function goToDay(k) {
+    if (!k || !KEY_RE.test(k) || k > todayKey()) return;
+    closeCal();
+    const go = () => {
+      selectedDay = k;
+      loadTodayIntoUI();
+      showScreen('today');
+      window.scrollTo(0, 0);
+    };
+    if (k === selectedDay) { showScreen('today'); return; }
+    if (isDirty()) {
+      showModal('Discard unsaved changes?', 'You changed ' + fmtLong(selectedDay) + ' but haven’t saved it. Switch days and discard those changes?', go);
+    } else {
+      go();
+    }
   }
 
   document.getElementById('btnSave').addEventListener('click', saveToday);
@@ -1553,8 +1713,12 @@
       const d = addDays(today, -i);
       const k = formatKey(d);
       const e = data.entries[k];
-      const dot = document.createElement('div');
+      const dot = document.createElement('button');
+      dot.type = 'button';
       dot.className = 'heat-dot';
+      dot.dataset.day = k;
+      dot.setAttribute('aria-label', fmtLong(k) + (e ? ': ' + habitCount(e) + ' of ' + HABITS.length + ' habits' : ': not logged') + '. Open this day.');
+      if (k === selectedDay) dot.classList.add('sel');
       if (!e) {
         dot.classList.add('empty');
         dot.title = k + ': no log';
@@ -1579,52 +1743,129 @@
   // ——— History ———
   function renderHistory() {
     const list = document.getElementById('historyList');
-    const keys = Object.keys(data.entries).sort().reverse();
-    if (keys.length === 0) {
-      list.innerHTML = '<div class="empty-state">No history yet.<br>Log today to get started.</div>';
-      return;
+    const t = todayKey();
+    const tp = parseKey(t);
+    const monthStart = formatKey(new Date(tp.getFullYear(), tp.getMonth(), 1));
+    const weekAgo = shiftKey(t, -6);
+    const gapStart = weekAgo < monthStart ? weekAgo : monthStart;
+    const set = {};
+    Object.keys(data.entries).forEach(k => { if (KEY_RE.test(k) && data.entries[k] && k <= t) set[k] = true; });
+    for (let g = gapStart; g <= t; g = shiftKey(g, 1)) set[g] = true;
+    const keys = Object.keys(set).sort().reverse();
+
+    let mLogged = 0, mMissed = 0;
+    for (let m = monthStart; m <= t; m = shiftKey(m, 1)) {
+      if (data.entries[m]) mLogged++; else if (m < t) mMissed++;
     }
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    list.innerHTML = keys.slice(0, 60).map(k => {
-      const e = data.entries[k];
+    document.getElementById('historySum').textContent = mLogged + ' logged · ' + mMissed + ' missed';
+
+    let html = '', lastMonth = '';
+    keys.slice(0, 90).forEach(k => {
       const d = parseKey(k);
-      const n = habitCount(e);
-      const chips = HABITS.map(h =>
-        '<span class="h-chip' + (e[h.id] ? ' on' : '') + '" title="' + h.short + '">' + h.emoji + '</span>'
-      ).join('');
-      const stepsNote = e.steps && e.stepCount != null
-        ? ' <span style="font-size:0.7rem;color:var(--text-dim)">(' + Number(e.stepCount).toLocaleString() + ' steps)</span>'
+      if (k.slice(0, 7) !== lastMonth) {
+        lastMonth = k.slice(0, 7);
+        html += '<div class="history-group">' + MONTHS[d.getMonth()] + ' ' + d.getFullYear() + '</div>';
+      }
+      const cur = k === selectedDay ? ' cur' : '';
+      const dateCol = '<div class="date-col"><div class="day-num">' + d.getDate() + '</div><div class="day-mon">' + MONS[d.getMonth()] + '</div></div>';
+      const e = data.entries[k];
+      if (!e) {
+        const isToday = k === t;
+        const title = isToday ? 'Not logged yet' : 'Missed · not logged';
+        html += '<button type="button" class="history-item missed' + (isToday ? ' pending' : '') + cur + '" data-day="' + k + '" aria-label="' + fmtLong(k) + '. ' + title + '. Open to fill in.">' +
+          dateCol + '<div class="history-habits"><span class="missed-title">' + title + '</span></div><div class="history-log">Log ›</div></button>';
+        return;
+      }
+      const st = stateFor(k);
+      const n = habitCount(st);
+      const chips = HABITS.map(h => '<span class="h-chip' + (st[h.id] ? ' on' : '') + '" title="' + h.short + '">' + h.emoji + '</span>').join('');
+      const stepsNote = st.steps && st.stepCount != null
+        ? ' <span style="font-size:0.7rem;color:var(--text-dim)">(' + Number(st.stepCount).toLocaleString() + ' steps)</span>'
         : '';
-      const calNote = e.caloriesBurned != null
-        ? '<div class="history-meta">🔥 ' + Number(e.caloriesBurned).toLocaleString() + ' cal</div>'
+      const calNote = st.caloriesBurned != null
+        ? '<div class="history-meta">🔥 ' + Number(st.caloriesBurned).toLocaleString() + ' cal</div>'
         : '';
-      return (
-        '<div class="history-item">' +
-          '<div class="date-col">' +
-            '<div class="day-num">' + d.getDate() + '</div>' +
-            '<div class="day-mon">' + months[d.getMonth()] + '</div>' +
-          '</div>' +
-          '<div class="history-habits">' + chips + stepsNote + calNote + '</div>' +
-          '<div class="history-score' + (n === HABITS.length ? ' perfect' : '') + '">' + n + '/' + HABITS.length + '</div>' +
-        '</div>'
-      );
-    }).join('');
+      html += '<button type="button" class="history-item' + cur + '" data-day="' + k + '" aria-label="' + fmtLong(k) + ': ' + n + ' of ' + HABITS.length + ' habits. Open to view or edit.">' +
+        dateCol + '<div class="history-habits">' + chips + stepsNote + calNote + '</div>' +
+        '<div class="history-score' + (n === HABITS.length ? ' perfect' : '') + '">' + n + '/' + HABITS.length + '</div></button>';
+    });
+    list.innerHTML = html;
+  }
+
+  // ——— Calendar picker (any past day; nothing after today) ———
+  const cal = { mode: 'view', y: 0, m: 0, sel: null };
+  function openCal(mode, k) {
+    cal.mode = mode;
+    cal.sel = k;
+    const d = parseKey(k);
+    cal.y = d.getFullYear();
+    cal.m = d.getMonth();
+    document.getElementById('calTitle').textContent = mode === 'wizard' ? 'Which day are you logging?' : 'Pick a day';
+    renderCal();
+    document.getElementById('calOverlay').classList.add('open');
+  }
+  function closeCal() { document.getElementById('calOverlay').classList.remove('open'); }
+  function calIsOpen() { return document.getElementById('calOverlay').classList.contains('open'); }
+  function renderCal() {
+    const t = todayKey(), tp = parseKey(t);
+    document.getElementById('calMonth').textContent = MONTHS[cal.m] + ' ' + cal.y;
+    document.getElementById('calNext').disabled = cal.y > tp.getFullYear() || (cal.y === tp.getFullYear() && cal.m >= tp.getMonth());
+    document.getElementById('calPrev').disabled = cal.y <= 2000 && cal.m === 0;
+    const lead = (new Date(cal.y, cal.m, 1).getDay() + 6) % 7;
+    const days = new Date(cal.y, cal.m + 1, 0).getDate();
+    let html = '', logged = 0, missed = 0;
+    for (let i = 0; i < lead; i++) html += '<span class="cal-day blank"></span>';
+    for (let d = 1; d <= days; d++) {
+      const k = formatKey(new Date(cal.y, cal.m, d));
+      const e = data.entries[k];
+      const future = k > t;
+      if (!future) { if (e) logged++; else if (k < t) missed++; }
+      let cls = 'cal-day';
+      if (e) { const n = habitCount(e); cls += n === HABITS.length ? ' full' : n > 0 ? ' partial' : ' zero'; }
+      if (k === t) cls += ' today';
+      if (k === cal.sel) cls += ' sel';
+      const label = fmtLong(k) + ': ' + (e ? habitCount(e) + ' of ' + HABITS.length + ' habits' : 'not logged') + (future ? ', future' : '');
+      html += '<button type="button" class="' + cls + '" data-day="' + k + '"' + (future ? ' disabled' : '') + ' aria-label="' + label + '">' + d + '</button>';
+    }
+    document.getElementById('calGrid').innerHTML = html;
+    document.getElementById('calSummary').textContent = logged + ' logged · ' + missed + ' missed';
+  }
+  function calStep(n) {
+    cal.m += n;
+    if (cal.m < 0) { cal.m = 11; cal.y--; }
+    if (cal.m > 11) { cal.m = 0; cal.y++; }
+    renderCal();
+  }
+  function pickDay(k) {
+    if (!k || k > todayKey()) return;
+    const mode = cal.mode;
+    closeCal();
+    if (mode === 'wizard') { prefillWizard(k); renderWizardStep(); }
+    else goToDay(k);
   }
 
   // ——— Wizard ———
-  function openWizard() {
+  function wizardDefaultDay() {
+    const t = todayKey();
+    if (selectedDay !== t) return selectedDay;                         // viewing a past day → log that day
+    return new Date().getHours() < 4 ? shiftKey(t, -1) : t;           // after midnight → "last night"
+  }
+
+  function prefillWizard(day) {
+    const src = (day === selectedDay) ? todayState : (data.entries[day] ? stateFor(day) : null);
     wizard = {
+      day: day,
       step: 0,
-      answers: {
-        water: todayState.water,
-        protein: todayState.protein,
-        steps: todayState.steps,
-        workout: todayState.workout,
-        personalDev: todayState.personalDev
-      },
-      stepCount: todayState.stepCount,
-      caloriesBurned: todayState.caloriesBurned
+      answers: src ? {
+        water: src.water, protein: src.protein, steps: src.steps, workout: src.workout, personalDev: src.personalDev
+      } : {},
+      stepCount: src ? src.stepCount : null,
+      caloriesBurned: src ? src.caloriesBurned : null
     };
+  }
+
+  function openWizard() {
+    prefillWizard(wizardDefaultDay());
     document.getElementById('wizard').classList.add('open');
     renderWizardStep();
   }
@@ -1640,8 +1881,19 @@
   function renderWizardStep() {
     const total = WIZARD_TOTAL;
     const caloriesStep = isCaloriesStep();
+    const t = todayKey(), yd = shiftKey(t, -1);
+    const other = wizard.day !== t && wizard.day !== yd;
+    const dayName = wizard.day === t ? 'Today' : wizard.day === yd ? 'Yesterday' : fmtShort(wizard.day);
     document.getElementById('wizardStepLabel').textContent =
-      'Question ' + (wizard.step + 1) + ' of ' + total;
+      'Question ' + (wizard.step + 1) + ' of ' + total + ' · ' + dayName + (other ? '' : ' (' + fmtShort(wizard.day) + ')');
+    const dayRow = document.getElementById('wizardDay');
+    dayRow.hidden = wizard.step !== 0;
+    dayRow.querySelectorAll('button').forEach(b => {
+      const on = b.dataset.d === 'y' ? wizard.day === yd : b.dataset.d === 't' ? wizard.day === t : other;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    document.getElementById('wizardPick').textContent = other ? '📅 ' + monDay(wizard.day) : '📅 Pick date';
 
     const prog = document.getElementById('wizardProgress');
     prog.innerHTML = Array.from({ length: total }, (_, i) => {
@@ -1657,7 +1909,7 @@
 
     if (caloriesStep) {
       document.getElementById('wizardEmoji').textContent = '🔥';
-      document.getElementById('wizardQuestion').textContent = 'Calories burned today?';
+      document.getElementById('wizardQuestion').textContent = 'Calories burned ' + (wizard.day === t ? 'today' : wizard.day === yd ? 'yesterday' : 'on ' + fmtShort(wizard.day)) + '?';
       stepsInput.classList.remove('visible');
       calInput.classList.add('visible');
       choices.style.display = 'none';
@@ -1718,7 +1970,7 @@
       wizard.step++;
       renderWizardStep();
     } else {
-      todayState = {
+      const st = {
         water: !!wizard.answers.water,
         protein: !!wizard.answers.protein,
         steps: !!wizard.answers.steps,
@@ -1727,11 +1979,19 @@
         stepCount: wizard.stepCount,
         caloriesBurned: wizard.caloriesBurned
       };
-      saveToday();
-      syncHabitCards();
+      if (wizard.day !== selectedDay && isDirty()) {
+        // Keep unsaved edits on the day being viewed; just store the wizard's day.
+        saveEntry(wizard.day, st);
+        updateStatsStrip();
+      } else {
+        selectedDay = wizard.day;
+        todayState = st;
+        saveToday();
+        syncHabitCards();
+      }
       closeWizard();
       showScreen('today');
-      toast('Night check-in saved', true);
+      toast('Check-in saved for ' + fmtShort(wizard.day), true);
     }
   });
 
@@ -1745,6 +2005,67 @@
   document.getElementById('wizardClose').addEventListener('click', closeWizard);
   document.getElementById('btnWizard').addEventListener('click', openWizard);
   document.getElementById('btnLogTonight').addEventListener('click', openWizard);
+
+  document.getElementById('wizardDay').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    if (b.dataset.d === 'pick') { openCal('wizard', wizard.day); return; }
+    const t = todayKey();
+    prefillWizard(b.dataset.d === 'y' ? shiftKey(t, -1) : t);
+    renderWizardStep();
+  });
+
+  // ——— Day navigation events ———
+  document.getElementById('prevDay').addEventListener('click', () => goToDay(shiftKey(selectedDay, -1)));
+  document.getElementById('nextDay').addEventListener('click', () => goToDay(shiftKey(selectedDay, 1)));
+  document.getElementById('jumpToday').addEventListener('click', () => goToDay(todayKey()));
+  document.getElementById('dayPick').addEventListener('click', () => openCal('view', selectedDay));
+  document.getElementById('progressPick').addEventListener('click', () => openCal('view', selectedDay));
+  document.getElementById('historyPick').addEventListener('click', () => openCal('view', selectedDay));
+  document.getElementById('heatmap').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-day]');
+    if (b) goToDay(b.dataset.day);
+  });
+  document.getElementById('historyList').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-day]');
+    if (b) goToDay(b.dataset.day);
+  });
+  document.getElementById('calGrid').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button[data-day]');
+    if (b && !b.disabled) pickDay(b.dataset.day);
+  });
+  document.getElementById('calPrev').addEventListener('click', () => calStep(-1));
+  document.getElementById('calNext').addEventListener('click', () => calStep(1));
+  document.getElementById('calClose').addEventListener('click', closeCal);
+  document.getElementById('calToday').addEventListener('click', () => pickDay(todayKey()));
+  document.getElementById('calYesterday').addEventListener('click', () => pickDay(shiftKey(todayKey(), -1)));
+  document.getElementById('calOverlay').addEventListener('click', (ev) => { if (ev.target.id === 'calOverlay') closeCal(); });
+
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      if (calIsOpen()) closeCal();
+      else if (document.getElementById('modal').classList.contains('open')) document.getElementById('modalCancel').click();
+      else if (document.getElementById('wizard').classList.contains('open')) closeWizard();
+      return;
+    }
+    if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+    if (!document.getElementById('screen-today').classList.contains('active')) return;
+    if (calIsOpen() || document.getElementById('wizard').classList.contains('open') || document.getElementById('modal').classList.contains('open')) return;
+    if (ev.target && ev.target.matches && ev.target.matches('input, textarea, select')) return;
+    ev.preventDefault();
+    goToDay(shiftKey(selectedDay, ev.key === 'ArrowLeft' ? -1 : 1));
+  });
+
+  // Roll over to the new day if the tab is left open past midnight.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    const t = todayKey();
+    if (t === lastToday) return;
+    const wasOnToday = selectedDay === lastToday;
+    lastToday = t;
+    if (wasOnToday && !isDirty()) selectedDay = t;
+    loadTodayIntoUI();
+  });
 
   // ——— Export / Import ———
   document.getElementById('btnExport').addEventListener('click', () => {

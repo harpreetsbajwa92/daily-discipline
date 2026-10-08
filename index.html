@@ -120,8 +120,26 @@ main { padding: 12px var(--pad) calc(var(--tab-h) + var(--sab) + 24px); }
 .quote { font-size: 15px; color: var(--muted); font-style: italic; margin: 2px 2px 10px; }
 
 /* Day switcher */
-.daybar { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px; }
-.daytitle { flex: 1; min-width: 0; text-align: center; }
+/* Day navigator: ‹ [date → calendar] › */
+.daynav { display: flex; align-items: stretch; gap: 8px; margin: 2px 0 10px; }
+.daynav .iconbtn { width: 52px; height: auto; min-height: 72px; border-radius: 16px; }
+.daynav .iconbtn svg { width: 26px; height: 26px; }
+.daypick {
+  flex: 1; min-width: 0; min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 6px 8px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); text-align: center;
+}
+.daypick:active { background: var(--card2); }
+.daypick .bigdate { max-width: 100%; font-size: 30px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pickhint { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--dim); }
+.pickhint svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.daynav.past .daypick { border-color: rgba(234, 179, 8, 0.55); background: linear-gradient(135deg, var(--gold-bg), var(--card)); }
+.daynav.past .eyebrow { color: var(--gold); }
+.viewing {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 6px 6px 6px 14px;
+  border-radius: var(--r-sm); background: var(--gold-bg); border: 1px solid rgba(234, 179, 8, 0.45);
+}
+.viewing .vchip { flex: 1; min-width: 0; font-size: 15px; font-weight: 800; color: var(--gold); }
+.viewing .btn { width: auto; flex-shrink: 0; min-height: 48px; padding: 0 16px; font-size: 16px; }
 .eyebrow { font-size: 15px; font-weight: 700; color: var(--green); }
 .bigdate { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
 .statusrow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
@@ -244,21 +262,37 @@ body.typing .tabbar { display: none; }
 .week h3 { font-size: 18px; margin-bottom: 4px; }
 .week p { font-size: 15px; color: var(--muted); }
 .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-.cal-head, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
-.cal-head span { text-align: center; font-size: 15px; font-weight: 700; color: var(--dim); padding-bottom: 4px; }
-.cal-cell {
-  aspect-ratio: 1 / 1; min-height: 36px; display: grid; place-items: center; border-radius: 10px;
-  font-size: 15px; font-weight: 600; color: var(--dim); background: var(--bg); border: 1px solid var(--line);
+/* Day grids (Progress heatmap + calendar picker). 48px+ cells even at 375px wide. */
+.dhead, .dgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.dhead span { text-align: center; font-size: 15px; font-weight: 700; color: var(--dim); padding-bottom: 4px; }
+.dcell {
+  min-width: 0; min-height: 48px; padding: 0; display: grid; place-items: center; border-radius: 12px;
+  font-size: 16px; font-weight: 700; color: var(--muted); background: var(--bg); border: 1px solid var(--line);
 }
-.cal-cell.blank { background: none; border: 0; }
-.cal-cell.zero { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
-.cal-cell.part { color: #fde68a; border-color: rgba(234, 179, 8, 0.45); }
-.cal-cell.p1 { background: rgba(234, 179, 8, 0.12); }
-.cal-cell.p2 { background: rgba(234, 179, 8, 0.2); }
-.cal-cell.p3 { background: rgba(234, 179, 8, 0.3); }
-.cal-cell.p4 { background: rgba(234, 179, 8, 0.42); }
-.cal-cell.full { background: var(--green); border-color: var(--green); color: #04210f; box-shadow: 0 0 10px var(--green-glow); }
-.cal-cell.today { outline: 2px solid var(--text); outline-offset: 1px; }
+.dcell.blank { background: none; border: 0; }
+.dcell.zero { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+.dcell.part { color: #fde68a; border-color: rgba(234, 179, 8, 0.45); }
+.dcell.p1 { background: rgba(234, 179, 8, 0.12); }
+.dcell.p2 { background: rgba(234, 179, 8, 0.2); }
+.dcell.p3 { background: rgba(234, 179, 8, 0.3); }
+.dcell.p4 { background: rgba(234, 179, 8, 0.42); }
+.dcell.full { background: var(--green); border-color: var(--green); color: #04210f; }
+.dcell.today { box-shadow: inset 0 0 0 2px var(--text); }
+.dcell.sel { box-shadow: inset 0 0 0 3px var(--gold); }
+.dcell.today.sel { box-shadow: inset 0 0 0 3px var(--gold), inset 0 0 0 5px var(--text); }
+.dcell:disabled { opacity: 0.22; }
+button.dcell:not(:disabled):active { transform: scale(0.94); }
+.calcard { margin-left: -10px; margin-right: -10px; padding: 14px 6px; }
+.calcard .card-title, .calcard .card-hint, .calcard .legend { padding: 0 10px; }
+.calcard > .btn { width: auto; margin: 12px 10px 2px; }
+.card-hint { font-size: 15px; color: var(--dim); margin: -6px 0 10px; }
+.calwrap { margin: 0 -10px; }
+.calnav { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.calnav .mlabel { flex: 1; text-align: center; font-size: 20px; font-weight: 800; }
+.calsum { text-align: center; font-size: 15px; color: var(--dim); margin-bottom: 10px; }
+.calquick { display: flex; gap: 10px; margin-top: 14px; }
+.backdrop.cal-backdrop { z-index: 75; }
+.sheet.calsheet { z-index: 76; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 15px; color: var(--dim); }
 .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; margin-right: 6px; vertical-align: -2px; border: 1px solid var(--line); }
 .rate { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
@@ -275,6 +309,14 @@ body.typing .tabbar { display: none; }
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r);
 }
 .hitem:active { background: var(--card2); }
+.hitem.cur { border-color: rgba(234, 179, 8, 0.6); }
+.hitem.miss { background: transparent; border-style: dashed; }
+.hmiss { display: block; font-size: 16px; font-weight: 700; color: #fca5a5; }
+.hitem.pending .hmiss { color: var(--gold); }
+.hlog { flex-shrink: 0; font-size: 16px; font-weight: 800; color: var(--gold); }
+.hgroup { font-size: 15px; font-weight: 800; color: var(--muted); margin: 8px 2px 0; }
+.hgroup:first-child { margin-top: 0; }
+#histPick { margin-bottom: 14px; }
 .hdate { width: 48px; flex-shrink: 0; text-align: center; }
 .hdate b { display: block; font-size: 24px; font-weight: 800; line-height: 1.1; }
 .hdate span { display: block; font-size: 15px; font-weight: 600; color: var(--dim); }
@@ -338,6 +380,9 @@ body.typing .tabbar { display: none; }
 .wz-inner { width: 100%; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; min-height: 0; }
 .wz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .wz-top .tbtn { padding: 0 6px; font-size: 17px; font-weight: 600; }
+.wz-dayrow { margin-top: 8px; }
+.wz-dayrow .seg { width: 100%; }
+.wz-dayrow .seg button { flex: 1; min-width: 0; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seg { display: flex; padding: 2px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
 .seg button { min-height: 48px; padding: 0 14px; border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--dim); }
 .seg button.active { background: var(--card2); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
@@ -399,6 +444,27 @@ body.typing .tabbar { display: none; }
   <main>
     <!-- TODAY -->
     <section class="tab-panel active" id="tab-today" role="tabpanel" aria-label="Today">
+      <div class="daynav" id="dayNav">
+        <button class="iconbtn" id="prevDay" type="button" aria-label="Previous day">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="daypick" id="dayPick" type="button" aria-haspopup="dialog">
+          <span class="eyebrow" id="dayEyebrow"></span>
+          <span class="bigdate" id="dayBig"></span>
+          <span class="pickhint"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Tap for calendar</span>
+        </button>
+        <button class="iconbtn" id="nextDay" type="button" aria-label="Next day">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="viewing" id="viewingBar" hidden>
+        <span class="vchip" id="viewingText"></span>
+        <button class="btn btn-gold" id="jumpToday" type="button">Jump to today</button>
+      </div>
+      <div class="statusrow">
+        <span class="pill" id="statusPill" role="status"></span>
+      </div>
+
       <div class="banner" id="banner" hidden>
         <h2>📲 Keep your data safe</h2>
         <p id="bannerMain">Add this page to your Home Screen (Safari → Share → <b>Add to Home Screen</b>) and <b>always open it from that icon</b>. Safari and the Home Screen app keep separate storage, so logs may not carry over if you switch between them.</p>
@@ -407,23 +473,6 @@ body.typing .tabbar { display: none; }
       </div>
 
       <p class="quote" id="quote"></p>
-
-      <div class="daybar">
-        <button class="iconbtn" id="prevDay" type="button" aria-label="Previous day">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <div class="daytitle">
-          <div class="eyebrow" id="dayEyebrow"></div>
-          <div class="bigdate" id="dayBig"></div>
-        </div>
-        <button class="iconbtn" id="nextDay" type="button" aria-label="Next day">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-      </div>
-      <div class="statusrow">
-        <span class="pill" id="statusPill" role="status"></span>
-        <button class="linkbtn" id="jumpToday" type="button" hidden>Go to today</button>
-      </div>
 
       <div class="stats">
         <div class="stat"><b class="c-green" id="sStreak">0</b><span>Streak</span></div>
@@ -454,7 +503,7 @@ body.typing .tabbar { display: none; }
           <span class="h-title">Calories burned</span>
           <span class="h-sub">From WHOOP or your tracker</span>
           <div class="field">
-            <label for="calInput">Today's total <span class="opt">optional</span></label>
+            <label for="calInput" id="calLabel">Today's total <span class="opt">optional</span></label>
             <input class="num" id="calInput" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" enterkeyhint="done" maxlength="5" placeholder="e.g. 480">
           </div>
         </div>
@@ -493,16 +542,18 @@ body.typing .tabbar { display: none; }
         <div class="stat"><b id="pAvgCal">—</b><span>Avg cal · wk</span></div>
       </div>
 
-      <div class="card">
+      <div class="card calcard">
         <h3 class="card-title">Last 30 days</h3>
-        <div class="cal-head" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
-        <div class="cal-grid" id="calGrid"></div>
+        <p class="card-hint">Tap any day to view or edit it.</p>
+        <div class="dhead" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+        <div class="dgrid" id="calGrid"></div>
         <div class="legend">
           <span><i style="background:var(--green);border-color:var(--green)"></i>All 5</span>
           <span><i style="background:rgba(234,179,8,.3);border-color:rgba(234,179,8,.45)"></i>Some</span>
           <span><i style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)"></i>0/5</span>
           <span><i></i>No log</span>
         </div>
+        <button class="btn btn-secondary" id="progressPick" type="button">Open full calendar</button>
       </div>
 
       <div class="card">
@@ -513,7 +564,8 @@ body.typing .tabbar { display: none; }
 
     <!-- HISTORY -->
     <section class="tab-panel" id="tab-history" role="tabpanel" aria-label="History">
-      <div class="label-row"><span class="label">Past days · tap one to edit</span></div>
+      <div class="label-row"><span class="label">Tap any day to view or edit</span><span class="label" id="histSum"></span></div>
+      <button class="btn btn-secondary" id="histPick" type="button">📅 Pick any date…</button>
       <div class="hist" id="histList"></div>
       <button class="btn btn-secondary" id="moreBtn" type="button" hidden>Show more</button>
     </section>
@@ -571,6 +623,41 @@ body.typing .tabbar { display: none; }
   <button class="btn btn-danger" id="clearBtn" type="button">Clear all data…</button>
   <p class="fine">Storage key: harpreet-fitness-daily-v1 · same format as index.html</p>
 </div>
+<!-- Calendar picker -->
+<div class="backdrop cal-backdrop" id="calBackdrop"></div>
+<div class="sheet calsheet" id="calSheet" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h2 id="calTitle">Pick a day</h2>
+    <button class="iconbtn" id="calClose" type="button" aria-label="Close calendar">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="calnav">
+    <button class="iconbtn" id="calPrev" type="button" aria-label="Previous month">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <div class="mlabel" id="calMonth" aria-live="polite"></div>
+    <button class="iconbtn" id="calNext" type="button" aria-label="Next month">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+  <p class="calsum" id="calSummary"></p>
+  <div class="calwrap">
+    <div class="dhead" aria-hidden="true"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+    <div class="dgrid" id="calPickGrid"></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--green);border-color:var(--green)"></i>All 5</span>
+    <span><i style="background:rgba(234,179,8,.3);border-color:rgba(234,179,8,.45)"></i>Some</span>
+    <span><i style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)"></i>0/5</span>
+    <span><i></i>Not logged</span>
+  </div>
+  <div class="calquick">
+    <button class="btn btn-secondary" id="calYesterday" type="button">Yesterday</button>
+    <button class="btn btn-primary" id="calToday" type="button">Today</button>
+  </div>
+</div>
 <input type="file" id="fileInput" accept=".json,application/json,text/plain" hidden>
 
 <!-- Log tonight wizard -->
@@ -578,9 +665,12 @@ body.typing .tabbar { display: none; }
   <div class="wz-inner">
     <div class="wz-top">
       <button class="btn-ghost tbtn" id="wzClose" type="button">Cancel</button>
-      <div class="seg" id="wzSeg" role="group" aria-label="Which day">
+    </div>
+    <div class="wz-dayrow" id="wzDayRow">
+      <div class="seg" id="wzSeg" role="group" aria-label="Which day to log">
         <button type="button" data-d="y">Yesterday</button>
         <button type="button" data-d="t">Today</button>
+        <button type="button" data-d="pick" id="wzPick">📅 Pick</button>
       </div>
     </div>
     <div class="wz-bars" id="wzBars" aria-hidden="true"></div>
@@ -641,14 +731,14 @@ body.typing .tabbar { display: none; }
   var STEP_GOAL = 5000;
 
   var HABITS = [
-    { id: 'water', emoji: '💧', title: '3L of water', sub: 'Drank 3 liters today', short: 'Water 3L',
+    { id: 'water', emoji: '💧', title: '3L of water', sub: 'Drank 3 liters', short: 'Water 3L',
       q: 'Did you drink 3 liters of water?', hint: 'Your total for the whole day.' },
     { id: 'protein', emoji: '🥩', title: 'Hit protein', sub: 'Daily protein target', short: 'Protein',
       q: 'Did you hit your protein intake?', hint: 'Your daily protein target.' },
-    { id: 'steps', emoji: '👟', title: '5,000 steps', sub: 'Walked 5k+ today', short: '5k steps',
+    { id: 'steps', emoji: '👟', title: '5,000 steps', sub: 'Walked 5k+', short: '5k steps',
       q: 'Did you walk 5,000 steps?', hint: 'Add your step count if you have it.' },
     { id: 'workout', emoji: '💪', title: 'Worked out', sub: 'Training session done', short: 'Workout',
-      q: 'Did you work out today?', hint: 'A real training session.' },
+      q: 'Did you work out?', hint: 'A real training session.' },
     { id: 'personalDev', emoji: '📚', title: 'Personal development', sub: 'Read, learn, or practice a skill', short: 'Personal dev',
       q: 'Did you do personal development?', hint: 'Reading, learning, skill practice, journaling, or intentional growth work.' }
   ];
@@ -691,6 +781,13 @@ body.typing .tabbar { display: none; }
   function fmtLong(k) { var d = parseKey(k); return WDS[d.getDay()] + ', ' + MONS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear(); }
   function fmtShort(k) { var d = parseKey(k); return WDS[d.getDay()] + ' ' + MONS[d.getMonth()] + ' ' + d.getDate(); }
   function fmtInt(n) { return Number(n).toLocaleString('en-US'); }
+  function relLabel(k) {
+    var diff = dayNum(todayKey()) - dayNum(k);
+    var base = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff + ' days ago';
+    var y = parseKey(k).getFullYear();
+    return base + (y !== new Date().getFullYear() ? ' · ' + y : '');
+  }
+  function monDay(k) { var d = parseKey(k); return MONS[d.getMonth()] + ' ' + d.getDate(); }
   function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
 
   // ——— Data model ———
@@ -1011,11 +1108,12 @@ body.typing .tabbar { display: none; }
       var c = countHits(saved);
       pill.textContent = c === HABITS.length ? 'Perfect day logged' : c + '/' + HABITS.length + ' habits logged';
     } else {
-      pill.textContent = 'Not logged yet';
+      pill.textContent = selectedDay < todayKey() ? 'Missed · not logged yet' : 'Not logged yet';
     }
     var b = $('saveBtn');
-    if (!saved) { b.textContent = 'Save day'; b.classList.remove('saved'); }
-    else if (dirty) { b.textContent = 'Save changes'; b.classList.remove('saved'); }
+    var pastLabel = selectedDay !== todayKey() ? 'Save ' + monDay(selectedDay) : null;
+    if (!saved) { b.textContent = pastLabel || 'Save day'; b.classList.remove('saved'); }
+    else if (dirty) { b.textContent = pastLabel || 'Save changes'; b.classList.remove('saved'); }
     else { b.textContent = 'Saved ✓'; b.classList.add('saved'); }
   }
 
@@ -1047,13 +1145,17 @@ body.typing .tabbar { display: none; }
 
   function renderToday() {
     var t = todayKey();
-    var d = parseKey(selectedDay);
-    var lbl = dayLabel(selectedDay);
-    var yr = d.getFullYear() !== new Date().getFullYear() ? ' · ' + d.getFullYear() : '';
-    $('dayEyebrow').textContent = (lbl ? lbl + ' · ' : '') + WD[d.getDay()] + yr;
-    $('dayBig').textContent = MON[d.getMonth()] + ' ' + d.getDate();
-    $('nextDay').disabled = selectedDay >= t;
-    $('jumpToday').hidden = selectedDay === t;
+    var past = selectedDay !== t;
+    $('dayEyebrow').textContent = relLabel(selectedDay);
+    $('dayBig').textContent = fmtShort(selectedDay);
+    $('dayPick').setAttribute('aria-label', 'Showing ' + fmtLong(selectedDay) + '. Tap to open the calendar.');
+    $('dayNav').classList.toggle('past', past);
+    $('nextDay').disabled = !past;
+    $('viewingBar').hidden = !past;
+    $('viewingText').textContent = 'Viewing ' + fmtShort(selectedDay);
+    $('openWizard').querySelector('b').textContent = past ? 'Log ' + fmtShort(selectedDay) : 'Log tonight';
+    $('openWizard').querySelector('small').textContent = past ? 'Fill in this day, one question at a time' : '6 quick questions, one at a time';
+    $('calLabel').firstChild.nodeValue = past ? 'Day total ' : "Today's total ";
     renderHabitStates();
     syncInput($('stepInput'), draft.stepCount);
     syncInput($('calInput'), draft.caloriesBurned);
@@ -1076,7 +1178,8 @@ body.typing .tabbar { display: none; }
   }
 
   function goToDay(k) {
-    if (k > todayKey()) return;
+    if (!k || !KEY_RE.test(k) || k > todayKey()) return;
+    if (calIsOpen()) closeCal();
     var go = function () {
       selectedDay = k;
       draft = blankOr(k);
@@ -1121,18 +1224,10 @@ body.typing .tabbar { display: none; }
     var sd = parseKey(start).getDay();
     var lead = sd === 0 ? 6 : sd - 1;
     var html = '';
-    for (var i = 0; i < lead; i++) html += '<span class="cal-cell blank"></span>';
+    for (var i = 0; i < lead; i++) html += '<span class="dcell blank"></span>';
     for (var j = 0; j < 30; j++) {
       var k = shiftKey(start, j);
-      var e = getEntry(k);
-      var c = e ? countHits(e) : -1;
-      var cls = 'cal-cell';
-      if (c === HABITS.length) cls += ' full';
-      else if (c > 0) cls += ' part p' + c;
-      else if (c === 0) cls += ' zero';
-      if (k === t) cls += ' today';
-      var label = fmtShort(k) + ': ' + (e ? c + ' of ' + HABITS.length : 'not logged');
-      html += '<span class="' + cls + '" role="img" aria-label="' + label + '" title="' + label + '">' + parseKey(k).getDate() + '</span>';
+      html += '<button type="button" class="' + dayCellClass(k) + (k === selectedDay ? ' sel' : '') + '" data-day="' + k + '" aria-label="' + dayCellLabel(k) + '. Tap to open.">' + parseKey(k).getDate() + '</button>';
     }
     $('calGrid').innerHTML = html;
 
@@ -1152,14 +1247,39 @@ body.typing .tabbar { display: none; }
 
   // ——— History ———
   function renderHistory() {
-    var keys = entryKeys().sort().reverse();
-    if (!keys.length) {
-      $('histList').innerHTML = '<div class="empty">No days logged yet.<br>Save today or run “Log tonight”.</div>';
-      $('moreBtn').hidden = true;
-      return;
+    var t = todayKey(), tp = parseKey(t);
+    var monthStart = keyOf(new Date(tp.getFullYear(), tp.getMonth(), 1));
+    var weekAgo = shiftKey(t, -6);
+    var gapStart = weekAgo < monthStart ? weekAgo : monthStart;
+    var set = {};
+    entryKeys().forEach(function (k) { if (k <= t) set[k] = true; });
+    for (var g = gapStart; g <= t; g = shiftKey(g, 1)) set[g] = true;
+    var keys = Object.keys(set).sort().reverse();
+
+    var mLogged = 0, mMissed = 0;
+    for (var m = monthStart; m <= t; m = shiftKey(m, 1)) {
+      if (getEntry(m)) mLogged++; else if (m < t) mMissed++;
     }
-    $('histList').innerHTML = keys.slice(0, histLimit).map(function (k) {
-      var e = getEntry(k), d = parseKey(k), c = countHits(e);
+    $('histSum').textContent = mLogged + ' logged · ' + mMissed + ' missed';
+
+    var html = '', lastMonth = '';
+    keys.slice(0, histLimit).forEach(function (k) {
+      var d = parseKey(k), mk = k.slice(0, 7);
+      if (mk !== lastMonth) {
+        lastMonth = mk;
+        html += '<div class="hgroup">' + MON[d.getMonth()] + ' ' + d.getFullYear() + '</div>';
+      }
+      var cur = k === selectedDay ? ' cur' : '';
+      var dateCol = '<span class="hdate"><b>' + d.getDate() + '</b><span>' + MONS[d.getMonth()] + '</span></span>';
+      var e = getEntry(k);
+      if (!e) {
+        var isToday = k === t;
+        var title = isToday ? 'Not logged yet' : 'Missed · not logged';
+        return void (html += '<button type="button" class="hitem miss' + (isToday ? ' pending' : '') + cur + '" data-day="' + k + '" aria-label="' + fmtLong(k) + '. ' + title + '. Tap to fill in.">' +
+          dateCol + '<span class="hmain"><span class="hmiss">' + title + '</span><span class="hmeta">' + (dayLabel(k) || WDS[d.getDay()]) + ' · tap to fill in</span></span>' +
+          '<span class="hlog" aria-hidden="true">Log ›</span></button>');
+      }
+      var c = countHits(e);
       var meta = [dayLabel(k) || WDS[d.getDay()]];
       if (e.stepCount !== null) meta.push(fmtInt(e.stepCount) + ' steps');
       if (e.caloriesBurned !== null) meta.push(fmtInt(e.caloriesBurned) + ' cal');
@@ -1167,13 +1287,79 @@ body.typing .tabbar { display: none; }
         return '<span class="chip' + (e[h.id] ? ' on' : '') + '" aria-hidden="true">' + h.emoji + '</span>';
       }).join('');
       var done = HABITS.filter(function (h) { return e[h.id]; }).map(function (h) { return h.short; }).join(', ') || 'none';
-      return '<button type="button" class="hitem" data-day="' + k + '" aria-label="' + fmtLong(k) + '. ' + c + ' of ' + HABITS.length + ' habits: ' + done + '. Tap to edit.">' +
-        '<span class="hdate"><b>' + d.getDate() + '</b><span>' + MONS[d.getMonth()] + '</span></span>' +
-        '<span class="hmain"><span class="chips">' + chips + '</span><span class="hmeta">' + meta.join(' · ') + '</span></span>' +
-        '<span class="hscore' + (c === HABITS.length ? ' perfect' : '') + '">' + c + '/' + HABITS.length + '</span>' +
-        '</button>';
-    }).join('');
+      html += '<button type="button" class="hitem' + cur + '" data-day="' + k + '" aria-label="' + fmtLong(k) + '. ' + c + ' of ' + HABITS.length + ' habits: ' + done + '. Tap to view or edit.">' +
+        dateCol + '<span class="hmain"><span class="chips">' + chips + '</span><span class="hmeta">' + meta.join(' · ') + '</span></span>' +
+        '<span class="hscore' + (c === HABITS.length ? ' perfect' : '') + '">' + c + '/' + HABITS.length + '</span></button>';
+    });
+    $('histList').innerHTML = html;
     $('moreBtn').hidden = keys.length <= histLimit;
+  }
+
+  // ——— Calendar picker (any past day; nothing after today) ———
+  function dayCellClass(k) {
+    var e = getEntry(k), c = e ? countHits(e) : -1, cls = 'dcell';
+    if (c === HABITS.length) cls += ' full';
+    else if (c > 0) cls += ' part p' + c;
+    else if (c === 0) cls += ' zero';
+    if (k === todayKey()) cls += ' today';
+    return cls;
+  }
+  function dayCellLabel(k) {
+    var e = getEntry(k);
+    return fmtLong(k) + ': ' + (e ? countHits(e) + ' of ' + HABITS.length + ' habits' : 'not logged');
+  }
+
+  var cal = { mode: 'view', y: 0, m: 0, sel: null };
+  function calIsOpen() { return $('calSheet').classList.contains('open'); }
+  function openCal(mode, k) {
+    cal.mode = mode;
+    cal.sel = k;
+    var d = parseKey(k);
+    cal.y = d.getFullYear();
+    cal.m = d.getMonth();
+    $('calTitle').textContent = mode === 'wizard' ? 'Which day are you logging?' : 'Pick a day';
+    renderCal();
+    $('calBackdrop').classList.add('open');
+    $('calSheet').classList.add('open');
+    document.body.classList.add('locked');
+  }
+  function closeCal() {
+    $('calBackdrop').classList.remove('open');
+    $('calSheet').classList.remove('open');
+    if (!$('sheet').classList.contains('open') && $('wizard').hidden) document.body.classList.remove('locked');
+  }
+  function renderCal() {
+    var t = todayKey(), tp = parseKey(t);
+    $('calMonth').textContent = MON[cal.m] + ' ' + cal.y;
+    $('calNext').disabled = cal.y > tp.getFullYear() || (cal.y === tp.getFullYear() && cal.m >= tp.getMonth());
+    $('calPrev').disabled = cal.y <= 2000 && cal.m === 0;
+    var lead = (new Date(cal.y, cal.m, 1).getDay() + 6) % 7;
+    var days = new Date(cal.y, cal.m + 1, 0).getDate();
+    var html = '', logged = 0, missed = 0;
+    for (var i = 0; i < lead; i++) html += '<span class="dcell blank"></span>';
+    for (var d = 1; d <= days; d++) {
+      var k = keyOf(new Date(cal.y, cal.m, d));
+      var future = k > t;
+      if (!future) { if (getEntry(k)) logged++; else if (k < t) missed++; }
+      var sel = k === cal.sel;
+      html += '<button type="button" class="' + dayCellClass(k) + (sel ? ' sel' : '') + '" data-day="' + k + '"' +
+        (future ? ' disabled' : '') + ' aria-label="' + dayCellLabel(k) + (sel ? ', selected' : '') + (future ? ', future' : '') + '">' + d + '</button>';
+    }
+    $('calPickGrid').innerHTML = html;
+    $('calSummary').textContent = logged + ' logged · ' + missed + ' missed';
+  }
+  function calStep(n) {
+    cal.m += n;
+    if (cal.m < 0) { cal.m = 11; cal.y--; }
+    if (cal.m > 11) { cal.m = 0; cal.y++; }
+    renderCal();
+  }
+  function pickDay(k) {
+    if (!k || k > todayKey()) return;
+    var mode = cal.mode;
+    closeCal();
+    if (mode === 'wizard') { prefillWizard(k); renderWizard(); }
+    else goToDay(k);
   }
 
   // ——— Tabs ———
@@ -1203,8 +1389,10 @@ body.typing .tabbar { display: none; }
   var wz = { day: null, step: 0, ans: {}, stepCount: null, cal: null, done: false, timer: null };
 
   function wizardDefaultDay() {
-    // Logging after midnight usually means "last night", so default to yesterday until 4am.
-    return new Date().getHours() < 4 ? shiftKey(todayKey(), -1) : todayKey();
+    var t = todayKey();
+    // Viewing a past day? Log that day. After midnight (before 4am) default to "last night".
+    if (selectedDay !== t) return selectedDay;
+    return new Date().getHours() < 4 ? shiftKey(t, -1) : t;
   }
 
   function prefillWizard(day) {
@@ -1243,14 +1431,16 @@ body.typing .tabbar { display: none; }
     }
     $('wzBars').innerHTML = bars;
 
-    var t = todayKey();
-    $('wzSeg').style.visibility = (wz.step === 0 && !wz.done) ? 'visible' : 'hidden';
+    var t = todayKey(), yd = shiftKey(t, -1);
+    var other = wz.day !== t && wz.day !== yd;
+    $('wzDayRow').hidden = !(wz.step === 0 && !wz.done);
     $('wzSeg').querySelectorAll('button').forEach(function (b) {
-      var k = b.dataset.d === 'y' ? shiftKey(t, -1) : t;
-      var on = k === wz.day;
+      var on = b.dataset.d === 'y' ? wz.day === yd : b.dataset.d === 't' ? wz.day === t : other;
       b.classList.toggle('active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    $('wzPick').textContent = other ? '📅 ' + monDay(wz.day) : '📅 Pick';
+    $('wzPick').setAttribute('aria-label', other ? 'Logging ' + fmtLong(wz.day) + '. Tap to pick another date.' : 'Pick another date');
 
     $('wzBody').hidden = wz.done;
     $('wzNav').hidden = wz.done;
@@ -1268,7 +1458,7 @@ body.typing .tabbar { display: none; }
     }
 
     $('wzCount').textContent = 'Question ' + (wz.step + 1) + ' of ' + total;
-    $('wzDay').textContent = dayLabel(wz.day) || fmtShort(wz.day);
+    $('wzDay').textContent = dayLabel(wz.day) ? dayLabel(wz.day) + ' (' + fmtShort(wz.day) + ')' : fmtShort(wz.day);
 
     if (wz.step < HABITS.length) {
       var h = HABITS[wz.step];
@@ -1289,7 +1479,7 @@ body.typing .tabbar { display: none; }
       $('wzNext').disabled = typeof a !== 'boolean';
     } else {
       $('wzEmoji').textContent = '🔥';
-      $('wzQ').textContent = 'Calories burned today?';
+      $('wzQ').textContent = 'Calories burned ' + (wz.day === t ? 'today' : wz.day === yd ? 'yesterday' : 'on ' + fmtShort(wz.day)) + '?';
       $('wzHint').textContent = 'From WHOOP or your tracker. Optional: leave blank to skip.';
       $('wzAnswers').hidden = true;
       $('wzStepsField').hidden = true;
@@ -1561,10 +1751,42 @@ body.typing .tabbar { display: none; }
   $('wzSeg').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.d === 'pick') { openCal('wizard', wz.day); return; }
     var t = todayKey();
     prefillWizard(b.dataset.d === 'y' ? shiftKey(t, -1) : t);
     renderWizard();
   });
+
+  // Day navigation: date label → calendar, Progress heatmap, History picker
+  $('dayPick').addEventListener('click', function () { openCal('view', selectedDay); });
+  $('histPick').addEventListener('click', function () { openCal('view', selectedDay); });
+  $('progressPick').addEventListener('click', function () { openCal('view', selectedDay); });
+  $('calGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-day]');
+    if (b) goToDay(b.dataset.day);
+  });
+  $('calPickGrid').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-day]');
+    if (b && !b.disabled) pickDay(b.dataset.day);
+  });
+  $('calPrev').addEventListener('click', function () { calStep(-1); });
+  $('calNext').addEventListener('click', function () { calStep(1); });
+  $('calClose').addEventListener('click', closeCal);
+  $('calBackdrop').addEventListener('click', closeCal);
+  $('calToday').addEventListener('click', function () { pickDay(todayKey()); });
+  $('calYesterday').addEventListener('click', function () { pickDay(shiftKey(todayKey(), -1)); });
+
+  // Swipe the date navigator left/right to change day.
+  (function () {
+    var sx = null, sy = null;
+    $('dayNav').addEventListener('touchstart', function (e) { var p = e.touches[0]; sx = p.clientX; sy = p.clientY; }, { passive: true });
+    $('dayNav').addEventListener('touchend', function (e) {
+      if (sx === null) return;
+      var p = e.changedTouches[0], dx = p.clientX - sx, dy = p.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 60 && Math.abs(dy) < 40) goToDay(shiftKey(selectedDay, dx > 0 ? -1 : 1));
+    }, { passive: true });
+  })();
   $('wzClose').addEventListener('click', closeWizard);
   $('wzFinish').addEventListener('click', function () { closeWizard(); showTab('today'); });
   $('wzSend').addEventListener('click', function () { sendToFitness(wz.day); });
@@ -1619,10 +1841,19 @@ body.typing .tabbar { display: none; }
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape') return;
-    if (!$('modalWrap').hidden) closeModal();
-    else if ($('sheet').classList.contains('open')) closeSheet();
-    else if (!$('wizard').hidden) closeWizard();
+    if (e.key === 'Escape') {
+      if (!$('modalWrap').hidden) closeModal();
+      else if (calIsOpen()) closeCal();
+      else if ($('sheet').classList.contains('open')) closeSheet();
+      else if (!$('wizard').hidden) closeWizard();
+      return;
+    }
+    // ← / → change day on the Today tab (hardware keyboards / desktop).
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (activeTab !== 'today' || !$('wizard').hidden || calIsOpen() || $('sheet').classList.contains('open') || !$('modalWrap').hidden) return;
+    if (e.target && e.target.matches && e.target.matches('input, textarea')) return;
+    e.preventDefault();
+    goToDay(shiftKey(selectedDay, e.key === 'ArrowLeft' ? -1 : 1));
   });
 
   // Enables :active press styles on iOS Safari.
