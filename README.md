@@ -1,6 +1,28 @@
+# Transformation tracker + Daily Discipline
+
+**Live app:** https://harpreetsbajwa92.github.io/daily-discipline/ (`index.html`)
+
+## Transformation (index.html)
+Phone-first tracker for a 2–3 month cut (program starts Sat Oct 31, 2026). Single HTML file, no build step, data in `localStorage` (one key: `transformation-tracker`, schema `version: 1`).
+
+- **Today:** morning check-in (weight, energy/hunger/soreness 1–10, sleep), WHOOP numbers (calories burned, steps, strain, recovery %), five habits (3 L water, protein goal, 5,000 steps, workout, personal development). Steps and protein auto-tick from the numbers; tap to override.
+- **Food:** log per meal (Breakfast, Pre-gym, Post-gym, Lunch, Snack, Dinner) from a built-in food library or custom foods (saved to the library). Copy yesterday's meals, meal templates, live totals vs targets.
+- **Week:** waist at belly button, progress-photo checklist (front/side/back, no images stored).
+- **Trends:** weight + 7-day average, calories eaten vs burned, protein, waist, habit streaks, weekly averages table (inline SVG, works offline).
+- **History:** calendar + list of logged days; tap to edit any day. ‹ › in the header steps through days.
+- **Send to Fitness** (share icon): compact text summary of the selected day via the share sheet, or copied to clipboard.
+- **Settings (gear):** targets (default 1,800 kcal, P 150, F 50, C = rest), steps goal, start date, food library, Export/Import JSON backup.
+
+On iPhone: open in Safari → Share → **Add to Home Screen**, and always open it from that icon (Safari and the Home Screen app keep separate storage). Export a backup weekly.
+
+WHOOP data shape per day (`days[YYYY-MM-DD].whoop`): `{ caloriesBurned, steps, strain, recovery, source: 'manual'|'whoop', syncedAt }`, ready for a future API sync.
+
+## Old habit tracker
+The earlier Daily Discipline app is kept as `habits.html` (phone) and `desktop.html`. Its notes follow.
+
 # Daily Discipline
 
-A mobile-friendly habit tracker for **Harpreet Singh** — five daily habits (fitness + personal development), streaks, and local backups.
+A mobile-friendly habit tracker for **Harpreet** — five daily habits (fitness + personal development), streaks, and local backups.
 
 ## How to use
 
@@ -13,7 +35,7 @@ Works offline once the page has been opened — no internet required after that.
 
 ## On your phone
 
-Use **`mobile.html`**, the phone-first version (same habits, same data format as `index.html`).
+Use **`habits.html`** (formerly mobile.html), the phone-first version (same habits, same data format as `index.html`).
 
 1. Put `mobile.html` somewhere Safari can open as a web address (any static host such as GitHub Pages or Netlify Drop, or your own site). iPhone Safari can't add a local file to the Home Screen.
 2. Open it in **Safari**, tap **Share → Add to Home Screen**. It installs as **Discipline** with its own icon.
