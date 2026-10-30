@@ -3,19 +3,19 @@
 **Live app:** https://harpreetsbajwa92.github.io/daily-discipline/ (`index.html`)
 
 ## Transformation (index.html)
-Phone-first tracker for a 2–3 month cut (program starts Sat Oct 31, 2026). Single HTML file, no build step, data in `localStorage` (one key: `transformation-tracker`, schema `version: 1`).
+Phone-first tracker for a 2–3 month cut. The challenge starts Sat Oct 31, 2026, and the header shows "Day N of challenge". It is a single HTML file with no build step. Data is stored in `localStorage` under one key, `transformation-tracker`, with schema `version: 1`.
 
-- **Today:** morning check-in (weight, energy/hunger/soreness 1–10, sleep), WHOOP numbers (calories burned, steps, strain, recovery %), five habits (3 L water, protein goal, 5,000 steps, workout, personal development). Steps and protein auto-tick from the numbers; tap to override.
-- **Food:** log per meal (Breakfast, Pre-gym, Post-gym, Lunch, Snack, Dinner) from a built-in food library or custom foods (saved to the library). Copy yesterday's meals, meal templates, live totals vs targets.
-- **Week:** waist at belly button, progress-photo checklist (front/side/back, no images stored).
-- **Trends:** weight + 7-day average, calories eaten vs burned, protein, waist, habit streaks, weekly averages table (inline SVG, works offline).
-- **History:** calendar + list of logged days; tap to edit any day. ‹ › in the header steps through days.
-- **Send to Fitness** (share icon): compact text summary of the selected day via the share sheet, or copied to clipboard.
-- **Settings (gear):** targets (default 1,800 kcal, P 150, F 50, C = rest), steps goal, start date, food library, Export/Import JSON backup.
+- **Today:** morning weight and energy/hunger/soreness (1–10). The manual WHOOP fields are calories burned, strain, recovery % and sleep hours. Steps are entered by hand because the WHOOP API has no steps.
+- **11 daily habits** with a daily score %, a score streak (days at 80% or more) and per-habit streaks: Clean eating, 4 L water, Protein goal, Fish oil, CoQ10, Multivitamin, Creatine 5 g, Workout, Steps goal, Personal development, Sleep 7h+. Steps, protein, sleep and creatine tick themselves from the numbers and the food log; tap to override.
+- **Daily progress note** on the Today tab.
+- **Food:** log food per meal from a built-in Indian-vegetarian-plus-eggs library or from custom foods. You can copy yesterday's meals, use templates, and see live totals against targets.
+- **Week (Sunday check-in):** weight, body fat %, waist at the belly button, plus optional muscle kg/%, visceral fat, BMR, chest and arms. It also has a front/side/back photo checklist and weekly notes, and shows the change vs last week and vs the start.
+- **Trends:** daily weight with a 7-day average, calories eaten vs burned, and protein. Weekly charts cover weight, body fat % and waist, each with the change vs last week and vs the start. There is also a daily habit score chart, habit streaks with a heatmap, and a weekly averages table.
+- **History:** a calendar and a list of logged days, plus a **Progress notes** journal that combines daily and Sunday notes.
+- **Send to Fitness:** sends the day's summary through the share sheet, or copies it to the clipboard. On Sundays the summary also includes the check-in.
+- **Settings:** targets default to 1,550 kcal, P 150 g and F 45 g, with carbs as the rest. The steps goal defaults to 8,000. Settings also hold the start date, the food library, and JSON Export/Import.
 
-On iPhone: open in Safari → Share → **Add to Home Screen**, and always open it from that icon (Safari and the Home Screen app keep separate storage). Export a backup weekly.
-
-WHOOP data shape per day (`days[YYYY-MM-DD].whoop`): `{ caloriesBurned, steps, strain, recovery, source: 'manual'|'whoop', syncedAt }`, ready for a future API sync.
+On iPhone, open the app in Safari, tap Share, then **Add to Home Screen**. Always open it from that icon, because Safari and the Home Screen app keep separate storage. Export a backup weekly.
 
 ## Old habit tracker
 The earlier Daily Discipline app is kept as `habits.html` (phone) and `desktop.html`. Its notes follow.
