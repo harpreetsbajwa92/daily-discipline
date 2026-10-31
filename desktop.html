@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+<!-- Old app version: send old bookmarks/Home Screen shortcuts to the current app. Add ?stay to the URL to open this old page anyway. -->
+<script>if(!/[?&]stay\b/.test(location.search))location.replace("./"+location.hash);</script>
+<noscript><meta http-equiv="refresh" content="0; url=./"></noscript>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
   <meta name="theme-color" content="#0a0a0b" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
