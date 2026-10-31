@@ -765,7 +765,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   var FOODS=[
     ["egg","Whole egg, boiled",1,"egg","eggs",1,72,6.3,0.4,4.8,0],
     ["eggw","Egg white",1,"white","whites",1,17,3.6,0.2,0.1,0],
-    ["omelette","Omelette, 2 eggs, 1 tsp oil, veggies",1,"omelette","omelettes",0.5,190,13,3,14,0],
+    ["omelette","Omelette, per egg (½ tsp oil, veggies)",1,"egg","eggs",1,95,6.5,1.5,7,0],
     ["lfpaneer","Paneer, low-fat (palm ~100 g)",1,"palm","palms",0.5,180,20,4,9,0],
     ["paneer","Paneer, regular (palm ~100 g)",1,"palm","palms",0.5,290,18,3,22,0],
     ["tofu","Tofu, firm (palm ~100 g)",1,"palm","palms",0.5,145,16,3,8,0],
@@ -855,7 +855,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     SZ_TSP=[["1 tsp",1],["1 tbsp",3],["2 tbsp",6]],SZ_TBSP=[["1 tsp",1/3],["1 tbsp",1],["2 tbsp",2]],SZ_HAND=[["½ handful",1],["1 handful",2]];
   function szG(u){return [["½ "+u,0.5],["1 "+u,1],["1½ "+u,1.5]];}
   // [section, food id, short name, unit label, sizes, default size index]
-  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","2 eggs"],[0,"paneer","Paneer","palm",SZ_PALM,1],[0,"tofu","Tofu","palm",SZ_PALM,1],[0,"chicken","Chicken","palm",SZ_PALM,1],[0,"soya","Soya chunks","",SZ_BOWL,1],
+  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","1 egg"],[0,"paneer","Paneer","palm",SZ_PALM,1],[0,"tofu","Tofu","palm",SZ_PALM,1],[0,"chicken","Chicken","palm",SZ_PALM,1],[0,"soya","Soya chunks","",SZ_BOWL,1],
     [1,"milk","Milk","",szG("glass"),1],[1,"yogurt","Greek yogurt","",szG("cup"),1],[1,"curd","Curd","",SZ_BOWL,1],
     [2,"roti","Roti","1"],[2,"bread","Bread","1 slice"],[2,"rice","Rice","",SZ_BOWL,1],[2,"oats","Oats","dry",[["¼ cup",0.5],["½ cup",1],["¾ cup",1.5],["1 cup",2]],1],[2,"pizza","Pizza","1 slice"],
     [3,"dal","Dal","",SZ_BOWL,1],[3,"rajma","Rajma","",SZ_BOWL,1],[3,"chana","Chana","",SZ_BOWL,1],
