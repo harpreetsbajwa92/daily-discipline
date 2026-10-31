@@ -144,7 +144,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   <div class="cards" id="cards"></div>
   <h2 id="hWeekTitle">This week</h2>
   <div class="week" id="hWeek"></div>
-  <div class="note" id="note">Monday: send Fitness your weight, scale report, WHOOP screenshots and 3 photos.</div>
+  <div class="note" id="note">Sunday: send Fitness your weight, scale report, WHOOP screenshots, 3 photos and the copied report.</div>
 </section>
 
 <section class="page" id="p-workout">
@@ -165,6 +165,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
 <section class="page" id="p-trends">
   <h1>Trends</h1>
   <button class="big" id="copyBtn">Copy report for Fitness</button>
+  <div class="empty" style="text-align:center;margin-top:6px">Every Sunday: tap, then paste it into the Fitness chat with your check-in.</div>
   <div id="copyHint"></div>
   <textarea id="reportBox" readonly hidden></textarea>
   <div class="box"><h3>Strength progress</h3><div id="sumList"></div></div>
@@ -332,7 +333,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
       wh+='<button class="wd'+(k===view?" sel":"")+'" data-k="'+k+'"><span class="l">'+fmt(k)+(k===today?'<small>today</small>':'')+'</span><span class="p'+(sc===N?" ok":"")+'">'+(has||sc?sc+"/"+N+(sc===N?" ✓":""):"-")+'</span></button>';
     }
     $("hWeek").innerHTML=wh;
-    $("note").className="note"+(parse(today).getDay()===1?" mon":"");
+    $("note").className="note"+(parse(today).getDay()===0?" mon":"");
   }
   $("cards").addEventListener("click",function(e){
     var b=e.target.closest(".card"); if(!b)return;
