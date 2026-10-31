@@ -79,15 +79,17 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
 .exc.done>.exh .chk{background:#2e7d32;border-color:#2e7d32;color:#fff}
 .exn{flex:1;min-width:0}
 .exn .n{font-size:17px;font-weight:700}
-.exn .r{font-size:13px;color:#9a9a9a}
+.exn .r{font-size:15px;color:#d0d0d0;font-weight:600;margin-top:1px}
+.eqp{display:inline-block;vertical-align:2px;font-size:11px;font-weight:800;color:#8ab4f8;background:#1a2a3c;border:1px solid #2a4a6a;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.goal{margin-top:8px;font-size:13px;line-height:1.35;color:#c8c8c8;background:#1a1a1a;border-radius:8px;padding:7px 9px}
 .exn .last{font-size:13px;color:#8ab4f8;margin-top:1px}
-.sets{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-left:42px}
+.sets{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-left:18px}
 .set{display:flex;align-items:center;gap:6px}
 .set .sn{width:16px;color:#777;font-size:13px;font-weight:700}
 .set input{width:74px;height:44px;border-radius:10px;border:1px solid #3a3a3a;background:#161616;color:#fff;font:inherit;font-size:18px;font-weight:700;text-align:center;-webkit-appearance:none;appearance:none}
 .set input::placeholder{color:#5f6b78;font-weight:600}
 .set input:focus{outline:none;border-color:#1e88e5}
-.set .u{font-size:13px;color:#9a9a9a;width:30px}
+.set .u{font-size:12px;color:#9a9a9a;width:52px;line-height:1.1}
 .sub{font-size:12px;color:#9a9a9a;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin:14px 2px 8px}
 .rest{background:#222;border-radius:14px;padding:16px;color:#ccc;margin-top:12px}
 .week{display:flex;flex-direction:column;gap:6px}
@@ -196,24 +198,47 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   // ---- workout plans ----
-  var ABS=[["Hanging leg raises","3x10-15","bw"],["Cable crunch","3x12-15"],["Ab wheel or plank","3x45s","sec"],["Cable woodchoppers","3x12/side"]];
-  var WALK=["Incline walk","15-20 min","min"];
-  var PLANS={
-    push:{n:"Push",x:[["Incline DB press","4x8-10"],["Machine/flat bench press","3x8-10"],["Seated DB shoulder press","3x8-10"],["Lateral raises","4x12-15"],["Rope pushdown","3x12"],["Overhead triceps extension","3x12"],["Incline walk","15-20 min, 10-12%, ~5 km/h","min"]]},
-    pull:{n:"Pull + Abs",abs:1,x:[["Lat pulldown / pull-ups","4x8-10"],["Chest-supported row","4x8-10"],["Seated cable row","3x10-12"],["Face pulls","3x15"],["DB curl","3x10-12"],["Hammer curl","3x12"]]},
-    legs:{n:"Legs",x:[["Squat / hack squat","4x6-8"],["Romanian deadlift","3x8-10"],["Leg press","3x10-12"],["Leg curl","3x12"],["Calf raises","4x15"],WALK]},
-    upper:{n:"Upper + Abs",abs:1,x:[["Incline press","3x8-10"],["Lat pulldown","3x10"],["Lateral raises","4x15"],["Rear delt fly","3x15"],["Superset curls + pushdowns","3x12"],WALK]},
-    lower:{n:"Lower + Abs",abs:1,x:[["Bulgarian split squat","3x10/leg"],["Hip thrust","3x10"],["Leg extension","3x12"],["Leg curl","3x12"]]},
-    active:{n:"Active rest",x:[["Steps","10k","chk"],["Incline walk","30 min","min"]]}
+  // Equipment: tag (pill), unit next to the weight box, weight-entry rule, short label for the report.
+  var EQ={
+    db:{tag:"Dumbbells",unit:"lbs each",rule:"log lbs per dumbbell",rep:"DB each"},
+    bb:{tag:"Barbell",unit:"total lbs",rule:"log total lbs incl. 45 lb bar",rep:"BB total"},
+    bbm:{tag:"Barbell / machine",unit:"total lbs",rule:"barbell: total lbs incl. 45 lb bar · machine: stack lbs",rep:"BB total / machine stack"},
+    squat:{tag:"Barbell / hack squat",unit:"total lbs",rule:"barbell: total lbs incl. 45 lb bar · hack squat: plates added",rep:"BB total / hack plates"},
+    hip:{tag:"Barbell / machine",unit:"total lbs",rule:"barbell: total lbs incl. 45 lb bar · machine: stack or plates",rep:"BB total / machine"},
+    cable:{tag:"Cable",unit:"stack lbs",rule:"log the stack weight",rep:"cable stack"},
+    cableside:{tag:"Cable",unit:"stack lbs",rule:"log the stack weight, reps per side",rep:"cable stack, per side"},
+    machine:{tag:"Machine",unit:"stack lbs",rule:"log the stack weight",rep:"machine stack"},
+    plates:{tag:"Machine",unit:"plates lbs",rule:"log total plates added (not the sled)",rep:"plates added"},
+    rdf:{tag:"Dumbbells / pec-deck",unit:"lbs each",rule:"dumbbells: lbs per dumbbell · pec-deck: stack lbs",rep:"DB each / pec-deck stack"},
+    bw:{tag:"Bodyweight",kind:"bw",unit:"reps",rule:"reps only, no weight",rep:"bodyweight"},
+    plank:{tag:"Bodyweight",kind:"sec",unit:"sec",rule:"plank: seconds · ab wheel: enter reps",rep:"bodyweight, sec"},
+    tread:{tag:"Treadmill",kind:"min",unit:"min",rule:"log minutes",rep:"treadmill"},
+    steps:{tag:"Steps",kind:"chk",unit:"",rule:"tick when done",rep:"steps"}
   };
+  // [id (kept stable so history carries over), name, sets, reps, equipment, note]
+  var ABS=[["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["cable-crunch","Cable crunch",3,"12-15","cable"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
+  var WALK=["incline-walk","Incline walk",1,"15-20 min","tread","10-12% incline, ~5 km/h"];
+  var PLANS={
+    push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
+    pull:{n:"Pull + Abs",abs:1,x:[["lat-pulldown","Lat pulldown",4,"8-10","cable"],["chest-supported-row","Chest-supported dumbbell row",4,"8-10","db"],["seated-cable-row","Seated cable row",3,"10-12","cable"],["face-pulls","Face pulls",3,"15","cable"],["db-curl","Dumbbell curl",3,"10-12","db"],["hammer-curl","Hammer curl",3,"12","db"]]},
+    legs:{n:"Legs",x:[["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["romanian-deadlift","Romanian deadlift",3,"8-10","bb"],["leg-press","Leg press",3,"10-12","plates"],["leg-curl","Leg curl",3,"12","machine"],["calf-raises","Calf raises",4,"15","machine"],WALK]},
+    upper:{n:"Upper + Abs",abs:1,x:[["incline-press","Incline barbell press",3,"8-10","bb"],["lat-pulldown","Lat pulldown",3,"10","cable"],["lateral-raises","Lateral raises",4,"15","db"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["superset-db-curl","Dumbbell curl (superset)",3,"12","db","back to back, no rest"],["superset-rope-pushdown","Rope pushdown (superset)",3,"12","cable","back to back, no rest"],WALK]},
+    lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["leg-extension","Leg extension",3,"12","machine"],["leg-curl","Leg curl",3,"12","machine"]]},
+    active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]}
+  };
+  // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
+  var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
   var PLAN_ORDER=["push","pull","legs","upper","lower","active"];
   var SUGGEST=["none","push","pull","legs","active","upper","lower"];
-  function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
   function exList(pid){
     var p=PLANS[pid]; if(!p)return [];
     return (p.abs?p.x.concat(ABS):p.x).map(function(e){
-      var kind=e[2]||"w", m=/^(\d+)x/.exec(e[1]);
-      return {id:slug(e[0]),name:e[0],target:e[1],kind:kind,n:kind==="chk"?0:kind==="min"?1:(m?+m[1]:3)};
+      var q=EQ[e[4]], kind=q.kind||"w", timed=kind==="min"||kind==="chk";
+      var short=timed?e[3]:e[2]+" x "+e[3];
+      var full=timed?e[3]:e[2]+" sets x "+e[3]+(kind==="sec"?"":" reps");
+      return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],eq:q,note:e[5]||"",
+        target:short+" · "+q.tag+(e[5]?" · "+e[5]:""),
+        goal:"Target: "+full+" · "+q.tag+" · "+q.rule+(e[5]?" · "+e[5]:"")};
     });
   }
   var EXINFO={};
@@ -250,7 +275,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   function load(k){var v=getJ(k);if(Array.isArray(v)&&v.length===N)return v.map(Boolean);return new Array(N).fill(false);}
   function save(k,v){setJ(k,v);}
   function count(v){return v.filter(Boolean).length;}
-  function loadWo(k){var v=getJ("wo:"+k);if(v&&typeof v==="object"){v.ex=v.ex||{};return v;}return {plan:null,ex:{},done:false};}
+  function loadWo(k){var v=getJ("wo:"+k);if(v&&typeof v==="object"){v.ex=v.ex||{};for(var o in ALIAS){if(v.ex[o]&&!v.ex[ALIAS[o]])v.ex[ALIAS[o]]=v.ex[o];}return v;}return {plan:null,ex:{},done:false};}
   function saveWo(k,v){setJ("wo:"+k,v);}
   function woDates(){return allKeys().filter(function(k){return k.indexOf("wo:")===0;}).map(function(k){return k.slice(3);}).sort();}
   function filled(x){return x!==undefined&&x!==null&&String(x).trim()!=="";}
@@ -341,6 +366,11 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     if(same)return ws[0]+" lbs x "+sets.map(function(s){return num(s[1])||"?";}).join(", ");
     return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+" lbs x "+r:w?w+" lbs":r+" reps";}).join(", ");
   }
+  function repSets(kind,sets){
+    sets=(sets||[]).filter(function(s){return s&&s.some(filled);});
+    if(kind==="min"||kind==="sec")return fmtSets(kind,sets);
+    return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+"x"+r:w?w+"x?":r+" reps";}).join(", ");
+  }
   function renderWorkout(){
     var w=loadWo(wdate), pid=planOf(wdate,w), sug=SUGGEST[parse(wdate).getDay()];
     $("dPick").value=wdate;
@@ -358,14 +388,16 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
         if(PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[];
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
-        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="chk">✓</span><span class="exn"><div class="n">'+e.name+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the weight")+' or it counts as skipped</div></span></button>';
+        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="chk">✓</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span></div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span></button>';
         if(e.n){
           var nrows=Math.max(e.n,(cur.s||[]).length);
           h+='<div class="sets">';
           for(var s=0;s<nrows;s++){
             var cs=(cur.s&&cur.s[s])||[], ps=ls[s]||[];
-            if(e.kind==="w"||e.kind==="bw"){
-              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' lbs"><span class="u">lbs</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+            if(e.kind==="bw"){
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+            } else if(e.kind==="w"){
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' '+e.eq.unit+'"><span class="u">'+e.eq.unit+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else {
               var u=e.kind==="min"?"min":"sec";
               h+='<div class="set"><span class="sn">'+(e.n>1?(s+1):"")+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' '+u+'"><span class="u">'+u+'</span></div>';
@@ -373,7 +405,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
           }
           h+='</div>';
         }
-        h+='</div>';
+        h+='<div class="goal">'+e.goal+'</div></div>';
       });
     }
     $("woBody").innerHTML=h;
@@ -519,7 +551,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
       out.push(fmt(k)+": "+c+"/8"+(miss.length?" (missed: "+miss.join(", ")+")":""));
     }
     out.push("Avg "+(n?(tot/n).toFixed(1):"-")+"/8 · streak "+streak()+" days");
-    out.push("","WORKOUTS");
+    out.push("","WORKOUTS (weights in lbs: DB each = per dumbbell, BB total = incl. 45 lb bar, stack = cable/machine stack)");
     var any=false;
     for(var d=0;d<7;d++){
       var k2=shift(start,d), w=getJ("wo:"+k2); if(!woLogged(w))continue; w.ex=w.ex||{};
@@ -527,8 +559,8 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
       var lines=[], skipped=0;
       exList(pid).forEach(function(e){
         var x=w.ex[e.id];
-        if(!performed(e,x)){skipped++;lines.push("- "+e.name+": SKIPPED");return;}
-        lines.push("- "+e.name+": "+(e.kind==="chk"?"done":fmtSets(e.kind,x.s)));
+        if(!performed(e,x)){skipped++;lines.push("- "+e.name+" ["+e.eq.rep+"]: SKIPPED");return;}
+        lines.push("- "+e.name+" ["+e.eq.rep+"]: "+(e.kind==="chk"?"done":repSets(e.kind,x.s)));
       });
       var nl=exList(pid).length;
       out.push(fmt(k2)+" - "+planName(pid)+(w.done?" (done)":" (partial)")+(nl?" · "+(nl-skipped)+"/"+nl+" done, "+skipped+" skipped":""));
@@ -538,7 +570,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     out.push("","PROGRESS (est. 1RM, best set per session)");
     var ids=strengthIds();
     if(!ids.length)out.push("No strength data yet");
-    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+": "+s.t+" (top "+L.top+" lbs, e1RM "+r1(L.e1)+" lbs)");});
+    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+" ["+EXINFO[id].eq.rep+"]: "+s.t+" (top "+L.top+" lbs, e1RM "+r1(L.e1)+" lbs)");});
     return out.join("\n");
   }
   $("copyBtn").addEventListener("click",function(){
