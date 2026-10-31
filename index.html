@@ -495,6 +495,13 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .sin{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px 12px}
 .sinl{display:flex;align-items:center;gap:6px}.sinl input{width:96px;min-height:44px;box-sizing:border-box;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:#1b2226;color:#fff;font-size:16px;padding:0 10px}
 .sinl span{color:#a3adb4;font-size:14px}
+
+.bkl{font-size:14px;color:#c4ccd1;margin:2px 0}
+.bkcard .big{margin-top:10px}
+.bkrow{display:flex;gap:8px;margin-top:8px}.bkb{flex:1;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:#2b343b;color:#e6eaec;font-size:15px;font-weight:600;touch-action:manipulation}
+.bksnap{display:block;width:100%;text-align:left;min-height:52px;margin-top:6px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:#1b2226;color:#fff;padding:8px 12px;font-size:15px;touch-action:manipulation}.bksnap span{display:block;font-size:13px;color:#a3adb4}
+#bkMsg{margin-top:8px;color:#7cc4f5}
+.bknudge{display:block;width:100%;min-height:44px;margin:4px 0 8px;border-radius:12px;border:1px solid rgba(0,147,231,.5);background:rgba(0,147,231,.1);color:#7cc4f5;font-size:15px;font-weight:600;touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -545,6 +552,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <section class="page" id="p-sunday">
   <div class="phead"><span class="ptitle">SUNDAY CHECK-IN</span><div class="pnav"><button type="button" class="pa" id="sPrev" aria-label="Previous Sunday">‹</button><label class="pl"><span id="sLab">SUN</span><input type="date" class="dpick" id="sPick" aria-label="Pick a Sunday"></label><button type="button" class="pa" id="sNext" aria-label="Next Sunday">›</button></div></div>
   <div class="dsub" id="sSub"></div>
+  <button type="button" class="bknudge" id="sBkNudge" hidden>💾 Save a backup to Files ›</button>
   <div class="top wcard sring"><div id="sRing"></div><div><div class="slbl" style="margin:0">Check-in progress</div><div class="score" id="sScore">0/13</div><div class="streak">items ticked</div><div class="bar"><div class="fill" id="sFill"></div></div></div></div>
   <div class="tip">Weigh in after waking, after the bathroom, before food or water.</div>
   <div id="sList"></div>
@@ -580,7 +588,14 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   <h2>Strength · est. 1RM · tap for trend view</h2><div id="exArea"></div>
   <div class="box"><h3>Habits: weekly average</h3><div class="empty" id="streakLine"></div><div id="habChart"></div></div>
   <div class="box"><h3>Workouts per week</h3><div id="woChart"></div></div>
-  <button class="export" id="exportBtn">Export all data (JSON)</button>
+  <div class="box bkcard"><h3>Data</h3>
+    <div class="bkl" id="bkAuto">Last auto-backup: …</div><div class="bkl" id="bkFile">Last file backup: never</div>
+    <button type="button" class="big" id="bkNow">Backup now</button>
+    <div class="bkrow"><button type="button" class="bkb" id="bkRestFile">Restore from file</button><button type="button" class="bkb" id="bkRestAuto">Restore auto-backup</button></div>
+    <input type="file" id="bkFileIn" accept="application/json,.json" hidden>
+    <div id="bkList" hidden></div><div id="bkMsg" class="bkl"></div>
+    <div class="empty" style="margin-top:6px">Your logs live only on this phone. The app keeps a daily copy (last 14 days); Backup now saves a file to Files / iCloud.</div>
+  </div>
 </section>
 
 </div>
@@ -1495,13 +1510,69 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     }
     if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok,fallback);}else fallback();
   });
-  $("exportBtn").addEventListener("click",function(){
-    var o={app:"daily-non-negotiables",version:1,exported:new Date().toISOString(),data:{}};
-    allKeys().forEach(function(k){o.data[PREFIX+k]=getJ(k);});
-    var blob=new Blob([JSON.stringify(o,null,1)],{type:"application/json"}), a=document.createElement("a");
-    a.href=URL.createObjectURL(blob); a.download="daily-nn-backup-"+today+".json"; document.body.appendChild(a); a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
-  });
+  // ================= BACKUP (separate store: IndexedDB "nn-backup", fallback localStorage "nn-bk:*"; never inside nn-v1:) =================
+  var BK_LS="nn-bk:snaps", BK_FILE="nn-bk:lastfile", bkDb=null;
+  function bkOpen(){if(bkDb)return bkDb;bkDb=new Promise(function(res){try{if(!window.indexedDB)return res(null);var r=indexedDB.open("nn-backup",1);
+      r.onupgradeneeded=function(){r.result.createObjectStore("snaps",{keyPath:"id"});};r.onsuccess=function(){res(r.result);};r.onerror=function(){res(null);};r.onblocked=function(){res(null);};}catch(e){res(null);}});return bkDb;}
+  function bkLsAll(){try{var a=JSON.parse(localStorage.getItem(BK_LS));return Array.isArray(a)?a:[];}catch(e){return [];}}
+  function bkAll(){return bkOpen().then(function(db){if(!db)return bkLsAll();return new Promise(function(res){try{var q=db.transaction("snaps").objectStore("snaps").getAll();q.onsuccess=function(){res(q.result||[]);};q.onerror=function(){res(bkLsAll());};}catch(e){res(bkLsAll());}});});}
+  function bkPutAll(add,delIds){return bkOpen().then(function(db){
+    if(!db){var a=bkLsAll().filter(function(x){return delIds.indexOf(x.id)<0&&(!add||x.id!==add.id);});if(add)a.push(add);
+      while(a.length){try{localStorage.setItem(BK_LS,JSON.stringify(a));break;}catch(e){a.sort(function(x,y){return x.at<y.at?-1:1;});a.shift();}}return;}
+    return new Promise(function(res){try{var tx=db.transaction("snaps","readwrite"),os=tx.objectStore("snaps");if(add)os.put(add);delIds.forEach(function(id){os.delete(id);});tx.oncomplete=function(){res();};tx.onerror=tx.onabort=function(){res();};}catch(e){res();}});});}
+  function bkData(){var d={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PREFIX)===0)d[k]=localStorage.getItem(k);}return d;} // raw strings, exact copy
+  function bkDays(d){var s={};Object.keys(d).forEach(function(k){var m=/\d{4}-\d{2}-\d{2}/.exec(k);if(m)s[m[0]]=1;});return Object.keys(s).length;}
+  function bkSnap(kind){var now=new Date(),d=bkData(),id=kind==="daily"?today:"pre-"+now.toISOString();
+    return bkAll().then(function(all){
+      if(kind==="daily"&&all.some(function(x){return x.id===today;}))return false;
+      var snap={id:id,kind:kind,date:today,at:now.toISOString(),days:bkDays(d),data:d};
+      var keep=all.concat([snap]),daily=keep.filter(function(x){return x.kind==="daily";}).sort(function(x,y){return x.id<y.id?1:-1;}),pre=keep.filter(function(x){return x.kind!=="daily";}).sort(function(x,y){return x.at<y.at?1:-1;});
+      var del=daily.slice(14).concat(pre.slice(3)).map(function(x){return x.id;}).filter(function(i){return i!==id;});
+      return bkPutAll(snap,del).then(function(){return true;});});}
+  function bkWhen(iso){if(!iso)return "never";var d=new Date(iso),k=key(d);return (k===today?"today":fmt(k))+" "+fmtHM(String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"));}
+  function bkLastFile(){return localStorage.getItem(BK_FILE);}
+  function bkStatus(){if(!$("bkAuto"))return;bkAll().then(function(all){var d=all.filter(function(x){return x.kind==="daily";}).sort(function(x,y){return x.at<y.at?1:-1;})[0];
+      $("bkAuto").textContent="Last auto-backup: "+(d?bkWhen(d.at):"none yet");});
+    $("bkFile").textContent="Last file backup: "+bkWhen(bkLastFile());}
+  function bkNudge(){var l=bkLastFile();$("sBkNudge").hidden=!!l&&(Date.now()-new Date(l).getTime())<7*864e5;}
+  function bkMsg(t){$("bkMsg").textContent=t||"";}
+  function bkFileNow(btn){
+    var d=bkData(),o={app:"daily-discipline",version:2,raw:true,date:today,exported:new Date().toISOString(),days:bkDays(d),data:d},
+      name="daily-discipline-backup-"+today+".json",txt=JSON.stringify(o),blob=new Blob([txt],{type:"application/json"});
+    function done(){try{localStorage.setItem(BK_FILE,new Date().toISOString());}catch(e){}bkStatus();bkNudge();bkMsg("Backup saved ✓");}
+    function download(){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);done();}
+    var file=null;try{file=new File([blob],name,{type:"application/json"});}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+      navigator.share({files:[file],title:name}).then(done,function(err){if(err&&err.name==="AbortError")bkMsg("Backup not saved (cancelled)");else download();});}
+    else download();
+  }
+  function bkRestore(data,label){
+    if(!confirm("Replace current data with backup from "+label+"?"))return;
+    bkMsg("Restoring…");
+    bkSnap("pre").then(function(){
+      var cur=bkData(),ok=true;
+      try{Object.keys(cur).forEach(function(k){localStorage.removeItem(k);});Object.keys(data).forEach(function(k){localStorage.setItem(k,data[k]);});}
+      catch(e){ok=false;try{Object.keys(data).forEach(function(k){localStorage.removeItem(k);});Object.keys(cur).forEach(function(k){localStorage.setItem(k,cur[k]);});}catch(e2){}}
+      if(!ok){bkMsg("Restore failed (storage full). Nothing changed.");return;}
+      location.reload();});
+  }
+  function bkParse(txt){var o;try{o=JSON.parse(txt);}catch(e){return null;}if(!o||typeof o!=="object"||!o.data||typeof o.data!=="object")return null;
+    var d={},n=0;Object.keys(o.data).forEach(function(k){if(k.indexOf(PREFIX)!==0)return;var v=o.data[k];if(o.raw){if(typeof v!=="string")return;d[k]=v;}else d[k]=JSON.stringify(v);n++;});
+    if(!n)return null;return {data:d,date:o.date||(o.exported?key(new Date(o.exported)):"unknown date")};}
+  $("bkNow").addEventListener("click",function(){bkFileNow(this);});
+  $("sBkNudge").addEventListener("click",function(){bkFileNow(this);});
+  $("bkRestFile").addEventListener("click",function(){$("bkFileIn").value="";$("bkFileIn").click();});
+  $("bkFileIn").addEventListener("change",function(){var f=this.files&&this.files[0];if(!f)return;var r=new FileReader();
+    r.onload=function(){var b=bkParse(String(r.result));if(!b){bkMsg("That file isn't a Daily Discipline backup. Nothing changed.");return;}bkRestore(b.data,/^\d{4}-\d{2}-\d{2}$/.test(b.date)?fmt(b.date):b.date);};
+    r.onerror=function(){bkMsg("Couldn't read that file.");};r.readAsText(f);});
+  var bkSnaps=[];
+  $("bkRestAuto").addEventListener("click",function(){var el=$("bkList");bkMsg("");if(!el.hidden){el.hidden=true;return;}
+    bkAll().then(function(all){bkSnaps=all.sort(function(x,y){return x.at<y.at?1:-1;});
+      el.innerHTML=bkSnaps.length?bkSnaps.map(function(x,i){return '<button type="button" class="bksnap" data-bi="'+i+'"><b>'+(x.kind==="daily"?fmt(x.date):"Before restore · "+fmt(x.date))+'</b><span>'+x.days+' day'+(x.days===1?"":"s")+' logged · '+bkWhen(x.at)+'</span></button>';}).join(""):'<div class="empty">No auto-backups yet.</div>';
+      el.hidden=false;});});
+  $("bkList").addEventListener("click",function(e){var b=e.target.closest("[data-bi]");if(!b)return;var x=bkSnaps[+b.dataset.bi];if(x)bkRestore(x.data,(x.kind==="daily"?"":"before restore, ")+fmt(x.date));});
+  function bkDaily(){bkSnap("daily").then(bkStatus);}
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
 
   // ================= SUNDAY CHECK-IN (ticks only, nn-v1:sun:DATE) =================
   var SUN=[
@@ -1551,7 +1622,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
           ins.map(function(q){return '<label class="sinl"><input type="text" inputmode="decimal" autocomplete="off" data-k="'+q[0]+'" data-slot="'+i+'" value="'+sinShow(q[0],q[1],o)+'" placeholder="—" aria-label="'+it[0]+' '+(q[1]==="T"?U:q[1])+'"><span>'+(q[1]==="T"?U:q[1])+'</span></label>';}).join("")+'</div></div>';});
       h+='</div>';
     });
-    $("sList").innerHTML=h; sunScore(st);
+    $("sList").innerHTML=h; sunScore(st); bkNudge();
   }
   function sunScore(st){var c=0;SUN.forEach(function(sec){sec[1].forEach(function(it){if(st[it[2]])c++;});});
     $("sScore").textContent=c+"/"+SUN_N;
@@ -1624,11 +1695,12 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   });
   window.addEventListener("hashchange",function(){show(location.hash.slice(1),true);});
 
-  function checkDay(){var t=key(new Date()); if(t!==today){var o=today; today=t; if(view===o)view=t; if(wdate===o)wdate=t; if(mdate===o)mdate=t; if(!L)show(tab);}}
+  function checkDay(){var t=key(new Date()); if(t!==today){var o=today; today=t; bkDaily(); if(view===o)view=t; if(wdate===o)wdate=t; if(mdate===o)mdate=t; if(!L)show(tab);}}
   document.addEventListener("visibilitychange",function(){if(!document.hidden)checkDay();});
   window.addEventListener("focus",checkDay);
   setInterval(checkDay,60000);
   show(location.hash.slice(1));
+  bkDaily();
   window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText};
 })();
 </script>
