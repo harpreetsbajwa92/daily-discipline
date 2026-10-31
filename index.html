@@ -52,6 +52,25 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
 .day b{color:#eee;font-size:12px}
 .note{margin-top:20px;background:#222;border-radius:14px;padding:12px 14px;font-size:14px;color:#aaa;border:2px solid #222}
 .note.mon{border-color:#1e88e5;background:#14304a;color:#fff;font-weight:600}
+.wk{background:#222;border-radius:16px;padding:14px 14px 10px;margin-top:18px}
+.wk h3{font-size:20px;font-weight:800}
+.wk .tip{font-size:13px;color:#9a9a9a;margin:4px 0 10px}
+.chips{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:10px}
+.chip{background:#333;color:#ccc;border:2px solid #333;border-radius:999px;padding:6px 0;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.chip.cur{border-color:#1e88e5}
+.chip.on{background:#1e88e5;border-color:#1e88e5;color:#fff}
+.wkname{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;margin:4px 2px 8px;font-size:16px}
+.wkname span{font-size:13px;color:#9a9a9a;font-weight:600}
+.preview{font-size:13px;color:#ffb74d;margin:0 2px 8px}
+.ex{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#2a2a2a;color:#eee;border:0;border-radius:12px;padding:12px;margin-bottom:6px;min-height:52px;font:inherit;cursor:pointer}
+.ex .chk{flex:0 0 26px;height:26px;border-radius:50%;border:2px solid #555;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:transparent}
+.ex .n{flex:1;font-size:16px;font-weight:600}
+.ex .r{font-size:14px;color:#9a9a9a;white-space:nowrap}
+.ex.done{background:#2e7d32}
+.ex.done .chk{background:#fff;border-color:#fff;color:#2e7d32}
+.ex.done .r{color:#d7efd8}
+.ex:disabled{cursor:default;opacity:.85}
+.sub{font-size:12px;color:#9a9a9a;text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin:10px 2px 6px}
 </style>
 </head>
 <body>
@@ -66,6 +85,13 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
   </div>
 
   <div class="cards" id="cards"></div>
+
+  <div class="wk" id="workout">
+    <h3>Today's Workout</h3>
+    <div class="tip">Leave 1-2 reps in the tank. Add a rep or a little weight every week.</div>
+    <div class="chips" id="chips"></div>
+    <div id="wkbody"></div>
+  </div>
 
   <h2>Last 7 days</h2>
   <div class="strip" id="strip"></div>
@@ -92,6 +118,24 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
   function load(k){try{var v=JSON.parse(localStorage.getItem(PREFIX+k));if(Array.isArray(v)&&v.length===N)return v.map(Boolean);}catch(e){}return new Array(N).fill(false);}
   function save(k,v){try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch(e){}}
   function count(v){return v.filter(Boolean).length;}
+
+  var ABS=[["Hanging leg raises","3x10-15"],["Cable crunch","3x12-15"],["Ab wheel or plank","3x45s"],["Cable woodchoppers","3x12/side"]];
+  var WALK=["Incline walk","15-20 min"];
+  // index = JS weekday (0=Sun)
+  var PLAN=[
+    {n:"Rest",x:[["Walk","easy"],["Progress photos","front, side, back"]]},
+    {n:"Push",x:[["Incline DB press","4x8-10"],["Machine/flat bench press","3x8-10"],["Seated DB shoulder press","3x8-10"],["Lateral raises","4x12-15"],["Rope pushdown","3x12"],["Overhead triceps extension","3x12"],["Incline walk (10-12%, ~5 km/h)","15-20 min"]]},
+    {n:"Pull + Abs",x:[["Lat pulldown / pull-ups","4x8-10"],["Chest-supported row","4x8-10"],["Seated cable row","3x10-12"],["Face pulls","3x15"],["DB curl","3x10-12"],["Hammer curl","3x12"]],abs:true},
+    {n:"Legs",x:[["Squat / hack squat","4x6-8"],["Romanian deadlift","3x8-10"],["Leg press","3x10-12"],["Leg curl","3x12"],["Calf raises","4x15"],WALK]},
+    {n:"Active rest",x:[["Steps","10k"],["Incline walk","30 min"]]},
+    {n:"Upper + Abs",x:[["Incline press","3x8-10"],["Lat pulldown","3x10"],["Lateral raises","4x15"],["Rear delt fly","3x15"],["Superset curls + pushdowns","3x12"],WALK],abs:true},
+    {n:"Lower + Abs",x:[["Bulgarian split squat","3x10/leg"],["Hip thrust","3x10"],["Leg extension","3x12"],["Leg curl","3x12"]],abs:true}
+  ];
+  function exList(dow){var p=PLAN[dow];return p.abs?p.x.concat(ABS):p.x;}
+  function loadW(k,len){try{var v=JSON.parse(localStorage.getItem(PREFIX+"w:"+k));if(Array.isArray(v)&&v.length===len)return v.map(Boolean);}catch(e){}return new Array(len).fill(false);}
+  function saveW(k,v){try{localStorage.setItem(PREFIX+"w:"+k,JSON.stringify(v));}catch(e){}}
+  var planDow=null; // null = follow the viewed day
+  var CHIP_ORDER=[1,2,3,4,5,6,0];
 
   var today=key(new Date()), view=today;
   var $=function(id){return document.getElementById(id);};
@@ -128,20 +172,49 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
       sh+='<button class="day'+(k===view?" sel":"")+'" data-k="'+k+'"><span>'+(n===0?"Today":DOW[d.getDay()])+'</span><span class="mb"><i class="'+(sc===N?"full":"")+'" style="height:'+(sc/N*100)+'%"></i></span><b>'+sc+'</b></button>';
     }
     $("strip").innerHTML=sh;
+    renderWorkout();
 
     $("note").className="note"+(parse(today).getDay()===1?" mon":"");
   }
+
+  function renderWorkout(){
+    var vdow=parse(view).getDay(), pd=(planDow===null?vdow:planDow), own=(pd===vdow);
+    var ch="";
+    CHIP_ORDER.forEach(function(d){ch+='<button class="chip'+(d===pd?" on":"")+(d===vdow?" cur":"")+'" data-d="'+d+'">'+DOW[d]+'</button>';});
+    $("chips").innerHTML=ch;
+    var list=exList(pd), w=own?loadW(view,list.length):new Array(list.length).fill(false), p=PLAN[pd];
+    var done=w.filter(Boolean).length;
+    var h='<div class="wkname">'+DOW[pd]+' - '+p.n+(own?'<span>'+done+'/'+list.length+'</span>':'')+'</div>';
+    if(!own)h+='<div class="preview">Previewing '+DOW[pd]+'\'s plan. Tap '+DOW[vdow]+' to tick off this day.</div>';
+    list.forEach(function(e,i){
+      if(p.abs&&i===p.x.length)h+='<div class="sub">Abs circuit</div>';
+      h+='<button class="ex'+(w[i]?" done":"")+'" data-i="'+i+'"'+(own?'':' disabled')+'><span class="chk">✓</span><span class="n">'+e[0]+'</span><span class="r">'+e[1]+'</span></button>';
+    });
+    $("wkbody").innerHTML=h;
+  }
+
+  $("chips").addEventListener("click",function(e){
+    var b=e.target.closest(".chip"); if(!b)return; var d=+b.dataset.d;
+    planDow=(d===parse(view).getDay())?null:d; render();
+  });
+  $("wkbody").addEventListener("click",function(e){
+    var b=e.target.closest(".ex"); if(!b||b.disabled)return;
+    var list=exList(parse(view).getDay()), w=loadW(view,list.length), i=+b.dataset.i;
+    var wasAll=w.every(Boolean); w[i]=!w[i]; saveW(view,w);
+    if(!wasAll&&w.every(Boolean)){var st=load(view);st[5]=true;save(view,st);}
+    render();
+  });
 
   $("cards").addEventListener("click",function(e){
     var b=e.target.closest(".card"); if(!b)return;
     var st=load(view), i=+b.dataset.i; st[i]=!st[i]; save(view,st); render();
   });
   $("strip").addEventListener("click",function(e){
-    var b=e.target.closest(".day"); if(!b)return; view=b.dataset.k; render();
+    var b=e.target.closest(".day"); if(!b)return; view=b.dataset.k; planDow=null; render();
   });
-  $("todayBtn").addEventListener("click",function(){view=today;render();});
+  $("todayBtn").addEventListener("click",function(){view=today;planDow=null;render();});
 
-  function checkDay(){var t=key(new Date()); if(t!==today){var wasToday=(view===today); today=t; if(wasToday)view=t; render();}}
+  function checkDay(){var t=key(new Date()); if(t!==today){var wasToday=(view===today); today=t; if(wasToday){view=t;planDow=null;} render();}}
   document.addEventListener("visibilitychange",function(){if(!document.hidden)checkDay();});
   window.addEventListener("focus",checkDay);
   setInterval(checkDay,60000);
