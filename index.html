@@ -469,6 +469,12 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .lcancel{flex:0 0 auto;min-height:52px;padding:0 14px;background:none;border:0;color:#cfd6db;font-size:15px}
 .lgo{flex:1;min-height:52px;border-radius:14px;border:0;background:var(--blue);color:#fff;font-family:var(--fc)!important;letter-spacing:1.2px;font-size:17px;font-weight:700}
 .lgo:disabled{background:#3a444c;color:#8c979f}
+
+.lrow.hasz{flex-direction:column;align-items:stretch;padding:6px 6px 8px 14px}
+.ltop{display:flex;align-items:center;gap:8px;width:100%;flex:1}
+.lsz{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.lchip{min-height:40px;min-width:52px;padding:0 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:#2b343b;color:#d6dde2;font-size:14.5px;font-weight:600;touch-action:manipulation}
+.lchip.on{background:#fff;color:#101518;border-color:#fff;font-weight:800}
 </style>
 </head>
 <body>
@@ -844,20 +850,28 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   var LSLOTS=["Breakfast","Lunch","Snack","Dinner"];
   var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats"];
   // [section, food id (macros come from FOODS), short name, unit label]
-  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","2 eggs"],[0,"paneer","Paneer","1 palm"],[0,"tofu","Tofu","1 palm"],[0,"chicken","Chicken","1 palm"],[0,"soya","Soya chunks","1 bowl"],
-    [1,"milk","Milk","1 glass"],[1,"yogurt","Greek yogurt","1 cup"],[1,"curd","Curd","1 bowl"],
-    [2,"roti","Roti","1"],[2,"bread","Bread","1 slice"],[2,"rice","Rice","1 bowl"],[2,"oats","Oats","1/2 cup"],[2,"pizza","Pizza","1 slice"],
-    [3,"dal","Dal","1 bowl"],[3,"rajma","Rajma","1 bowl"],[3,"chana","Chana","1 bowl"],
-    [4,"salad","Salad","1 bowl"],[4,"palak","Palak","1 bowl"],[4,"sabzi","Sabzi","1 bowl"],
-    [5,"almonds","Almonds","10"],[5,"walnut","Walnuts","4 halves"],[5,"chia","Chia seeds","1 tbsp"],[5,"sunflower","Sunflower seeds","1 tbsp"],
+  // serving sizes: [label, multiplier of the food's base serving, optional other food id]
+  var SZ_BOWL=[["½ bowl",0.5],["1 bowl",1],["1½ bowl",1.5],["2 bowl",2]],SZ_PALM=[["Small",0.75],["Medium",1],["Large",1.5]],
+    SZ_TSP=[["1 tsp",1],["1 tbsp",3],["2 tbsp",6]],SZ_TBSP=[["1 tsp",1/3],["1 tbsp",1],["2 tbsp",2]],SZ_HAND=[["½ handful",1],["1 handful",2]];
+  function szG(u){return [["½ "+u,0.5],["1 "+u,1],["1½ "+u,1.5]];}
+  // [section, food id, short name, unit label, sizes, default size index]
+  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","2 eggs"],[0,"paneer","Paneer","palm",SZ_PALM,1],[0,"tofu","Tofu","palm",SZ_PALM,1],[0,"chicken","Chicken","palm",SZ_PALM,1],[0,"soya","Soya chunks","",SZ_BOWL,1],
+    [1,"milk","Milk","",szG("glass"),1],[1,"yogurt","Greek yogurt","",szG("cup"),1],[1,"curd","Curd","",SZ_BOWL,1],
+    [2,"roti","Roti","1"],[2,"bread","Bread","1 slice"],[2,"rice","Rice","",SZ_BOWL,1],[2,"oats","Oats","dry",[["¼ cup",0.5],["½ cup",1],["¾ cup",1.5],["1 cup",2]],1],[2,"pizza","Pizza","1 slice"],
+    [3,"dal","Dal","",SZ_BOWL,1],[3,"rajma","Rajma","",SZ_BOWL,1],[3,"chana","Chana","",SZ_BOWL,1],
+    [4,"salad","Salad","",SZ_BOWL,1],[4,"palak","Palak","",SZ_BOWL,1],[4,"sabzi","Sabzi","",SZ_BOWL,1],
+    [5,"almonds","Almonds","½ handful = 10",SZ_HAND,0],[5,"walnut","Walnuts","½ handful = 4 halves",SZ_HAND,0],[5,"chia","Chia seeds","",SZ_TBSP,1],[5,"sunflower","Sunflower seeds","",SZ_TBSP,1],
     [6,"banana","Banana",""],[6,"apple","Apple",""],[6,"orange","Orange",""],
-    [7,"oil","Oil","1 tsp"],[7,"ghee","Ghee","1 tsp"],[7,"avo","Avocado","1 tbsp"],[7,"avohalf","Avocado","half"],
+    [7,"oil","Oil","",SZ_TSP,0],[7,"ghee","Ghee","",SZ_TSP,0],[7,"avo","Avocado","",[["1 tbsp",1],["¼",0.5,"avohalf"],["½",1,"avohalf"],["Whole",2,"avohalf"]],0],
     [8,"whey","Protein scoop","1"],[8,"creatine","Creatine","5 g"],
     [9,"cake","Cake","1 slice"],[9,"sweet","Sweet","1 piece"]
-  ].map(function(a){var fd=foodById(a[1]);return {sec:a[0],fd:fd,sn:a[2],u:a[3]};});
-  var L=null; // log state {slot, cnt:{id:n}}
+  ].map(function(a){var fd=foodById(a[1]);return {sec:a[0],id:a[1],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
+  function lrowById(id){return LFOODS.filter(function(q){return q.id===id;})[0];}
+  function lSize(x){return x.sz.length?x.sz[L&&L.sz[x.id]!==undefined?L.sz[x.id]:x.d]:{l:"",m:1,fd:x.fd};}
+  function lMac(x,n){var z=lSize(x);return {k:z.fd.k*z.m*n,p:z.fd.p*z.m*n,c:z.fd.c*z.m*n,f:z.fd.f*z.m*n};}
+  var L=null; // log state {slot, cnt:{rowId:n}, sz:{rowId:sizeIdx}, ord:[rowId]}
   function lslotDef(){var h=new Date().getHours();return h<11?"Breakfast":h<15?"Lunch":h<18?"Snack":"Dinner";}
-  function itemLabel(it){var sn=it.sn;if(!sn)LFOODS.forEach(function(x){if(x.fd.id===it.fid)sn=x.sn;});if(sn)return fq(it.a/it.b)+" × "+sn;
+  function itemLabel(it){if(it.sn&&it.cnt)return it.cnt+" × "+it.sn+(it.sz?" ("+it.sz+")":"");var sn=it.sn;if(!sn)LFOODS.forEach(function(x){if(x.fd.id===it.fid)sn=x.sn;});if(sn)return fq(it.a/it.b)+" × "+sn;
     var nm=it.n.split(/[,(]/)[0].trim();return it.b===1?fq(it.a)+" × "+nm:qtyTxt(it)+" "+nm.toLowerCase();}
   function renderMeals(){
     var d=loadMeals(mdate), t=dayTot(d.items), isT=mdate===today;
@@ -890,29 +904,34 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     d.meals=d.meals.filter(function(q){return q.id!==id;}); saveMeals(mdate,d); renderMeals();
   });
   // ---- Log meal page ----
-  function lTot(){var t={k:0,p:0,c:0,f:0,n:0};LFOODS.forEach(function(x){var n=L.cnt[x.fd.id]||0;if(!n)return;t.n+=n;t.k+=x.fd.k*n;t.p+=x.fd.p*n;t.c+=x.fd.c*n;t.f+=x.fd.f*n;});return t;}
+  function lTot(){var t={k:0,p:0,c:0,f:0,n:0};LFOODS.forEach(function(x){var n=L.cnt[x.id]||0;if(!n)return;var m=lMac(x,n);t.n+=n;t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});return t;}
   function renderLog(){
     $("lDate").textContent=mdate===today?"TODAY":pillLab(mdate);
     $("lSlots").innerHTML=LSLOTS.map(function(s){return '<button type="button" class="lslot'+(L.slot===s?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("");
     var h="";
     LSECS.forEach(function(sn,i){h+='<div class="lsec">'+sn+'</div>';
-      LFOODS.forEach(function(x){if(x.sec!==i)return;var n=L.cnt[x.fd.id]||0;
-        h+='<div class="lrow'+(n?" on":"")+'" data-f="'+x.fd.id+'"><div class="lname"><b>'+esc(x.sn)+'</b>'+(x.u?' <span>('+esc(x.u)+')</span>':'')+'<small>'+r0(x.fd.k)+' kcal · P '+r1m(x.fd.p)+'</small></div>'+
-          '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less '+esc(x.sn)+'">−</button><span class="ln">'+n+'</span><button type="button" class="lb" data-d="1" aria-label="More '+esc(x.sn)+'">+</button></div></div>';});});
+      LFOODS.forEach(function(x){if(x.sec!==i)return;h+=lRow(x);});});
     $("lList").innerHTML=h; lBar();
   }
+  function lRow(x){var n=L.cnt[x.id]||0,m=lMac(x,1),si=L.sz[x.id]!==undefined?L.sz[x.id]:x.d;
+    return '<div class="lrow'+(n?" on":"")+(x.sz.length?" hasz":"")+'" data-f="'+x.id+'"><div class="ltop"><div class="lname"><b>'+esc(x.sn)+'</b>'+(x.u?' <span>('+esc(x.u)+')</span>':'')+'<small>'+r0(m.k)+' kcal · P '+r1m(m.p)+'</small></div>'+
+      '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less '+esc(x.sn)+'">−</button><span class="ln">'+n+'</span><button type="button" class="lb" data-d="1" aria-label="More '+esc(x.sn)+'">+</button></div></div>'+
+      (x.sz.length?'<div class="lsz">'+x.sz.map(function(z,j){return '<button type="button" class="lchip'+(j===si?" on":"")+'" data-z="'+j+'">'+esc(z.l)+'</button>';}).join("")+'</div>':'')+'</div>';}
   function lBar(){var t=lTot(),g=$("lGo");g.disabled=!t.n;g.textContent=t.n?"LOG · "+r0(t.k)+" kcal · "+r0(t.p)+" g protein":"LOG · pick foods";}
-  function openLog(){L={slot:lslotDef(),cnt:{},ord:[]};renderMeals();window.scrollTo(0,0);}
+  function openLog(){L={slot:lslotDef(),cnt:{},sz:{},ord:[]};renderMeals();window.scrollTo(0,0);}
   function closeLog(){L=null;renderMeals();window.scrollTo(0,0);}
   $("mLogBtn").addEventListener("click",openLog);
   $("lCancel").addEventListener("click",function(){if(L&&lTot().n&&!confirm("Discard this meal?"))return;closeLog();});
   $("lSlots").addEventListener("click",function(e){var b=e.target.closest("[data-slot]");if(!b||!L)return;L.slot=b.dataset.slot;
     [].forEach.call($("lSlots").children,function(c){c.classList.toggle("on",c===b);});});
-  $("lList").addEventListener("click",function(e){var b=e.target.closest("[data-d]");if(!b||!L)return;var r=b.closest(".lrow"),id=r.dataset.f;
-    var n=Math.max(0,(L.cnt[id]||0)+(+b.dataset.d));if(n){L.cnt[id]=n;if(L.ord.indexOf(id)<0)L.ord.push(id);}else{delete L.cnt[id];L.ord=L.ord.filter(function(q){return q!==id;});}
-    r.querySelector(".ln").textContent=n;r.classList.toggle("on",n>0);lBar();});
+  $("lList").addEventListener("click",function(e){if(!L)return;var r=e.target.closest(".lrow");if(!r)return;var id=r.dataset.f,x=lrowById(id);
+    var zb=e.target.closest("[data-z]");
+    if(zb){L.sz[id]=+zb.dataset.z;if(!L.cnt[id]){L.cnt[id]=1;if(L.ord.indexOf(id)<0)L.ord.push(id);}}
+    else{var b=e.target.closest("[data-d]");if(!b)return;var n=Math.max(0,(L.cnt[id]||0)+(+b.dataset.d));
+      if(n){L.cnt[id]=n;if(L.ord.indexOf(id)<0)L.ord.push(id);}else{delete L.cnt[id];L.ord=L.ord.filter(function(q){return q!==id;});}}
+    var tmp=document.createElement("div");tmp.innerHTML=lRow(x);r.parentNode.replaceChild(tmp.firstChild,r);lBar();});
   $("lGo").addEventListener("click",function(){if(!L)return;var items=[];
-    L.ord.forEach(function(id){var x=LFOODS.filter(function(q){return q.fd.id===id;})[0],n=L.cnt[id];if(!x||!n)return;var it=mkItem(x.fd,n*x.fd.b);it.sn=x.sn;items.push(it);});
+    L.ord.forEach(function(id){var x=lrowById(id),n=L.cnt[id];if(!x||!n)return;var z=lSize(x),it=mkItem(z.fd,n*z.m*z.fd.b);it.sn=x.sn;it.cnt=n;if(z.l)it.sz=x.u==="palm"?z.l.toLowerCase()+" palm":x.id==="avo"&&z.fd!==x.fd?z.l.toLowerCase()+" avocado":z.l;items.push(it);});
     if(!items.length)return;var d=loadMeals(mdate);d.meals.push({id:uid("m"),slot:L.slot,name:"",t:mdate===today?nowHM():"",items:items});saveMeals(mdate,d);closeLog();});
   function mealsText(k){
     var d=loadMeals(k), t=dayTot(d.items), out=["Meals "+fmt(k)];
