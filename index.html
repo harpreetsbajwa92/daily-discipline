@@ -436,6 +436,39 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .tabs button{color:#7f8a92;font-size:11.5px;font-weight:600;gap:4px;padding:9px 0 10px;min-height:58px}
 .tabs button .ic{width:25px;height:25px;font-size:0}
 .tabs button.on{color:#fff}
+
+/* simple meals */
+#p-meals{touch-action:manipulation}
+#p-meals button{touch-action:manipulation;-webkit-tap-highlight-color:rgba(255,255,255,.08);font-family:inherit}
+.fill.kc{background:var(--blue)}.fill.pr{background:var(--sleep)}.fill.cb{background:var(--yel)}.fill.ft{background:#B39DDB}
+#mTot .mt{margin-top:12px}#mTot .mt:nth-child(2){margin-top:0}
+.lm{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 6px 12px 14px;margin-bottom:8px}
+.lmb{flex:1;min-width:0}
+.lmt b{font-family:var(--fc);text-transform:uppercase;letter-spacing:1.3px;font-size:16px}.lmtime{color:var(--mut);font-size:13px;margin-left:4px}
+.lmi{font-size:16px;color:#fff;margin-top:3px;line-height:1.35}
+.lmm{font-size:13.5px;color:#b9c2c8;margin-top:4px}.lmm b{color:#fff}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.lmx{flex:0 0 auto;width:44px;height:44px;border-radius:12px;background:none;border:0;color:#9aa5ad;font-size:18px}
+.lempty{text-align:center;color:var(--mut);padding:22px 0;background:var(--card);border:1px dashed rgba(255,255,255,.12);border-radius:14px}
+.mlogbtn{min-height:58px;font-size:19px;margin-top:16px}
+.lhead{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 12px}.ldate{font-family:var(--fc);letter-spacing:1.4px;color:#cfd6db;font-size:15px;font-weight:700}
+.lslots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.lslot{min-height:52px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:#cfd6db;font-family:var(--fc)!important;text-transform:uppercase;letter-spacing:1px;font-size:15px;font-weight:700;padding:0 2px}
+.lslot.on{background:#fff;color:#101518;border-color:#fff}
+.lsec{font-family:var(--fc);font-size:14px;font-weight:700;letter-spacing:1.4px;color:#cfd6db;text-transform:uppercase;margin:20px 2px 8px}
+.lrow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 6px 6px 14px;margin-bottom:6px;min-height:60px}
+.lrow.on{background:#123a55;border-color:var(--blue)}
+.lname{flex:1;min-width:0;font-size:16px;line-height:1.25}.lname span{color:#b9c2c8}.lname small{display:block;font-size:12.5px;color:#8c979f;margin-top:2px}
+.lrow.on .lname small{color:#a9cbe2}
+.lctr{flex:0 0 auto;display:flex;align-items:center}
+.lb{width:48px;height:48px;border-radius:12px;border:0;background:#3a444c;color:#fff;font-size:26px;line-height:1;font-weight:500;padding:0}
+.lrow.on .lb{background:#1d5a82}
+.ln{width:34px;text-align:center;font-family:var(--fn);font-size:20px;font-weight:700}
+#mLog{padding-bottom:calc(env(safe-area-inset-bottom) + 150px)}
+.lbar{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 59px);z-index:9;display:flex;gap:8px;padding:10px 12px;background:rgba(22,28,32,.94);border-top:1px solid rgba(255,255,255,.08);max-width:520px;margin:0 auto}
+.lcancel{flex:0 0 auto;min-height:52px;padding:0 14px;background:none;border:0;color:#cfd6db;font-size:15px}
+.lgo{flex:1;min-height:52px;border-radius:14px;border:0;background:var(--blue);color:#fff;font-family:var(--fc)!important;letter-spacing:1.2px;font-size:17px;font-weight:700}
+.lgo:disabled{background:#3a444c;color:#8c979f}
 </style>
 </head>
 <body>
@@ -455,18 +488,23 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 </section>
 
 <section class="page" id="p-meals">
-  <div class="phead"><span class="ptitle">MEALS</span><div class="pnav"><button class="pa" id="mPrev" aria-label="Previous day">‹</button><label class="pl"><span id="mLab">TODAY</span><input type="date" class="dpick" id="mPick" aria-label="Pick a date"></label><button class="pa" id="mNext" aria-label="Next day">›</button></div></div>
+ <div id="mMain">
+  <div class="phead"><span class="ptitle">MEALS</span><div class="pnav"><button type="button" class="pa" id="mPrev" aria-label="Previous day">‹</button><label class="pl"><span id="mLab">TODAY</span><input type="date" class="dpick" id="mPick" aria-label="Pick a date"></label><button type="button" class="pa" id="mNext" aria-label="Next day">›</button></div></div>
   <div class="dsub" id="mSub"></div>
   <div class="top wcard" id="mTot"></div>
-  <button class="big alt" id="mUsual">⚡ Quick add my usual day</button>
-  <div class="slbl">Today's meals <span id="mCnt"></span></div>
+  <div class="slbl" id="mLoggedLbl">Logged today</div>
   <div id="mList"></div>
-  <button class="big" id="mCopy">Copy for Fitness</button>
-  <div class="empty" style="text-align:center;margin-top:6px">Paste it in the Fitness chat. Fitness replies with macros for any ❓ items; tap an item to fill them in.</div>
+  <button type="button" class="big mlogbtn" id="mLogBtn">+ Log meal</button>
+  <button type="button" class="export" id="mCopy">Copy for Fitness</button>
   <div id="mHint"></div>
   <textarea id="mBox" readonly hidden></textarea>
-  <button class="export" id="mMy">My foods</button>
-  <button class="fab" id="mFab" aria-label="Log meal"><span>+</span></button>
+ </div>
+ <div id="mLog" hidden>
+  <div class="lhead"><span class="ptitle">LOG MEAL</span><span class="ldate" id="lDate"></span></div>
+  <div class="lslots" id="lSlots"></div>
+  <div id="lList"></div>
+  <div class="lbar" id="lBar"><button type="button" class="lcancel" id="lCancel">Cancel</button><button type="button" class="lgo" id="lGo" disabled>LOG</button></div>
+ </div>
 </section>
 
 <section class="page" id="p-workout">
@@ -521,7 +559,6 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 </section>
 
 </div>
-<div class="sheet" id="sheet" hidden><div class="sheetin" id="sheetBody"></div></div>
 <nav class="tabs" id="tabs">
   <button data-t="habits"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
   <button data-t="meals"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M4 3v5a3 3 0 0 0 6 0V3M7 11v10M17 21V3c-2.5 1-4 4-4 8h4"/></svg>Meals</button>
@@ -770,13 +807,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     ["sweet","Indian sweet (gulab jamun / barfi)",1,"piece","pieces",1,150,2,22,6,9,1],
     ["icecream","Ice cream",1,"scoop","scoops",1,140,2.5,16,7,9,1]
   ].map(function(a){return {id:a[0],n:a[1],b:a[2],s:a[3],pl:a[4],st:a[5],k:a[6],p:a[7],c:a[8],f:a[9],sec:FSECS[a[10]],treat:!!a[11]};});
-  var USUAL=[["Breakfast","egg",2],["Breakfast","eggw",3],["Breakfast","bread",1],["Breakfast","avo",1],["Breakfast","cofskim",1],
-    ["Pre-gym","banana",1],["Post-gym","whey",1],["Post-gym","creatine",5],
-    ["Lunch","lfpaneer",1],["Lunch","oil",1],["Lunch","roti",2],["Lunch","salad",1],
-    ["Snack","yogurt",1],["Snack","whey",0.5],["Snack","berries",1],
-    ["Dinner","dal",1],["Dinner","sabzi",1],["Dinner","soya",1]];
-  var USUAL_NAMES={"Breakfast":"Usual breakfast","Pre-gym":"Pre-gym banana","Post-gym":"Post-gym shake","Lunch":"Usual lunch","Snack":"Yogurt bowl","Dinner":"Usual dinner"};
-  var mdate=today, B=null, mSearch="", mOpen={}, flashId=null, plateMsg="", secOpen={};
+  var mdate=today;
   function myFoods(){var v=getJ("myfoods");return Array.isArray(v)?v:[];}
   function allFoods(){return FOODS.concat(myFoods());}
   function foodById(id){var a=allFoods();for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
@@ -808,40 +839,43 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   }
   function saveMeals(k,d){setJ("meals:"+k,{v:2,meals:d.meals});}
   function sortMeals(ms){return ms.slice().sort(function(a,b){var x=SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot);return x||((a.t||"")<(b.t||"")?-1:1);});}
-  function normItem(it){var fd=null;FOODS.forEach(function(f){if(f.id===it.fid)fd=f;});if(!fd||(it.b===fd.b&&it.s===fd.s))return false;
-    var perOld=it.k/it.b*it.a; if(it.k===null||Math.abs(it.k-fd.k)>0.5*fd.k)return false; // only if one old base ~ one new base
-    it.a=Math.max(fd.st,Math.round(it.a/it.b*fd.b/fd.st)*fd.st);it.b=fd.b;it.s=fd.s;it.pl=fd.pl;it.st=fd.st;it.n=fd.n;it.k=fd.k;it.p=fd.p;it.c=fd.c;it.f=fd.f;return true;}
-  function myMeals(){var v=getJ("mymeals");if(v===null){v=SLOTS.filter(function(sl){return USUAL_NAMES[sl];}).map(function(sl){return usualMeal(sl);});setJ("mymeals",v);}
-    if(!Array.isArray(v))return [];var ch=false;v.forEach(function(m){(m.items||[]).forEach(function(it){if(normItem(it))ch=true;});});if(ch)setJ("mymeals",v);return v;}
-  function usualMeal(sl){return {id:uid("f"),name:USUAL_NAMES[sl],slot:sl,items:USUAL.filter(function(u){return u[0]===sl;}).map(function(u){return mkItem(foodById(u[1]),u[2]);})};}
-  function pushRecent(fid){var rec=getJ("recentfoods");rec=Array.isArray(rec)?rec:[];rec=rec.filter(function(r){return r!==fid;});rec.unshift(fid);setJ("recentfoods",rec.slice(0,10));}
-  // ---- Meals tab ----
-  function gbar(lbl,v,g,u,cls){var pct=Math.min(100,v/g*100);return '<div class="mt"><div class="mtl"><span>'+lbl+'</span><b>'+r0(v)+'<small> / '+g.toLocaleString()+(u?" "+u:"")+'</small></b></div><div class="bar"><div class="fill '+cls+'" style="width:'+pct+'%"></div></div></div>';}
-  function chips(t){return '<span class="mc p">P '+r0(t.p)+' g</span><span class="mc c">C '+r0(t.c)+' g</span><span class="mc f">F '+r0(t.f)+' g</span>';}
+  // ---- Meals tab (simple) ----
+  var LSLOTS=["Breakfast","Lunch","Snack","Dinner"];
+  var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats"];
+  // [section, food id (macros come from FOODS), short name, unit label]
+  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","2 eggs"],[0,"paneer","Paneer","1 palm"],[0,"tofu","Tofu","1 palm"],[0,"chicken","Chicken","1 palm"],[0,"soya","Soya chunks","1 bowl"],
+    [1,"milk","Milk","1 glass"],[1,"yogurt","Greek yogurt","1 cup"],[1,"curd","Curd","1 bowl"],
+    [2,"roti","Roti","1"],[2,"bread","Bread","1 slice"],[2,"rice","Rice","1 bowl"],[2,"oats","Oats","1/2 cup"],[2,"pizza","Pizza","1 slice"],
+    [3,"dal","Dal","1 bowl"],[3,"rajma","Rajma","1 bowl"],[3,"chana","Chana","1 bowl"],
+    [4,"salad","Salad","1 bowl"],[4,"palak","Palak","1 bowl"],[4,"sabzi","Sabzi","1 bowl"],
+    [5,"almonds","Almonds","10"],[5,"walnut","Walnuts","4 halves"],[5,"chia","Chia seeds","1 tbsp"],[5,"sunflower","Sunflower seeds","1 tbsp"],
+    [6,"banana","Banana",""],[6,"apple","Apple",""],[6,"orange","Orange",""],
+    [7,"oil","Oil","1 tsp"],[7,"ghee","Ghee","1 tsp"],
+    [8,"whey","Protein scoop","1"],[8,"creatine","Creatine","5 g"],
+    [9,"cake","Cake","1 slice"],[9,"sweet","Sweet","1 piece"]
+  ].map(function(a){var fd=foodById(a[1]);return {sec:a[0],fd:fd,sn:a[2],u:a[3]};});
+  var L=null; // log state {slot, cnt:{id:n}}
+  function lslotDef(){var h=new Date().getHours();return h<11?"Breakfast":h<15?"Lunch":h<18?"Snack":"Dinner";}
+  function itemLabel(it){var sn=it.sn;if(!sn)LFOODS.forEach(function(x){if(x.fd.id===it.fid)sn=x.sn;});if(sn)return fq(it.a/it.b)+" × "+sn;
+    var nm=it.n.split(/[,(]/)[0].trim();return it.b===1?fq(it.a)+" × "+nm:qtyTxt(it)+" "+nm.toLowerCase();}
   function renderMeals(){
-    var vd=parse(mdate), d=loadMeals(mdate), t=dayTot(d.items);
+    var d=loadMeals(mdate), t=dayTot(d.items), isT=mdate===today;
+    $("mMain").hidden=!!L; $("mLog").hidden=!L; if(L){renderLog();return;}
     $("mPick").value=mdate; $("mLab").textContent=pillLab(mdate);
-    $("mSub").innerHTML=mdate===today?"":'<button class="today-btn" id="mToday">Back to today</button>';
-    $("mCnt").textContent=d.meals.length?"· "+d.meals.length:"";
-    function mr(lbl,v,g,u,col){return '<div class="mrg">'+ring(v/g,col,70,6,'<b>'+r0(v)+'</b>')+'<span class="rl">'+lbl+'</span><span class="rs">/ '+g.toLocaleString()+(u?" "+u:"")+'</span></div>';}
-    $("mTot").innerHTML='<div class="slbl" style="margin:0 0 10px">'+(mdate===today?"Today's":fmt(mdate)+" ·")+' nutrition</div><div class="mrings">'+mr("KCAL",t.k,GOAL.k,"",t.k>GOAL.k+100?"#F5A623":"#0093E7")+mr("PROTEIN",t.p,GOAL.p,"g",Math.round(t.p)>=GOAL.p?"#16EC06":"#7BA1BB")+mr("CARBS",t.c,GOAL.c,"g","#FFDE00")+mr("FAT",t.f,GOAL.f,"g","#B39DDB")+'</div>'+
-      (t.unk?'<div class="munk">❓ + '+t.unk+' unknown item'+(t.unk>1?"s":"")+' (not counted yet, ask Fitness)</div>':'');
+    $("mSub").innerHTML=isT?"":'<button type="button" class="today-btn" id="mToday">Back to today</button>';
+    $("mTot").innerHTML='<div class="slbl" style="margin:0 0 12px">'+(isT?"Today's totals":fmt(mdate)+" · totals")+'</div>'+
+      gbar("Calories",t.k,GOAL.k,"",t.k>GOAL.k+100?"over":"kc")+gbar("Protein",t.p,GOAL.p,"g",Math.round(t.p)>=GOAL.p?"full":"pr")+gbar("Carbs",t.c,GOAL.c,"g","cb")+gbar("Fat",t.f,GOAL.f,"g","ft")+
+      (t.unk?'<div class="munk">+ '+t.unk+' item'+(t.unk>1?"s":"")+' without macros (not counted)</div>':'');
+    $("mLoggedLbl").textContent=isT?"Logged today":"Logged · "+fmt(mdate);
     var h="";
-    sortMeals(d.meals).forEach(function(m){
-      var mt=dayTot(m.items), open=!!mOpen[m.id];
-      h+='<div class="meal'+(open?" open":"")+'" data-mid="'+m.id+'"><div class="mhd" data-tog="1"><div class="mh1"><span class="mslot">'+m.slot+'</span>'+(m.t?'<span class="mtime">'+fmtHM(m.t)+'</span>':'')+'</div>'+
-        (m.name?'<div class="mname">'+esc(m.name)+'</div>':'')+
-        '<div class="mkc"><b>'+r0(mt.k)+'</b> kcal'+(mt.unk?' <span class="ask">❓ '+mt.unk+'</span>':'')+'</div><div class="mchips">'+chips(mt)+'</div>';
-      if(!open)h+='<div class="msum">'+m.items.map(function(it){return esc(qtyTxt(it)+" "+shortName(it.n));}).join(", ")+' <span class="more">▾</span></div>';
-      h+='</div>';
-      if(open){
-        h+='<div class="mitems">'+m.items.map(function(it){var x=itMac(it);return '<div class="mrow"><div class="mib"><div class="min">'+esc(it.n)+(x?'':' <span class="ask">❓ Ask Fitness</span>')+'</div><div class="mim">'+qtyTxt(it)+(x?' · '+r0(x.k)+' kcal · P '+r1m(x.p)+' C '+r1m(x.c)+' F '+r1m(x.f):'')+'</div></div></div>';}).join("")+'</div>'+
-          '<div class="macts"><button data-act="edit">✎ Edit</button><button data-act="dup">＋ Copy to today</button><button data-act="fav">☆ Favourite</button><button data-act="del" class="danger">✕ Delete</button></div>';
-      }
-      h+='</div>';
-    });
-    $("mList").innerHTML=h||'<div class="empty" style="text-align:center;padding:18px 0">Nothing logged for this day yet. Tap <b>+ Log meal</b> to build a meal, or quick-add your usual day.</div>';
+    sortMeals(d.meals).forEach(function(m){var mt=dayTot(m.items);
+      h+='<div class="lm" data-mid="'+esc(m.id)+'"><div class="lmb"><div class="lmt"><b>'+esc(m.slot)+'</b>'+(m.t?' <span class="lmtime">'+fmtHM(m.t)+'</span>':'')+'</div>'+
+        '<div class="lmi"><span class="vh">'+esc(m.slot)+': </span>'+m.items.map(function(it){return esc(itemLabel(it));}).join(" · ")+'</div>'+
+        '<div class="lmm"><b>'+r0(mt.k)+' kcal</b> · P '+r1m(mt.p)+' · C '+r1m(mt.c)+' · F '+r1m(mt.f)+'</div></div>'+
+        '<button type="button" class="lmx" data-del="'+esc(m.id)+'" aria-label="Delete '+esc(m.slot)+'">✕</button></div>';});
+    $("mList").innerHTML=h||'<div class="lempty">Nothing logged yet</div>';
   }
+  function gbar(lbl,v,g,u,cls){var pct=Math.min(100,v/g*100);return '<div class="mt"><div class="mtl"><span>'+lbl+'</span><b>'+r0(v)+'<small> / '+g.toLocaleString()+(u?" "+u:"")+'</small></b></div><div class="bar"><div class="fill '+cls+'" style="width:'+pct+'%"></div></div></div>';}
   function shortName(n){return n.split(/[,(]/)[0].trim().toLowerCase();}
   function setM(d){if(d){mdate=d;renderMeals();}}
   $("mPrev").addEventListener("click",function(){setM(shift(mdate,-1));});
@@ -849,163 +883,36 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   $("mPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setM(this.value);});
   $("mSub").addEventListener("click",function(e){if(e.target.id==="mToday")setM(today);});
   $("mList").addEventListener("click",function(e){
-    var card=e.target.closest(".meal"); if(!card)return;
-    var id=card.dataset.mid, d=loadMeals(mdate), m=d.meals.filter(function(x){return x.id===id;})[0]; if(!m)return;
-    var a=e.target.closest("[data-act]");
-    if(!a){if(e.target.closest("[data-tog]")){mOpen[id]=!mOpen[id];renderMeals();}return;}
-    var act=a.dataset.act;
-    if(act==="edit")openBuilder(m);
-    else if(act==="dup"){var td=loadMeals(today),c=JSON.parse(JSON.stringify(m));c.id=uid("m");c.t=nowHM();td.meals.push(c);saveMeals(today,td);
-      if(mdate!==today){a.textContent="Added to today ✓";}else renderMeals();}
-    else if(act==="fav"){var nm=prompt("Name this favourite meal",m.name||m.slot);if(nm===null)return;var mm=myMeals();mm.push({id:uid("f"),name:nm.trim()||m.slot,slot:m.slot,items:cloneItems(m.items)});setJ("mymeals",mm);a.textContent="Saved ★";}
-    else if(act==="del"){if(!confirm("Delete this "+m.slot.toLowerCase()+(m.name?" ("+m.name+")":"")+"?"))return;d.meals=d.meals.filter(function(x){return x.id!==id;});saveMeals(mdate,d);renderMeals();}
+    var x=e.target.closest("[data-del]"); if(!x)return;
+    var id=x.dataset.del, d=loadMeals(mdate), m=d.meals.filter(function(q){return q.id===id;})[0]; if(!m)return;
+    if(!confirm("Delete this "+m.slot.toLowerCase()+"?"))return;
+    d.meals=d.meals.filter(function(q){return q.id!==id;}); saveMeals(mdate,d); renderMeals();
   });
-  $("mUsual").addEventListener("click",function(){
-    var d=loadMeals(mdate);
-    if(d.meals.length&&!confirm("This day already has meals. Add your usual day on top?"))return;
-    SLOTS.forEach(function(sl){if(!USUAL_NAMES[sl])return;var um=usualMeal(sl);d.meals.push({id:uid("m"),slot:sl,name:um.name,t:"",items:um.items});});
-    saveMeals(mdate,d);renderMeals();
-  });
-  // ---- sheet ----
-  function openSheet(html,full){$("sheetBody").innerHTML=html;$("sheetBody").className="sheetin"+(full?" full":"");$("sheet").hidden=false;document.body.classList.add("noscroll");}
-  function closeSheet(){$("sheet").hidden=true;B=null;document.body.classList.remove("noscroll");renderMeals();}
-  $("sheet").addEventListener("click",function(e){if(e.target.id==="sheet"||e.target.closest("[data-close]"))closeSheet();});
-  // ---- MEAL BUILDER ----
-  function openBuilder(m){
-    B=m?{edit:m.id,date:mdate,slot:m.slot,name:m.name||"",t:m.t||"",items:cloneItems(m.items)}:{edit:null,date:mdate,slot:defSlot(),name:"",t:"",items:[]};
-    mSearch=""; plateMsg=""; flashId=null; renderBuilder();
+  // ---- Log meal page ----
+  function lTot(){var t={k:0,p:0,c:0,f:0,n:0};LFOODS.forEach(function(x){var n=L.cnt[x.fd.id]||0;if(!n)return;t.n+=n;t.k+=x.fd.k*n;t.p+=x.fd.p*n;t.c+=x.fd.c*n;t.f+=x.fd.f*n;});return t;}
+  function renderLog(){
+    $("lDate").textContent=mdate===today?"TODAY":pillLab(mdate);
+    $("lSlots").innerHTML=LSLOTS.map(function(s){return '<button type="button" class="lslot'+(L.slot===s?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("");
+    var h="";
+    LSECS.forEach(function(sn,i){h+='<div class="lsec">'+sn+'</div>';
+      LFOODS.forEach(function(x){if(x.sec!==i)return;var n=L.cnt[x.fd.id]||0;
+        h+='<div class="lrow'+(n?" on":"")+'" data-f="'+x.fd.id+'"><div class="lname"><b>'+esc(x.sn)+'</b>'+(x.u?' <span>('+esc(x.u)+')</span>':'')+'<small>'+r0(x.fd.k)+' kcal · P '+r1m(x.fd.p)+'</small></div>'+
+          '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less '+esc(x.sn)+'">−</button><span class="ln">'+n+'</span><button type="button" class="lb" data-d="1" aria-label="More '+esc(x.sn)+'">+</button></div></div>';});});
+    $("lList").innerHTML=h; lBar();
   }
-  function renderBuilder(){
-    var h='<div class="bhd"><button class="shx" data-close="1">Cancel</button><b>'+(B.edit?"Edit meal":"Build meal")+'</b><span style="width:70px"></span></div>';
-    h+='<div class="chips">'+SLOTS.map(function(s){return '<button class="chip'+(s===B.slot?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("")+'</div>';
-    h+='<input id="bName" class="fsearch" type="text" placeholder="Meal name (optional), e.g. Egg breakfast" value="'+esc(B.name)+'" autocomplete="off">';
-    var mm=myMeals(); if(mm.length)h+='<div class="fsec">My meals · tap to add the whole combo</div><div class="chips mm">'+mm.map(function(x){return '<button class="chip fav" data-mm="'+x.id+'">★ '+esc(x.name)+'</button>';}).join("")+'</div>';
-    h+='<div class="plate" id="plate"></div>';
-    h+='<input id="fSearch" class="fsearch" type="search" placeholder="Search foods" value="'+esc(mSearch)+'" autocomplete="off"><div id="fList"></div>';
-    h+='<div class="bbar"><button class="bcancel" data-close="1">Cancel</button><button class="bsave" id="bSave"></button></div>';
-    openSheet(h,true); renderPlate(); renderFoodList();
-  }
-  function renderPlate(){
-    var t=dayTot(B.items), h='<div class="plh"><span>YOUR PLATE</span>'+(plateMsg?'<span class="pmsg">'+plateMsg+'</span>':'')+'</div>';
-    if(!B.items.length)h+='<div class="plempty">Tap foods below to add them</div>';
-    else{h+='<div class="plrows">'+B.items.map(function(it,i){var x=itMac(it);
-      return '<div class="prow'+(i===flashId?" flash":"")+'" data-pi="'+i+'"><div class="pb"><div class="pn">'+esc(it.n)+(x?'':' <button class="ask" data-fix="'+i+'">❓ tap to fill</button>')+'</div><div class="pm">'+(x?r0(x.k)+' kcal · P '+r1m(x.p)+' C '+r1m(x.c)+' F '+r1m(x.f):'macros unknown, ask Fitness')+'</div></div>'+
-        '<div class="step"><button data-pq="-">−</button><span>'+qtyTxt(it)+'</span><button data-pq="+">+</button></div><button class="px" data-px="1" aria-label="Remove">✕</button></div>';}).join("")+'</div>';}
-    h+='<div class="ptot"><div><b>'+r0(t.k)+'</b><span>kcal</span><i>'+Math.round(t.k/GOAL.k*100)+'%</i></div><div><b>'+r0(t.p)+'</b><span>Protein g</span><i>'+Math.round(t.p/GOAL.p*100)+'%</i></div><div><b>'+r0(t.c)+'</b><span>Carbs g</span><i>'+Math.round(t.c/GOAL.c*100)+'%</i></div><div><b>'+r0(t.f)+'</b><span>Fat g</span><i>'+Math.round(t.f/GOAL.f*100)+'%</i></div></div>';
-    if(t.unk)h+='<div class="munk" style="margin-top:4px">❓ + '+t.unk+' unknown item'+(t.unk>1?"s":"")+'</div>';
-    $("plate").innerHTML=h;
-    if(flashId!==null){var rr=$("plate").querySelector(".prow.flash");if(rr&&rr.scrollIntoView){var pr=$("plate").querySelector(".plrows");if(pr)pr.scrollTop=rr.offsetTop-pr.offsetTop-20;}}
-    var sv=$("bSave"); sv.textContent=B.items.length?"Save meal · "+r0(t.k)+" kcal · "+r0(t.p)+" g P":"Add foods to save"; sv.disabled=!B.items.length;
-    flashId=null;
-    var pl=$("plate"); if(pl)$("sheetBody").style.setProperty("--plh",(pl.offsetHeight-12)+"px");
-  }
-  function foodRow(fd){
-    var on=B.items.filter(function(it){return it.fid===fd.id&&it.b===fd.b&&it.s===fd.s;})[0];
-    var mac=fd.k===null||fd.k===undefined?'❓ macros unknown':r0(fd.k)+' kcal · P '+r1m(fd.p||0)+' C '+r1m(fd.c||0)+' F '+r1m(fd.f||0);
-    return '<button class="frow'+(on?" in":"")+'" data-f="'+fd.id+'"><span class="fb"><span class="fn">'+esc(fd.n)+(fd.treat?' <b class="treat">treat</b>':'')+'</span><span class="fm">per '+qtyTxt({a:fd.b,b:fd.b,s:fd.s,pl:fd.pl})+' · '+mac+'</span></span><span class="fplus">'+(on?'<em>'+qtyTxt(on)+'</em>':'')+'＋</span></button>';
-  }
-  function secId(n){return "sec-"+n.toLowerCase().replace(/[^a-z]+/g,"");}
-  function secBlock(name,foods,open){var id=secId(name);
-    return '<div class="fsect'+(open?"":" shut")+'" id="'+id+'"><button class="fshd" data-sec="'+esc(name)+'"><span>'+esc(name)+' <i>'+foods.length+'</i></span><span class="caret">'+(open?"▾":"▸")+'</span></button><div class="fsb">'+(open?foods.map(foodRow).join(""):"")+'</div></div>';}
-  function renderFoodList(){
-    var q=mSearch.trim().toLowerCase(), h="";
-    if(q){var hit=allFoods().filter(function(f){return (f.n+" "+(f.sec||"")).toLowerCase().indexOf(q)>=0;});h+=hit.length?hit.map(foodRow).join(""):'<div class="empty">No match. Add it as a custom item below.</div>';}
-    else{
-      var mf=myFoods(), names=[];
-      if(mf.length)names.push("My foods");
-      var fav=USUAL.filter(function(u){return u[0]===B.slot;}).map(function(u){return foodById(u[1]);}).filter(Boolean);
-      var rec=(getJ("recentfoods")||[]).map(foodById).filter(Boolean).slice(0,6);
-      if(fav.length)names.push("Favourites"); if(rec.length)names.push("Recent");
-      names=names.concat(FSECS);
-      h+='<div class="chips secchips">'+names.map(function(n){return '<button class="chip sj" data-jump="'+esc(n)+'">'+esc(n)+'</button>';}).join("")+'</div>';
-      function op(n,d){return secOpen[n]===undefined?d:secOpen[n];}
-      if(mf.length)h+=secBlock("My foods",mf,op("My foods",true));
-      if(fav.length)h+=secBlock("Favourites",fav,op("Favourites",true));
-      if(rec.length)h+=secBlock("Recent",rec,op("Recent",false));
-      FSECS.forEach(function(sn){h+=secBlock(sn,FOODS.filter(function(f){return f.sec===sn;}),op(sn,true));});
-    }
-    h+='<button class="fcustom" id="fCustom">Not in list? Add custom</button>';
-    $("fList").innerHTML=h;
-  }
-  function jumpSec(n){secOpen[n]=true;renderFoodList();var el=$(secId(n)),sb=$("sheetBody"),pl=$("plate");if(!el)return;
-    sb.scrollTop=el.getBoundingClientRect().top-sb.getBoundingClientRect().top+sb.scrollTop-(pl?pl.offsetHeight:0)+4;}
-  function addToPlate(fd,a){
-    var i=-1;B.items.forEach(function(it,j){if(it.fid===fd.id&&it.b===fd.b&&it.s===fd.s)i=j;});
-    if(i<0){B.items.push(mkItem(fd,a));i=B.items.length-1;}else B.items[i].a=Math.round((B.items[i].a+a)*100)/100;
-    flashId=i; var sn=shortName(fd.n);plateMsg="Added "+qtyTxt({a:a,b:fd.b,s:fd.s,pl:fd.pl})+(sn.indexOf(fd.s)===0?"":" "+sn)+" ✓";
-  }
-  $("sheetBody").addEventListener("input",function(e){
-    if(e.target.id==="fSearch"){mSearch=e.target.value;renderFoodList();}
-    if(e.target.id==="bName"&&B)B.name=e.target.value;
-  });
-  $("sheetBody").addEventListener("click",function(e){
-    var t=e.target;
-    if(B&&t.dataset.slot){B.slot=t.dataset.slot;[].forEach.call(document.querySelectorAll(".chip[data-slot]"),function(c){c.classList.toggle("on",c.dataset.slot===B.slot);});renderFoodList();return;}
-    var mmb=t.closest("[data-mm]");
-    if(B&&mmb){var fm=myMeals().filter(function(x){return x.id===mmb.dataset.mm;})[0];if(fm){fm.items.forEach(function(it){var i=-1;B.items.forEach(function(x,j){if(x.fid===it.fid&&x.b===it.b)i=j;});if(i<0)B.items.push(cloneItems([it])[0]);else B.items[i].a=Math.round((B.items[i].a+it.a)*100)/100;});
-      if(!B.name)B.name=fm.name; if(!B.items.length)B.slot=fm.slot; plateMsg="Added "+esc(fm.name)+" ✓";var bn=$("bName");if(bn&&!bn.value)bn.value=B.name;renderPlate();renderFoodList();}return;}
-    var fx=t.closest("[data-fix]"); if(B&&fx){renderCustom({plate:+fx.dataset.fix});return;}
-    var pr=t.closest(".prow");
-    if(B&&pr){var i=+pr.dataset.pi,it=B.items[i];
-      if(t.dataset.px){B.items.splice(i,1);plateMsg="Removed "+shortName(it.n);}
-      else if(t.dataset.pq){var st=it.st||it.b||1,nv=Math.round((it.a+(t.dataset.pq==="+"?st:-st))*100)/100;
-        if(nv<=0){B.items.splice(i,1);plateMsg="Removed "+shortName(it.n);}else{it.a=nv;flashId=i;plateMsg="";}}
-      else return;
-      renderPlate();renderFoodList();return;}
-    var sh=t.closest("[data-sec]"); if(B&&sh){var n=sh.dataset.sec,el=sh.parentNode;secOpen[n]=el.classList.contains("shut");renderFoodList();return;}
-    var jb=t.closest("[data-jump]"); if(B&&jb){jumpSec(jb.dataset.jump);return;}
-    var fr=t.closest(".frow");
-    if(B&&fr){var fd=foodById(fr.dataset.f);if(fd){addToPlate(fd,fd.b);renderPlate();renderFoodList();}return;}
-    if(t.id==="bSave"&&B&&B.items.length){saveBuilder();return;}
-    if(t.id==="fCustom"){renderCustom({});return;}
-    if(t.id==="cSave"){saveCustom();return;}
-    if(t.id==="cBack"){if(B)renderBuilder();else renderMyFoods();return;}
-    if(t.dataset.mfdel){setJ("myfoods",myFoods().filter(function(f){return f.id!==t.dataset.mfdel;}));renderMyFoods();return;}
-    if(t.dataset.mmdel){setJ("mymeals",myMeals().filter(function(f){return f.id!==t.dataset.mmdel;}));renderMyFoods();return;}
-    if(t.dataset.mfedit){renderCustom({food:t.dataset.mfedit});return;}
-  });
-  function saveBuilder(){
-    var nm=($("bName")?$("bName").value:B.name).trim(), d=loadMeals(B.date);
-    B.items.forEach(function(it){if(it.fid)pushRecent(it.fid);});
-    if(B.edit){d.meals.forEach(function(m){if(m.id===B.edit){m.slot=B.slot;m.name=nm;m.items=B.items;}});mOpen[B.edit]=true;}
-    else{var id=uid("m");d.meals.push({id:id,slot:B.slot,name:nm,t:B.date===today?nowHM():"",items:B.items});mOpen[id]=true;}
-    saveMeals(B.date,d); mdate=B.date; closeSheet();
-  }
-  function fld(id,lbl,v,type){return '<label class="fld"><span>'+lbl+'</span><input id="'+id+'" '+(type==="text"?'type="text"':'type="number" inputmode="decimal" step="any"')+' value="'+(v===null||v===undefined?"":esc(v))+'"></label>';}
-  var cMode={};
-  function renderCustom(mode){
-    cMode=mode; var f=null,title="Custom item";
-    if(mode.food){f=foodById(mode.food);title="Edit my food";}
-    if(mode.plate!==undefined){var it=B.items[mode.plate];f={n:it.n,s:it.b===1?it.s:fq(it.b)+" "+it.pl,k:it.k,p:it.p,c:it.c,f:it.f};title="Fill in macros";}
-    var h='<div class="shh"><button class="shx" id="cBack">‹ Back</button><b>'+title+'</b><span style="width:60px"></span></div>';
-    h+=fld("cName","Name (required)",f?f.n:"","text")+fld("cUnit","Serving (e.g. 1 plate, 1 bowl)",f?f.s:"serving","text")+
-      '<div class="fgrid">'+fld("cK","kcal",f?f.k:"")+fld("cP","Protein g",f?f.p:"")+fld("cC","Carbs g",f?f.c:"")+fld("cF","Fat g",f?f.f:"")+'</div>'+
-      '<div class="empty">Macros are per 1 serving. Leave them blank if you don\'t know: it goes on your plate marked ❓ Ask Fitness, and you can fill it in later.</div>'+
-      (mode.food||mode.plate!==undefined?'':'<label class="cbx"><input type="checkbox" id="cSaveMy" checked> Save to My foods for next time</label>')+
-      '<button class="big" id="cSave">'+(mode.food?"Save":mode.plate!==undefined?"Save macros":"Add to plate")+'</button>';
-    openSheet(h,!!B);
-  }
-  function saveCustom(){
-    var name=$("cName").value.trim(); if(!name){$("cName").focus();$("cName").style.borderColor="#ef5350";return;}
-    var unit=$("cUnit").value.trim()||"serving";
-    var k=mnum($("cK").value),p=mnum($("cP").value),c=mnum($("cC").value),f=mnum($("cF").value);
-    if(k===null&&(p!==null||c!==null||f!==null))k=Math.round((p||0)*4+(c||0)*4+(f||0)*9);
-    if(cMode.plate!==undefined){var it=B.items[cMode.plate];it.n=name;it.k=k===null?null:k*it.b/(it.b);it.p=p;it.c=c;it.f=f;
-      if(it.fid&&it.fid.indexOf("c_")===0&&k!==null)setJ("myfoods",myFoods().map(function(x){if(x.id===it.fid&&(x.k===null||x.k===undefined)){x.k=k;x.p=p;x.c=c;x.f=f;}return x;}));
-      plateMsg="Macros saved ✓";renderBuilder();return;}
-    var fd={id:cMode.food||"c_"+Date.now().toString(36),n:name,b:1,s:unit,pl:unit,st:0.5,k:k,p:p,c:c,f:f};
-    if(cMode.food){setJ("myfoods",myFoods().map(function(x){return x.id===fd.id?fd:x;}));renderMyFoods();return;}
-    if($("cSaveMy").checked){var mf=myFoods();mf.push(fd);setJ("myfoods",mf);}
-    addToPlate(fd,1); mSearch=""; renderBuilder();
-  }
-  function renderMyFoods(){
-    var mf=myFoods(), mm=myMeals(), h='<div class="shh"><b>My foods & meals</b><button class="shx" data-close="1">Done</button></div>';
-    h+='<div class="fsec">My meals (favourite combos)</div>'+(mm.length?mm.map(function(m){var t=dayTot(m.items);return '<div class="mrow"><div class="mib"><div class="min">★ '+esc(m.name)+'</div><div class="mim">'+m.slot+' · '+r0(t.k)+' kcal · P '+r0(t.p)+' g · '+m.items.length+' items</div></div><button class="mx" data-mmdel="'+m.id+'" aria-label="Delete">✕</button></div>';}).join(""):'<div class="empty">None yet. Use ☆ Favourite on a meal card.</div>');
-    h+='<div class="fsec">My foods (custom items)</div>'+(mf.length?mf.map(function(f){return '<div class="mrow"><div class="mib"><div class="min">'+esc(f.n)+(f.k===null||f.k===undefined?' <span class="ask">❓</span>':'')+'</div><div class="mim">per 1 '+esc(f.s)+(f.k===null||f.k===undefined?'':' · '+r0(f.k)+' kcal · P '+r1m(f.p||0)+' C '+r1m(f.c||0)+' F '+r1m(f.f||0))+'</div></div><button class="mx" data-mfedit="'+f.id+'" aria-label="Edit">✎</button><button class="mx" data-mfdel="'+f.id+'" aria-label="Delete">✕</button></div>';}).join(""):'<div class="empty">No custom foods yet. Use "Not in list? Add custom" while building a meal.</div>');
-    openSheet(h,false);
-  }
-  $("mFab").addEventListener("click",function(){openBuilder(null);});
-  $("mMy").addEventListener("click",renderMyFoods);
+  function lBar(){var t=lTot(),g=$("lGo");g.disabled=!t.n;g.textContent=t.n?"LOG · "+r0(t.k)+" kcal · "+r0(t.p)+" g protein":"LOG · pick foods";}
+  function openLog(){L={slot:lslotDef(),cnt:{},ord:[]};renderMeals();window.scrollTo(0,0);}
+  function closeLog(){L=null;renderMeals();window.scrollTo(0,0);}
+  $("mLogBtn").addEventListener("click",openLog);
+  $("lCancel").addEventListener("click",function(){if(L&&lTot().n&&!confirm("Discard this meal?"))return;closeLog();});
+  $("lSlots").addEventListener("click",function(e){var b=e.target.closest("[data-slot]");if(!b||!L)return;L.slot=b.dataset.slot;
+    [].forEach.call($("lSlots").children,function(c){c.classList.toggle("on",c===b);});});
+  $("lList").addEventListener("click",function(e){var b=e.target.closest("[data-d]");if(!b||!L)return;var r=b.closest(".lrow"),id=r.dataset.f;
+    var n=Math.max(0,(L.cnt[id]||0)+(+b.dataset.d));if(n){L.cnt[id]=n;if(L.ord.indexOf(id)<0)L.ord.push(id);}else{delete L.cnt[id];L.ord=L.ord.filter(function(q){return q!==id;});}
+    r.querySelector(".ln").textContent=n;r.classList.toggle("on",n>0);lBar();});
+  $("lGo").addEventListener("click",function(){if(!L)return;var items=[];
+    L.ord.forEach(function(id){var x=LFOODS.filter(function(q){return q.fd.id===id;})[0],n=L.cnt[id];if(!x||!n)return;var it=mkItem(x.fd,n*x.fd.b);it.sn=x.sn;items.push(it);});
+    if(!items.length)return;var d=loadMeals(mdate);d.meals.push({id:uid("m"),slot:L.slot,name:"",t:mdate===today?nowHM():"",items:items});saveMeals(mdate,d);closeLog();});
   function mealsText(k){
     var d=loadMeals(k), t=dayTot(d.items), out=["Meals "+fmt(k)];
     if(!d.meals.length){out.push("Nothing logged");return out.join("\n");}
@@ -1521,7 +1428,6 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     tvPushed=false; listY=null;
     TABS.forEach(function(x){$("p-"+x).classList.toggle("on",x===t);});
     [].forEach.call(document.querySelectorAll(".tabs button"),function(b){b.classList.toggle("on",b.dataset.t===t);});
-    if(t!=="meals"&&!$("sheet").hidden){$("sheet").hidden=true;document.body.classList.remove("noscroll");}
     if(t==="habits")renderHabits(); else if(t==="meals")renderMeals(); else if(t==="workout")renderWorkout(); else if(t==="sunday")renderSunday(); else renderTrends();
     if(scroll)window.scrollTo(0,0);
   }
@@ -1532,7 +1438,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   });
   window.addEventListener("hashchange",function(){show(location.hash.slice(1),true);});
 
-  function checkDay(){var t=key(new Date()); if(t!==today){var o=today; today=t; if(view===o)view=t; if(wdate===o)wdate=t; if(mdate===o)mdate=t; if($("sheet").hidden)show(tab);}}
+  function checkDay(){var t=key(new Date()); if(t!==today){var o=today; today=t; if(view===o)view=t; if(wdate===o)wdate=t; if(mdate===o)mdate=t; if(!L)show(tab);}}
   document.addEventListener("visibilitychange",function(){if(!document.hidden)checkDay();});
   window.addEventListener("focus",checkDay);
   setInterval(checkDay,60000);
