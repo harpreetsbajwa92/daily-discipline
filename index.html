@@ -206,6 +206,50 @@ body.noscroll{overflow:hidden}
 .estep{display:flex;gap:8px;align-items:center}.estep button{flex:0 0 48px;height:46px;margin-top:4px;border-radius:12px;background:#2a2a2a;border:0;font-size:22px;font-weight:800}
 .estep input{text-align:center}
 .drg{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin:18px 0 0}
+.sheetin.full{height:100dvh;border-radius:0;padding-top:calc(env(safe-area-inset-top) + 10px);padding-bottom:0}
+.bhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.bhd b{font-size:19px}
+.chip.fav{background:#3a2f12;color:#ffd54f}
+.plate{position:sticky;top:-10px;z-index:3;background:#202020;border:1px solid #333;border-radius:16px;padding:10px 12px;margin-top:12px;box-shadow:0 8px 16px rgba(0,0,0,.45)}
+.plh{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:800;letter-spacing:1px;color:#9a9a9a}
+.pmsg{color:#7bd17f;letter-spacing:0;font-size:12px;font-weight:700;text-transform:none}
+.plempty{color:#888;font-size:15px;text-align:center;padding:14px 0}
+.plrows{max-height:32dvh;overflow-y:auto;margin-top:4px}
+.prow{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #2e2e2e;transition:background .4s}
+.prow.flash{background:#1d3a20;border-radius:8px}
+.pb{flex:1;min-width:0}.pn{font-size:14px;font-weight:700;line-height:1.2}.pm{font-size:11px;color:#9a9a9a;margin-top:1px}
+.pn .ask{border:0}
+.px{flex:0 0 32px;height:36px;border-radius:8px;background:#2c2c2c;border:0;color:#bbb;font-size:14px}
+.ptot{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;text-align:center}
+.ptot div{background:#151515;border-radius:10px;padding:6px 2px}
+.ptot b{display:block;font-size:20px;font-weight:800;color:#fff}
+.ptot span{display:block;font-size:10px;color:#9a9a9a;font-weight:700}
+.ptot i{display:block;font-style:normal;font-size:11px;color:#8ab4f8;font-weight:700}
+.frow{width:100%;text-align:left;border:2px solid transparent;color:#eee}
+.frow.in{border-color:#1e88e5}
+.frow:active{background:#2e3b4a}
+.fb{display:flex;flex-direction:column}
+.fplus{flex:0 0 auto;display:flex;align-items:center;gap:6px;font-size:26px;color:#1e88e5;font-weight:400;padding-right:6px}
+.fplus em{font-style:normal;font-size:12px;font-weight:800;background:#1e88e5;color:#fff;border-radius:999px;padding:3px 8px}
+.bbar{position:sticky;bottom:0;display:flex;gap:8px;background:#181818;padding:10px 0 calc(env(safe-area-inset-bottom) + 12px);margin-top:12px;border-top:1px solid #2c2c2c;z-index:4}
+.bcancel{flex:0 0 96px;background:#2a2a2a;border:0;border-radius:14px;font-weight:800;font-size:16px;color:#fff;height:56px}
+.bsave{flex:1;background:#2e7d32;border:0;border-radius:14px;font-weight:800;font-size:16px;color:#fff;height:56px}
+.bsave:disabled{background:#2a2a2a;color:#777}
+.meal{background:#222;border-radius:16px;padding:12px 14px;margin-top:12px}
+.mh1{display:flex;justify-content:space-between;align-items:baseline}
+.mslot{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#8ab4f8}
+.mtime{font-size:12px;color:#9a9a9a}
+.mname{font-size:17px;font-weight:800;margin-top:2px}
+.mkc{margin-top:4px;font-size:14px;color:#bbb;font-weight:700}.mkc b{font-size:28px;color:#fff;font-weight:800}
+.mchips{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.mc{font-size:13px;font-weight:800;border-radius:999px;padding:4px 10px;background:#2c2c2c}
+.mc.p{color:#81c784}.mc.c{color:#64b5f6}.mc.f{color:#ffb74d}
+.msum{font-size:13px;color:#9a9a9a;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msum .more{color:#8ab4f8}
+.mitems{margin-top:8px;border-top:1px solid #2e2e2e}
+.mrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #2e2e2e}
+.macts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.macts button{background:#2c2c2c;border:0;border-radius:10px;height:42px;font-weight:800;font-size:14px;color:#eee}
+.macts .danger{color:#ef9a9a}
 /* tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#1a1a1a;border-top:1px solid #2c2c2c;padding-bottom:env(safe-area-inset-bottom);z-index:10}
 .tabs button{flex:1;min-width:0;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#8a8a8a;font-size:13px;font-weight:700;min-height:62px}
@@ -530,170 +574,224 @@ body.noscroll{overflow:hidden}
     ["Lunch","lfpaneer",100],["Lunch","oil",1],["Lunch","roti",2],["Lunch","salad",1],
     ["Snack","yogurt",170],["Snack","whey",0.5],["Snack","berries",0.5],
     ["Dinner","dal",1],["Dinner","sabzi",1],["Dinner","soya",40]];
-  var mdate=today, mSlot=null, mQty={}, mSearch="", mToast=null;
+  var USUAL_NAMES={"Breakfast":"Usual breakfast","Pre-gym":"Pre-gym banana","Post-gym":"Post-gym shake","Lunch":"Usual lunch","Snack":"Yogurt bowl","Dinner":"Usual dinner"};
+  var mdate=today, B=null, mSearch="", mOpen={}, flashId=null, plateMsg="";
   function myFoods(){var v=getJ("myfoods");return Array.isArray(v)?v:[];}
   function allFoods(){return FOODS.concat(myFoods());}
   function foodById(id){var a=allFoods();for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
-  function loadMeals(k){var v=getJ("meals:"+k);return v&&Array.isArray(v.items)?v:{items:[]};}
-  function saveMeals(k,v){setJ("meals:"+k,v);}
   function mnum(x){return x===null||x===undefined||x===""||isNaN(x)?null:Number(x);}
+  function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
   function fq(a){var w=Math.floor(a),h=Math.abs(a-w-0.5)<1e-9;return h?(w?w+"½":"½"):String(Math.round(a*100)/100);}
   function qtyTxt(it){return fq(it.a)+" "+(it.a===1||(it.b!==1&&it.s===it.pl)?it.s:it.pl);}
   function itMac(it){if(it.k===null||it.k===undefined)return null;var r=it.a/it.b;return {k:it.k*r,p:(it.p||0)*r,c:(it.c||0)*r,f:(it.f||0)*r};}
   function dayTot(items){var t={k:0,p:0,c:0,f:0,unk:0,n:items.length};items.forEach(function(it){var m=itMac(it);if(!m){t.unk++;return;}t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});return t;}
   function r0(x){return Math.round(x).toLocaleString();}
   function r1m(x){return (Math.round(x*10)/10).toString();}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
   function defSlot(){var h=new Date().getHours()+new Date().getMinutes()/60;return h<11?"Breakfast":h<15?"Lunch":h<18?"Snack":h<23?"Dinner":"Other";}
-  function mkItem(fd,a,slot){return {id:"i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),fid:fd.id,n:fd.n,a:a,b:fd.b,s:fd.s,pl:fd.pl,st:fd.st,k:mnum(fd.k),p:mnum(fd.p),c:mnum(fd.c),f:mnum(fd.f),slot:slot};}
-  function addItems(list){var d=loadMeals(mdate);list.forEach(function(x){d.items.push(x);});saveMeals(mdate,d);
-    var rec=getJ("recentfoods");rec=Array.isArray(rec)?rec:[];list.forEach(function(x){rec=rec.filter(function(r){return r!==x.fid;});rec.unshift(x.fid);});setJ("recentfoods",rec.slice(0,10));}
-  function bar(lbl,v,g,u,cls){var pct=Math.min(100,v/g*100);return '<div class="mt"><div class="mtl"><span>'+lbl+'</span><b>'+r0(v)+'<small> / '+g.toLocaleString()+(u?" "+u:"")+'</small></b></div><div class="bar"><div class="fill '+cls+'" style="width:'+pct+'%"></div></div></div>';}
+  function nowHM(){var d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+  function fmtHM(t){if(!t)return "";var p=t.split(":"),h=+p[0];return (h%12||12)+":"+p[1]+(h<12?" am":" pm");}
+  function mkItem(fd,a){return {fid:fd.id,n:fd.n,a:a,b:fd.b,s:fd.s,pl:fd.pl,st:fd.st,k:mnum(fd.k),p:mnum(fd.p),c:mnum(fd.c),f:mnum(fd.f)};}
+  function cloneItems(a){return JSON.parse(JSON.stringify(a||[]));}
+  // ---- storage: nn-v1:meals:DATE = {v:2, meals:[{id,slot,name,t,items:[...]}]}; .items is a flattened view ----
+  function loadMeals(k){
+    var v=getJ("meals:"+k), meals=[];
+    if(v&&Array.isArray(v.meals))meals=v.meals;
+    else if(v&&Array.isArray(v.items)&&v.items.length){ // migrate old per-item log: one meal per slot, nothing dropped
+      SLOTS.forEach(function(sl){var its=v.items.filter(function(it){return (SLOTS.indexOf(it.slot)<0?"Other":it.slot)===sl;});
+        if(its.length)meals.push({id:uid("m"),slot:sl,name:"",t:"",items:its.map(function(it){var x={};for(var q in it)if(q!=="slot"&&q!=="id")x[q]=it[q];return x;})});});
+      setJ("meals:"+k,{v:2,meals:meals});
+    }
+    var items=[];meals.forEach(function(m){m.items=m.items||[];items=items.concat(m.items);});
+    return {meals:meals,items:items};
+  }
+  function saveMeals(k,d){setJ("meals:"+k,{v:2,meals:d.meals});}
+  function sortMeals(ms){return ms.slice().sort(function(a,b){var x=SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot);return x||((a.t||"")<(b.t||"")?-1:1);});}
+  function myMeals(){var v=getJ("mymeals");if(v===null){v=SLOTS.filter(function(sl){return USUAL_NAMES[sl];}).map(function(sl){return usualMeal(sl);});setJ("mymeals",v);}return Array.isArray(v)?v:[];}
+  function usualMeal(sl){return {id:uid("f"),name:USUAL_NAMES[sl],slot:sl,items:USUAL.filter(function(u){return u[0]===sl;}).map(function(u){return mkItem(foodById(u[1]),u[2]);})};}
+  function pushRecent(fid){var rec=getJ("recentfoods");rec=Array.isArray(rec)?rec:[];rec=rec.filter(function(r){return r!==fid;});rec.unshift(fid);setJ("recentfoods",rec.slice(0,10));}
+  // ---- Meals tab ----
+  function gbar(lbl,v,g,u,cls){var pct=Math.min(100,v/g*100);return '<div class="mt"><div class="mtl"><span>'+lbl+'</span><b>'+r0(v)+'<small> / '+g.toLocaleString()+(u?" "+u:"")+'</small></b></div><div class="bar"><div class="fill '+cls+'" style="width:'+pct+'%"></div></div></div>';}
+  function chips(t){return '<span class="mc p">P '+r0(t.p)+' g</span><span class="mc c">C '+r0(t.c)+' g</span><span class="mc f">F '+r0(t.f)+' g</span>';}
   function renderMeals(){
     var vd=parse(mdate), d=loadMeals(mdate), t=dayTot(d.items);
     $("mPick").value=mdate;
     $("mSub").innerHTML=(mdate===today?"Today":vd.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"})+' <button class="today-btn" id="mToday">Today</button>');
-    $("mTot").innerHTML=bar("Calories",t.k,GOAL.k,"kcal",t.k>GOAL.k+100?"over":"")+bar("Protein",t.p,GOAL.p,"g",Math.round(t.p)>=GOAL.p?"full":"")+bar("Carbs",t.c,GOAL.c,"g","")+bar("Fat",t.f,GOAL.f,"g","")+
+    $("mTot").innerHTML=gbar("Calories",t.k,GOAL.k,"kcal",t.k>GOAL.k+100?"over":"")+gbar("Protein",t.p,GOAL.p,"g",Math.round(t.p)>=GOAL.p?"full":"")+gbar("Carbs",t.c,GOAL.c,"g","")+gbar("Fat",t.f,GOAL.f,"g","")+
       (t.unk?'<div class="munk">❓ + '+t.unk+' unknown item'+(t.unk>1?"s":"")+' (not counted yet, ask Fitness)</div>':'');
     var h="";
-    SLOTS.forEach(function(sl){
-      var its=d.items.filter(function(it){return it.slot===sl;}); if(!its.length)return;
-      var st=dayTot(its);
-      h+='<div class="msec"><div class="msh"><span>'+sl+'</span><small>'+r0(st.k)+' kcal · P '+r1m(st.p)+' g'+(st.unk?' · ❓'+st.unk:'')+'</small></div>';
-      its.forEach(function(it){var m=itMac(it);
-        h+='<div class="mit" data-id="'+it.id+'"><div class="mib"><div class="min">'+esc(it.n)+(m?'':' <span class="ask">❓ Ask Fitness</span>')+'</div><div class="mim">'+qtyTxt(it)+(m?' · '+r0(m.k)+' kcal · P '+r1m(m.p)+' C '+r1m(m.c)+' F '+r1m(m.f):'')+'</div></div><button class="mx" data-del="'+it.id+'" aria-label="Delete">✕</button></div>';});
+    sortMeals(d.meals).forEach(function(m){
+      var mt=dayTot(m.items), open=!!mOpen[m.id];
+      h+='<div class="meal'+(open?" open":"")+'" data-mid="'+m.id+'"><div class="mhd" data-tog="1"><div class="mh1"><span class="mslot">'+m.slot+'</span>'+(m.t?'<span class="mtime">'+fmtHM(m.t)+'</span>':'')+'</div>'+
+        (m.name?'<div class="mname">'+esc(m.name)+'</div>':'')+
+        '<div class="mkc"><b>'+r0(mt.k)+'</b> kcal'+(mt.unk?' <span class="ask">❓ '+mt.unk+'</span>':'')+'</div><div class="mchips">'+chips(mt)+'</div>';
+      if(!open)h+='<div class="msum">'+m.items.map(function(it){return esc(qtyTxt(it)+" "+shortName(it.n));}).join(", ")+' <span class="more">▾</span></div>';
+      h+='</div>';
+      if(open){
+        h+='<div class="mitems">'+m.items.map(function(it){var x=itMac(it);return '<div class="mrow"><div class="mib"><div class="min">'+esc(it.n)+(x?'':' <span class="ask">❓ Ask Fitness</span>')+'</div><div class="mim">'+qtyTxt(it)+(x?' · '+r0(x.k)+' kcal · P '+r1m(x.p)+' C '+r1m(x.c)+' F '+r1m(x.f):'')+'</div></div></div>';}).join("")+'</div>'+
+          '<div class="macts"><button data-act="edit">✎ Edit</button><button data-act="dup">＋ Copy to today</button><button data-act="fav">☆ Favourite</button><button data-act="del" class="danger">✕ Delete</button></div>';
+      }
       h+='</div>';
     });
-    $("mList").innerHTML=h||'<div class="empty" style="text-align:center;padding:18px 0">Nothing logged for this day yet. Tap <b>+ Log meal</b> or quick-add your usual day.</div>';
+    $("mList").innerHTML=h||'<div class="empty" style="text-align:center;padding:18px 0">Nothing logged for this day yet. Tap <b>+ Log meal</b> to build a meal, or quick-add your usual day.</div>';
   }
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+  function shortName(n){return n.split(/[,(]/)[0].trim().toLowerCase();}
   function setM(d){if(d){mdate=d;renderMeals();}}
   $("mPrev").addEventListener("click",function(){setM(shift(mdate,-1));});
   $("mNext").addEventListener("click",function(){setM(shift(mdate,1));});
   $("mPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setM(this.value);});
   $("mSub").addEventListener("click",function(e){if(e.target.id==="mToday")setM(today);});
   $("mList").addEventListener("click",function(e){
-    var x=e.target.closest("[data-del]");
-    if(x){var d=loadMeals(mdate);d.items=d.items.filter(function(it){return it.id!==x.dataset.del;});saveMeals(mdate,d);renderMeals();return;}
-    var r=e.target.closest(".mit"); if(r)openEdit(r.dataset.id);
+    var card=e.target.closest(".meal"); if(!card)return;
+    var id=card.dataset.mid, d=loadMeals(mdate), m=d.meals.filter(function(x){return x.id===id;})[0]; if(!m)return;
+    var a=e.target.closest("[data-act]");
+    if(!a){if(e.target.closest("[data-tog]")){mOpen[id]=!mOpen[id];renderMeals();}return;}
+    var act=a.dataset.act;
+    if(act==="edit")openBuilder(m);
+    else if(act==="dup"){var td=loadMeals(today),c=JSON.parse(JSON.stringify(m));c.id=uid("m");c.t=nowHM();td.meals.push(c);saveMeals(today,td);
+      if(mdate!==today){a.textContent="Added to today ✓";}else renderMeals();}
+    else if(act==="fav"){var nm=prompt("Name this favourite meal",m.name||m.slot);if(nm===null)return;var mm=myMeals();mm.push({id:uid("f"),name:nm.trim()||m.slot,slot:m.slot,items:cloneItems(m.items)});setJ("mymeals",mm);a.textContent="Saved ★";}
+    else if(act==="del"){if(!confirm("Delete this "+m.slot.toLowerCase()+(m.name?" ("+m.name+")":"")+"?"))return;d.meals=d.meals.filter(function(x){return x.id!==id;});saveMeals(mdate,d);renderMeals();}
   });
-  // swipe left to delete
-  (function(){var sx=null,el=null;
-    $("mList").addEventListener("touchstart",function(e){el=e.target.closest(".mit");sx=el?e.touches[0].clientX:null;},{passive:true});
-    $("mList").addEventListener("touchmove",function(e){if(sx===null)return;var dx=Math.min(0,e.touches[0].clientX-sx);el.style.transform="translateX("+dx+"px)";},{passive:true});
-    $("mList").addEventListener("touchend",function(e){if(sx===null)return;var dx=e.changedTouches[0].clientX-sx;el.style.transform="";
-      if(dx<-90){var id=el.dataset.id,d=loadMeals(mdate);d.items=d.items.filter(function(it){return it.id!==id;});saveMeals(mdate,d);renderMeals();}sx=null;el=null;});
-  })();
   $("mUsual").addEventListener("click",function(){
     var d=loadMeals(mdate);
-    if(d.items.length&&!confirm("This day already has items. Add your usual day on top?"))return;
-    addItems(USUAL.map(function(u){return mkItem(foodById(u[1]),u[2],u[0]);}));renderMeals();
+    if(d.meals.length&&!confirm("This day already has meals. Add your usual day on top?"))return;
+    SLOTS.forEach(function(sl){if(!USUAL_NAMES[sl])return;var um=usualMeal(sl);d.meals.push({id:uid("m"),slot:sl,name:um.name,t:"",items:um.items});});
+    saveMeals(mdate,d);renderMeals();
   });
   // ---- sheet ----
-  function openSheet(html){$("sheetBody").innerHTML=html;$("sheet").hidden=false;document.body.classList.add("noscroll");}
-  function closeSheet(){$("sheet").hidden=true;document.body.classList.remove("noscroll");renderMeals();}
+  function openSheet(html,full){$("sheetBody").innerHTML=html;$("sheetBody").className="sheetin"+(full?" full":"");$("sheet").hidden=false;document.body.classList.add("noscroll");}
+  function closeSheet(){$("sheet").hidden=true;B=null;document.body.classList.remove("noscroll");renderMeals();}
   $("sheet").addEventListener("click",function(e){if(e.target.id==="sheet"||e.target.closest("[data-close]"))closeSheet();});
-  function foodRow(fd,a){
-    var r=a/fd.b, mac=fd.k===null||fd.k===undefined?'❓ macros unknown':r0(fd.k*r)+' kcal · P '+r1m((fd.p||0)*r)+' C '+r1m((fd.c||0)*r)+' F '+r1m((fd.f||0)*r);
-    return '<div class="frow" data-f="'+fd.id+'"><div class="fb"><div class="fn">'+esc(fd.n)+'</div><div class="fm">'+mac+'</div></div>'+
-      '<div class="step"><button data-q="-">−</button><span>'+qtyTxt({a:a,b:fd.b,s:fd.s,pl:fd.pl})+'</span><button data-q="+">+</button></div><button class="fadd" data-add="1">Add</button></div>';
+  // ---- MEAL BUILDER ----
+  function openBuilder(m){
+    B=m?{edit:m.id,date:mdate,slot:m.slot,name:m.name||"",t:m.t||"",items:cloneItems(m.items)}:{edit:null,date:mdate,slot:defSlot(),name:"",t:"",items:[]};
+    mSearch=""; plateMsg=""; flashId=null; renderBuilder();
   }
-  function qOf(fd){return mQty[fd.id]!==undefined?mQty[fd.id]:fd.b;}
-  function renderLog(){
-    var h='<div class="shh"><b>Log meal</b><button class="shx" data-close="1">Done</button></div>';
-    h+='<div class="chips">'+SLOTS.map(function(s){return '<button class="chip'+(s===mSlot?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("")+'</div>';
-    h+='<input id="fSearch" class="fsearch" type="search" placeholder="Search foods" value="'+esc(mSearch)+'" autocomplete="off">';
-    h+='<div id="fList"></div>';
-    openSheet(h); renderFoodList();
+  function renderBuilder(){
+    var h='<div class="bhd"><button class="shx" data-close="1">Cancel</button><b>'+(B.edit?"Edit meal":"Build meal")+'</b><span style="width:70px"></span></div>';
+    h+='<div class="chips">'+SLOTS.map(function(s){return '<button class="chip'+(s===B.slot?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("")+'</div>';
+    h+='<input id="bName" class="fsearch" type="text" placeholder="Meal name (optional), e.g. Egg breakfast" value="'+esc(B.name)+'" autocomplete="off">';
+    var mm=myMeals(); if(mm.length)h+='<div class="fsec">My meals · tap to add the whole combo</div><div class="chips mm">'+mm.map(function(x){return '<button class="chip fav" data-mm="'+x.id+'">★ '+esc(x.name)+'</button>';}).join("")+'</div>';
+    h+='<div class="plate" id="plate"></div>';
+    h+='<input id="fSearch" class="fsearch" type="search" placeholder="Search foods" value="'+esc(mSearch)+'" autocomplete="off"><div id="fList"></div>';
+    h+='<div class="bbar"><button class="bcancel" data-close="1">Cancel</button><button class="bsave" id="bSave"></button></div>';
+    openSheet(h,true); renderPlate(); renderFoodList();
+  }
+  function renderPlate(){
+    var t=dayTot(B.items), h='<div class="plh"><span>YOUR PLATE</span>'+(plateMsg?'<span class="pmsg">'+plateMsg+'</span>':'')+'</div>';
+    if(!B.items.length)h+='<div class="plempty">Tap foods below to add them</div>';
+    else{h+='<div class="plrows">'+B.items.map(function(it,i){var x=itMac(it);
+      return '<div class="prow'+(i===flashId?" flash":"")+'" data-pi="'+i+'"><div class="pb"><div class="pn">'+esc(it.n)+(x?'':' <button class="ask" data-fix="'+i+'">❓ tap to fill</button>')+'</div><div class="pm">'+(x?r0(x.k)+' kcal · P '+r1m(x.p)+' C '+r1m(x.c)+' F '+r1m(x.f):'macros unknown, ask Fitness')+'</div></div>'+
+        '<div class="step"><button data-pq="-">−</button><span>'+qtyTxt(it)+'</span><button data-pq="+">+</button></div><button class="px" data-px="1" aria-label="Remove">✕</button></div>';}).join("")+'</div>';}
+    h+='<div class="ptot"><div><b>'+r0(t.k)+'</b><span>kcal</span><i>'+Math.round(t.k/GOAL.k*100)+'%</i></div><div><b>'+r0(t.p)+'</b><span>Protein g</span><i>'+Math.round(t.p/GOAL.p*100)+'%</i></div><div><b>'+r0(t.c)+'</b><span>Carbs g</span><i>'+Math.round(t.c/GOAL.c*100)+'%</i></div><div><b>'+r0(t.f)+'</b><span>Fat g</span><i>'+Math.round(t.f/GOAL.f*100)+'%</i></div></div>';
+    if(t.unk)h+='<div class="munk" style="margin-top:4px">❓ + '+t.unk+' unknown item'+(t.unk>1?"s":"")+'</div>';
+    $("plate").innerHTML=h;
+    if(flashId!==null){var rr=$("plate").querySelector(".prow.flash");if(rr&&rr.scrollIntoView){var pr=$("plate").querySelector(".plrows");if(pr)pr.scrollTop=rr.offsetTop-pr.offsetTop-20;}}
+    var sv=$("bSave"); sv.textContent=B.items.length?"Save meal · "+r0(t.k)+" kcal · "+r0(t.p)+" g P":"Add foods to save"; sv.disabled=!B.items.length;
+    flashId=null;
+  }
+  function foodRow(fd){
+    var on=B.items.filter(function(it){return it.fid===fd.id;})[0];
+    var mac=fd.k===null||fd.k===undefined?'❓ macros unknown':r0(fd.k)+' kcal · P '+r1m(fd.p||0)+' C '+r1m(fd.c||0)+' F '+r1m(fd.f||0);
+    return '<button class="frow'+(on?" in":"")+'" data-f="'+fd.id+'"><span class="fb"><span class="fn">'+esc(fd.n)+'</span><span class="fm">per '+qtyTxt({a:fd.b,b:fd.b,s:fd.s,pl:fd.pl})+' · '+mac+'</span></span><span class="fplus">'+(on?'<em>'+qtyTxt(on)+'</em>':'')+'＋</span></button>';
   }
   function renderFoodList(){
     var q=mSearch.trim().toLowerCase(), h="";
-    if(mToast)h+='<div class="toast">'+mToast+'</div>';
-    if(q){
-      var hit=allFoods().filter(function(f){return f.n.toLowerCase().indexOf(q)>=0;});
-      h+=hit.length?hit.map(function(f){return foodRow(f,qOf(f));}).join(""):'<div class="empty">No match.</div>';
-    }else{
-      var fav=USUAL.filter(function(u){return u[0]===mSlot;});
-      if(fav.length){h+='<div class="fsec">Favourites · usual '+mSlot.toLowerCase()+'</div>';fav.forEach(function(u){var f=foodById(u[1]);h+=foodRow(f,mQty[f.id]!==undefined?mQty[f.id]:u[2]);});}
+    if(q){var hit=allFoods().filter(function(f){return f.n.toLowerCase().indexOf(q)>=0;});h+=hit.length?hit.map(foodRow).join(""):'<div class="empty">No match. Add it as a custom item below.</div>';}
+    else{
+      var fav=USUAL.filter(function(u){return u[0]===B.slot;}).map(function(u){return foodById(u[1]);});
+      if(fav.length)h+='<div class="fsec">Favourites · usual '+B.slot.toLowerCase()+'</div>'+fav.map(foodRow).join("");
       var rec=(getJ("recentfoods")||[]).map(foodById).filter(Boolean).slice(0,6);
-      if(rec.length){h+='<div class="fsec">Recent</div>';rec.forEach(function(f){h+=foodRow(f,qOf(f));});}
-      var mf=myFoods(); if(mf.length){h+='<div class="fsec">My foods</div>';mf.forEach(function(f){h+=foodRow(f,qOf(f));});}
-      h+='<div class="fsec">All foods</div>'+FOODS.map(function(f){return foodRow(f,qOf(f));}).join("");
+      if(rec.length)h+='<div class="fsec">Recent</div>'+rec.map(foodRow).join("");
+      var mf=myFoods(); if(mf.length)h+='<div class="fsec">My foods</div>'+mf.map(foodRow).join("");
+      h+='<div class="fsec">All foods</div>'+FOODS.map(foodRow).join("");
     }
     h+='<button class="fcustom" id="fCustom">Not in list? Add custom</button>';
     $("fList").innerHTML=h;
   }
-  $("sheetBody").addEventListener("input",function(e){if(e.target.id==="fSearch"){mSearch=e.target.value;mToast=null;renderFoodList();}});
+  function addToPlate(fd,a){
+    var i=-1;B.items.forEach(function(it,j){if(it.fid===fd.id)i=j;});
+    if(i<0){B.items.push(mkItem(fd,a));i=B.items.length-1;}else B.items[i].a=Math.round((B.items[i].a+a)*100)/100;
+    flashId=i; plateMsg="Added "+qtyTxt({a:a,b:fd.b,s:fd.s,pl:fd.pl})+" "+shortName(fd.n)+" ✓";
+  }
+  $("sheetBody").addEventListener("input",function(e){
+    if(e.target.id==="fSearch"){mSearch=e.target.value;renderFoodList();}
+    if(e.target.id==="bName"&&B)B.name=e.target.value;
+  });
   $("sheetBody").addEventListener("click",function(e){
     var t=e.target;
-    if(t.dataset.slot){mSlot=t.dataset.slot;mToast=null;[].forEach.call(document.querySelectorAll(".chip"),function(c){c.classList.toggle("on",c.dataset.slot===mSlot);});renderFoodList();return;}
-    var row=t.closest(".frow");
-    if(row&&t.dataset.q){var f=foodById(row.dataset.f),fav=USUAL.filter(function(u){return u[0]===mSlot&&u[1]===f.id;})[0],cur=mQty[f.id]!==undefined?mQty[f.id]:(fav?fav[2]:f.b);
-      var nv=Math.round((cur+(t.dataset.q==="+"?f.st:-f.st))*100)/100; if(nv<=0)nv=f.st; mQty[f.id]=nv; mToast=null; renderFoodList(); return;}
-    if(row&&t.dataset.add){var f2=foodById(row.dataset.f),fav2=USUAL.filter(function(u){return u[0]===mSlot&&u[1]===f2.id;})[0],a=mQty[f2.id]!==undefined?mQty[f2.id]:(fav2?fav2[2]:f2.b);
-      addItems([mkItem(f2,a,mSlot)]); mToast="Added ✓ "+esc(f2.n)+" ("+qtyTxt({a:a,b:f2.b,s:f2.s,pl:f2.pl})+") to "+mSlot; delete mQty[f2.id]; renderFoodList(); $("fList").scrollIntoView({block:"start"}); return;}
-    if(t.id==="fCustom"){renderCustom();return;}
+    if(B&&t.dataset.slot){B.slot=t.dataset.slot;[].forEach.call(document.querySelectorAll(".chip[data-slot]"),function(c){c.classList.toggle("on",c.dataset.slot===B.slot);});renderFoodList();return;}
+    var mmb=t.closest("[data-mm]");
+    if(B&&mmb){var fm=myMeals().filter(function(x){return x.id===mmb.dataset.mm;})[0];if(fm){fm.items.forEach(function(it){var i=-1;B.items.forEach(function(x,j){if(x.fid===it.fid&&x.b===it.b)i=j;});if(i<0)B.items.push(cloneItems([it])[0]);else B.items[i].a=Math.round((B.items[i].a+it.a)*100)/100;});
+      if(!B.name)B.name=fm.name; if(!B.items.length)B.slot=fm.slot; plateMsg="Added "+esc(fm.name)+" ✓";var bn=$("bName");if(bn&&!bn.value)bn.value=B.name;renderPlate();renderFoodList();}return;}
+    var fx=t.closest("[data-fix]"); if(B&&fx){renderCustom({plate:+fx.dataset.fix});return;}
+    var pr=t.closest(".prow");
+    if(B&&pr){var i=+pr.dataset.pi,it=B.items[i];
+      if(t.dataset.px){B.items.splice(i,1);plateMsg="Removed "+shortName(it.n);}
+      else if(t.dataset.pq){var st=it.st||it.b||1,nv=Math.round((it.a+(t.dataset.pq==="+"?st:-st))*100)/100;
+        if(nv<=0){B.items.splice(i,1);plateMsg="Removed "+shortName(it.n);}else{it.a=nv;flashId=i;plateMsg="";}}
+      else return;
+      renderPlate();renderFoodList();return;}
+    var fr=t.closest(".frow");
+    if(B&&fr){var fd=foodById(fr.dataset.f);if(fd){addToPlate(fd,fd.b);renderPlate();renderFoodList();}return;}
+    if(t.id==="bSave"&&B&&B.items.length){saveBuilder();return;}
+    if(t.id==="fCustom"){renderCustom({});return;}
     if(t.id==="cSave"){saveCustom();return;}
-    if(t.id==="cBack"){renderLog();return;}
-    if(t.id==="eSave"){saveEdit();return;}
-    if(t.id==="eDel"){var d=loadMeals(mdate);d.items=d.items.filter(function(it){return it.id!==t.dataset.id;});saveMeals(mdate,d);closeSheet();return;}
-    if(t.dataset.eq){var inp=$("eQty"),st=+inp.dataset.st,v=(+inp.value||0)+(t.dataset.eq==="+"?st:-st);if(v<=0)v=st;inp.value=Math.round(v*100)/100;return;}
-    if(t.dataset.mfdel){var mf=myFoods().filter(function(f){return f.id!==t.dataset.mfdel;});setJ("myfoods",mf);renderMyFoods();return;}
-    if(t.dataset.mfedit){renderCustom(t.dataset.mfedit);return;}
+    if(t.id==="cBack"){if(B)renderBuilder();else renderMyFoods();return;}
+    if(t.dataset.mfdel){setJ("myfoods",myFoods().filter(function(f){return f.id!==t.dataset.mfdel;}));renderMyFoods();return;}
+    if(t.dataset.mmdel){setJ("mymeals",myMeals().filter(function(f){return f.id!==t.dataset.mmdel;}));renderMyFoods();return;}
+    if(t.dataset.mfedit){renderCustom({food:t.dataset.mfedit});return;}
   });
+  function saveBuilder(){
+    var nm=($("bName")?$("bName").value:B.name).trim(), d=loadMeals(B.date);
+    B.items.forEach(function(it){if(it.fid)pushRecent(it.fid);});
+    if(B.edit){d.meals.forEach(function(m){if(m.id===B.edit){m.slot=B.slot;m.name=nm;m.items=B.items;}});mOpen[B.edit]=true;}
+    else{var id=uid("m");d.meals.push({id:id,slot:B.slot,name:nm,t:B.date===today?nowHM():"",items:B.items});mOpen[id]=true;}
+    saveMeals(B.date,d); mdate=B.date; closeSheet();
+  }
   function fld(id,lbl,v,type){return '<label class="fld"><span>'+lbl+'</span><input id="'+id+'" '+(type==="text"?'type="text"':'type="number" inputmode="decimal" step="any"')+' value="'+(v===null||v===undefined?"":esc(v))+'"></label>';}
-  function renderCustom(editId){
-    var f=editId?foodById(editId):null;
-    var h='<div class="shh"><button class="shx" id="cBack">‹ Back</button><b>'+(f?"Edit my food":"Custom item")+'</b><button class="shx" data-close="1">Close</button></div>';
-    h+='<input type="hidden" id="cId" value="'+(f?f.id:"")+'">'+fld("cName","Name (required)",f?f.n:"","text")+fld("cUnit","Serving (e.g. 1 plate, 1 bowl)",f?f.s:"serving","text")+
+  var cMode={};
+  function renderCustom(mode){
+    cMode=mode; var f=null,title="Custom item";
+    if(mode.food){f=foodById(mode.food);title="Edit my food";}
+    if(mode.plate!==undefined){var it=B.items[mode.plate];f={n:it.n,s:it.b===1?it.s:fq(it.b)+" "+it.pl,k:it.k,p:it.p,c:it.c,f:it.f};title="Fill in macros";}
+    var h='<div class="shh"><button class="shx" id="cBack">‹ Back</button><b>'+title+'</b><span style="width:60px"></span></div>';
+    h+=fld("cName","Name (required)",f?f.n:"","text")+fld("cUnit","Serving (e.g. 1 plate, 1 bowl)",f?f.s:"serving","text")+
       '<div class="fgrid">'+fld("cK","kcal",f?f.k:"")+fld("cP","Protein g",f?f.p:"")+fld("cC","Carbs g",f?f.c:"")+fld("cF","Fat g",f?f.f:"")+'</div>'+
-      '<div class="empty">Macros are per 1 serving. Leave them blank if you don\'t know: it\'s marked ❓ Ask Fitness, and you can fill it in later by tapping the item.</div>'+
-      (f?'':'<label class="cbx"><input type="checkbox" id="cSaveMy" checked> Save to My foods for next time</label>')+
-      '<button class="big" id="cSave">'+(f?"Save":"Add to "+mSlot)+'</button>';
-    $("sheetBody").innerHTML=h;
+      '<div class="empty">Macros are per 1 serving. Leave them blank if you don\'t know: it goes on your plate marked ❓ Ask Fitness, and you can fill it in later.</div>'+
+      (mode.food||mode.plate!==undefined?'':'<label class="cbx"><input type="checkbox" id="cSaveMy" checked> Save to My foods for next time</label>')+
+      '<button class="big" id="cSave">'+(mode.food?"Save":mode.plate!==undefined?"Save macros":"Add to plate")+'</button>';
+    openSheet(h,!!B);
   }
   function saveCustom(){
     var name=$("cName").value.trim(); if(!name){$("cName").focus();$("cName").style.borderColor="#ef5350";return;}
-    var unit=$("cUnit").value.trim()||"serving", id=$("cId").value;
-    var fd={id:id||"c_"+Date.now().toString(36),n:name,b:1,s:unit,pl:unit,st:0.5,k:mnum($("cK").value),p:mnum($("cP").value),c:mnum($("cC").value),f:mnum($("cF").value)};
-    if(fd.k===null&&(fd.p!==null||fd.c!==null||fd.f!==null))fd.k=Math.round((fd.p||0)*4+(fd.c||0)*4+(fd.f||0)*9);
-    if(id){var mf=myFoods().map(function(f){return f.id===id?fd:f;});setJ("myfoods",mf);renderMyFoods();return;}
-    if($("cSaveMy").checked){var mf2=myFoods();mf2.push(fd);setJ("myfoods",mf2);}
-    addItems([mkItem(fd,1,mSlot)]); mToast="Added ✓ "+esc(name)+" to "+mSlot+(fd.k===null?" (❓ Ask Fitness)":""); mSearch=""; renderLog();
-  }
-  function openEdit(id){
-    var d=loadMeals(mdate), it=d.items.filter(function(x){return x.id===id;})[0]; if(!it)return;
-    var h='<div class="shh"><b>Edit item</b><button class="shx" data-close="1">Close</button></div>';
-    h+=fld("eName","Name",it.n,"text");
-    h+='<label class="fld"><span>Amount ('+esc(it.pl)+')</span><div class="estep"><button data-eq="-">−</button><input id="eQty" type="number" inputmode="decimal" step="any" data-st="'+(it.st||0.5)+'" value="'+it.a+'"><button data-eq="+">+</button></div></label>';
-    h+='<label class="fld"><span>Meal</span><select id="eSlot">'+SLOTS.map(function(s){return '<option'+(s===it.slot?" selected":"")+'>'+s+'</option>';}).join("")+'</select></label>';
-    h+='<div class="empty" style="margin-top:6px">Macros per '+fq(it.b)+' '+esc(it.b===1?it.s:it.pl)+(it.k===null?' · fill in what Fitness tells you':'')+'</div>';
-    h+='<div class="fgrid">'+fld("eK","kcal",it.k)+fld("eP","Protein g",it.p)+fld("eC","Carbs g",it.c)+fld("eF","Fat g",it.f)+'</div>';
-    h+='<input type="hidden" id="eId" value="'+it.id+'"><button class="big" id="eSave">Save</button><button class="export" id="eDel" data-id="'+it.id+'" style="color:#ef5350">Delete item</button>';
-    openSheet(h);
-  }
-  function saveEdit(){
-    var d=loadMeals(mdate), id=$("eId").value, it=d.items.filter(function(x){return x.id===id;})[0]; if(!it)return closeSheet();
-    it.n=$("eName").value.trim()||it.n; var a=+$("eQty").value; if(a>0)it.a=a; it.slot=$("eSlot").value;
-    it.k=mnum($("eK").value);it.p=mnum($("eP").value);it.c=mnum($("eC").value);it.f=mnum($("eF").value);
-    if(it.k===null&&(it.p!==null||it.c!==null||it.f!==null))it.k=Math.round((it.p||0)*4+(it.c||0)*4+(it.f||0)*9);
-    saveMeals(mdate,d);
-    // also teach My foods the macros if this custom food had none
-    if(it.fid&&it.fid.indexOf("c_")===0&&it.k!==null){var mf=myFoods(),ch=false;mf.forEach(function(f){if(f.id===it.fid&&(f.k===null||f.k===undefined)){f.k=it.k*it.b/it.b;f.p=it.p;f.c=it.c;f.f=it.f;ch=true;}});if(ch)setJ("myfoods",mf);}
-    closeSheet();
+    var unit=$("cUnit").value.trim()||"serving";
+    var k=mnum($("cK").value),p=mnum($("cP").value),c=mnum($("cC").value),f=mnum($("cF").value);
+    if(k===null&&(p!==null||c!==null||f!==null))k=Math.round((p||0)*4+(c||0)*4+(f||0)*9);
+    if(cMode.plate!==undefined){var it=B.items[cMode.plate];it.n=name;it.k=k===null?null:k*it.b/(it.b);it.p=p;it.c=c;it.f=f;
+      if(it.fid&&it.fid.indexOf("c_")===0&&k!==null)setJ("myfoods",myFoods().map(function(x){if(x.id===it.fid&&(x.k===null||x.k===undefined)){x.k=k;x.p=p;x.c=c;x.f=f;}return x;}));
+      plateMsg="Macros saved ✓";renderBuilder();return;}
+    var fd={id:cMode.food||"c_"+Date.now().toString(36),n:name,b:1,s:unit,pl:unit,st:0.5,k:k,p:p,c:c,f:f};
+    if(cMode.food){setJ("myfoods",myFoods().map(function(x){return x.id===fd.id?fd:x;}));renderMyFoods();return;}
+    if($("cSaveMy").checked){var mf=myFoods();mf.push(fd);setJ("myfoods",mf);}
+    addToPlate(fd,1); mSearch=""; renderBuilder();
   }
   function renderMyFoods(){
-    var mf=myFoods(), h='<div class="shh"><b>My foods</b><button class="shx" data-close="1">Done</button></div>';
-    h+=mf.length?mf.map(function(f){return '<div class="mit"><div class="mib"><div class="min">'+esc(f.n)+(f.k===null||f.k===undefined?' <span class="ask">❓</span>':'')+'</div><div class="mim">per 1 '+esc(f.s)+(f.k===null||f.k===undefined?'':' · '+r0(f.k)+' kcal · P '+r1m(f.p||0)+' C '+r1m(f.c||0)+' F '+r1m(f.f||0))+'</div></div><button class="mx" data-mfedit="'+f.id+'" aria-label="Edit">✎</button><button class="mx" data-mfdel="'+f.id+'" aria-label="Delete">✕</button></div>';}).join(""):'<div class="empty">No custom foods yet. Use "Not in list? Add custom" in Log meal; they get saved here for reuse.</div>';
-    openSheet(h);
+    var mf=myFoods(), mm=myMeals(), h='<div class="shh"><b>My foods & meals</b><button class="shx" data-close="1">Done</button></div>';
+    h+='<div class="fsec">My meals (favourite combos)</div>'+(mm.length?mm.map(function(m){var t=dayTot(m.items);return '<div class="mrow"><div class="mib"><div class="min">★ '+esc(m.name)+'</div><div class="mim">'+m.slot+' · '+r0(t.k)+' kcal · P '+r0(t.p)+' g · '+m.items.length+' items</div></div><button class="mx" data-mmdel="'+m.id+'" aria-label="Delete">✕</button></div>';}).join(""):'<div class="empty">None yet. Use ☆ Favourite on a meal card.</div>');
+    h+='<div class="fsec">My foods (custom items)</div>'+(mf.length?mf.map(function(f){return '<div class="mrow"><div class="mib"><div class="min">'+esc(f.n)+(f.k===null||f.k===undefined?' <span class="ask">❓</span>':'')+'</div><div class="mim">per 1 '+esc(f.s)+(f.k===null||f.k===undefined?'':' · '+r0(f.k)+' kcal · P '+r1m(f.p||0)+' C '+r1m(f.c||0)+' F '+r1m(f.f||0))+'</div></div><button class="mx" data-mfedit="'+f.id+'" aria-label="Edit">✎</button><button class="mx" data-mfdel="'+f.id+'" aria-label="Delete">✕</button></div>';}).join(""):'<div class="empty">No custom foods yet. Use "Not in list? Add custom" while building a meal.</div>');
+    openSheet(h,false);
   }
-  $("mFab").addEventListener("click",function(){mSlot=defSlot();mSearch="";mToast=null;mQty={};renderLog();});
+  $("mFab").addEventListener("click",function(){openBuilder(null);});
   $("mMy").addEventListener("click",renderMyFoods);
   function mealsText(k){
     var d=loadMeals(k), t=dayTot(d.items), out=["Meals "+fmt(k)];
-    if(!d.items.length){out.push("Nothing logged");return out.join("\n");}
-    SLOTS.forEach(function(sl){var its=d.items.filter(function(it){return it.slot===sl;});if(!its.length)return;out.push("",sl.toUpperCase());
-      its.forEach(function(it){var m=itMac(it);out.push("- "+it.n+", "+qtyTxt(it)+": "+(m?r0(m.k)+" kcal, P "+r1m(m.p)+" C "+r1m(m.c)+" F "+r1m(m.f):"❓ need estimate"));});});
-    out.push("","TOTAL: "+r0(t.k)+" kcal (goal 1,650) · P "+r1m(t.p)+" g (goal 150) · C "+r1m(t.c)+" g · F "+r1m(t.f)+" g");
+    if(!d.meals.length){out.push("Nothing logged");return out.join("\n");}
+    sortMeals(d.meals).forEach(function(m){var mt=dayTot(m.items);
+      out.push("",m.slot.toUpperCase()+(m.name?" · "+m.name:"")+(m.t?" ("+fmtHM(m.t)+")":"")+": "+r0(mt.k)+" kcal · P "+r1m(mt.p)+" C "+r1m(mt.c)+" F "+r1m(mt.f)+(mt.unk?" + "+mt.unk+" ❓":""));
+      m.items.forEach(function(it){var x=itMac(it);out.push("- "+it.n+", "+qtyTxt(it)+": "+(x?r0(x.k)+" kcal, P "+r1m(x.p)+" C "+r1m(x.c)+" F "+r1m(x.f):"❓ need estimate"));});});
+    out.push("","DAY TOTAL: "+r0(t.k)+" kcal (goal 1,650) · P "+r1m(t.p)+" g (goal 150) · C "+r1m(t.c)+" g · F "+r1m(t.f)+" g");
     var unk=d.items.filter(function(it){return !itMac(it);});
     if(unk.length){out.push("","❓ NEED ESTIMATE (not in totals):");unk.forEach(function(it){out.push("- "+it.n+", "+qtyTxt(it));});}
     return out.join("\n");
