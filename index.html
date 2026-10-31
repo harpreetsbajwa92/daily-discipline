@@ -250,6 +250,14 @@ body.noscroll{overflow:hidden}
 .macts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
 .macts button{background:#2c2c2c;border:0;border-radius:10px;height:42px;font-weight:800;font-size:14px;color:#eee}
 .macts .danger{color:#ef9a9a}
+.fsect{margin-top:10px}
+.fshd{position:sticky;top:var(--plh,0px);z-index:2;width:100%;display:flex;justify-content:space-between;align-items:center;background:#181818;border:0;border-bottom:1px solid #2c2c2c;color:#cfcfcf;font-size:13px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:10px 4px 8px;text-align:left}
+.fshd i{font-style:normal;color:#777;font-weight:700;margin-left:4px}
+.fshd .caret{color:#8ab4f8;font-size:15px}
+.fsect.shut .fsb{display:none}
+.secchips{margin-top:10px}
+.chip.sj{font-size:13px;padding:8px 12px;background:#1d2a38;color:#8ab4f8}
+.treat{font-size:10px;font-weight:800;color:#111;background:#ffa726;border-radius:6px;padding:1px 6px;margin-left:4px;text-transform:uppercase;vertical-align:2px}
 /* tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#1a1a1a;border-top:1px solid #2c2c2c;padding-bottom:env(safe-area-inset-bottom);z-index:10}
 .tabs button{flex:1;min-width:0;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#8a8a8a;font-size:13px;font-weight:700;min-height:62px}
@@ -533,49 +541,65 @@ body.noscroll{overflow:hidden}
   var SLOTS=["Breakfast","Pre-gym","Post-gym","Lunch","Snack","Dinner","Other"];
   var GOAL={k:1650,p:150,c:160,f:50};
   // [id, name, base amount, unit singular, unit plural, step, kcal, P, C, F]  (macros per base amount)
+  // [id,name,base,unit,units,step,kcal,P,C,F,section,treat]  (ids are permanent: saved meals and favourites refer to them)
+  var FSECS=["Protein","Dairy","Breads & grains","Dals & beans","Veggies & greens","Nuts & seeds","Fruits","Fats & oils","Supplements","Treats"];
   var FOODS=[
-    ["egg","Whole egg, boiled",1,"egg","eggs",1,72,6.3,0.4,4.8],
-    ["eggw","Egg white",1,"white","whites",1,17,3.6,0.2,0.1],
-    ["bread","Whole-grain bread",1,"slice","slices",1,80,4,14,1],
-    ["avo","Avocado",1,"tbsp","tbsp",1,24,0.3,1.3,2.2],
-    ["cofskim","Coffee with skim milk (120 ml)",1,"cup","cups",1,42,4,6,0.2],
-    ["cof2","Coffee with 2% milk (120 ml)",1,"cup","cups",1,60,4,6,2.4],
-    ["banana","Banana, medium",1,"banana","bananas",0.5,105,1.3,27,0.4],
-    ["whey","Whey protein",1,"scoop","scoops",0.5,120,24,3,1.5],
-    ["creatine","Creatine",5,"g","g",5,0,0,0,0],
-    ["lfpaneer","Low-fat paneer",100,"g","g",25,180,20,4,9],
-    ["paneer","Regular paneer",100,"g","g",25,290,18,3,22],
-    ["roti","Roti / chapati, whole wheat (no ghee)",1,"roti","roti",0.5,100,3,18,1.5],
-    ["ghee","Ghee",1,"tsp","tsp",0.5,45,0,0,5],
-    ["oil","Oil",1,"tsp","tsp",0.5,40,0,0,4.5],
-    ["salad","Salad",1,"bowl","bowls",0.5,30,1,6,0.2],
-    ["yogurt","0% Greek yogurt",170,"g","g",85,100,17,6,0],
-    ["berries","Berries",0.5,"cup","cup",0.5,35,0.5,8,0.2],
-    ["almonds","Almonds",10,"almonds","almonds",5,70,2.5,2.5,6],
-    ["honey","Honey",1,"tsp","tsp",0.5,21,0,6,0],
-    ["pb","Peanut butter",1,"tbsp","tbsp",0.5,95,4,3,8],
-    ["dal","Dal, cooked (~150 g)",1,"katori","katori",0.5,180,12,27,3],
-    ["sabzi","Sabzi, mixed veg (1 tsp oil)",1,"katori","katori",0.5,120,3,12,6],
-    ["soya","Soya chunks (dry weight)",40,"g","g",10,138,21,13,0.2],
-    ["tofu","Firm tofu",100,"g","g",25,145,16,3,8],
-    ["chicken","Chicken breast, cooked",100,"g","g",25,165,31,0,3.6],
-    ["fish","Fish, white, cooked",100,"g","g",25,120,25,0,2],
-    ["chana","Chana / chickpeas, cooked",1,"katori","katori",0.5,210,11,35,3.5],
-    ["rajma","Rajma, cooked",1,"katori","katori",0.5,200,13,35,1],
-    ["chilla","Moong dal chilla",1,"chilla","chillas",1,120,7,16,3],
-    ["rice","Rice, cooked",1,"cup","cups",0.5,205,4,45,0.4],
-    ["oats","Oats (dry weight)",40,"g","g",10,150,5,27,2.5],
-    ["milk","Milk, skim",250,"ml","ml",50,85,8.5,12,0.2],
-    ["apple","Apple, medium",1,"apple","apples",0.5,95,0.5,25,0.3],
-    ["curd","Curd / dahi, regular",1,"katori","katori",0.5,100,5,7,5]
-  ].map(function(a){return {id:a[0],n:a[1],b:a[2],s:a[3],pl:a[4],st:a[5],k:a[6],p:a[7],c:a[8],f:a[9]};});
+    ["egg","Whole egg, boiled",1,"egg","eggs",1,72,6.3,0.4,4.8,0],
+    ["eggw","Egg white",1,"white","whites",1,17,3.6,0.2,0.1,0],
+    ["omelette","Omelette, 2 eggs, 1 tsp oil, veggies",1,"omelette","omelettes",0.5,190,13,3,14,0],
+    ["lfpaneer","Paneer, low-fat (palm ~100 g)",1,"palm","palms",0.5,180,20,4,9,0],
+    ["paneer","Paneer, regular (palm ~100 g)",1,"palm","palms",0.5,290,18,3,22,0],
+    ["tofu","Tofu, firm (palm ~100 g)",1,"palm","palms",0.5,145,16,3,8,0],
+    ["soya","Soya chunks (bowl cooked, ~40 g dry)",1,"bowl","bowls",0.5,138,21,13,0.2,0],
+    ["chicken","Chicken breast, cooked (palm ~100 g)",1,"palm","palms",0.5,165,31,0,3.6,0],
+    ["chcurry","Chicken curry",1,"bowl","bowls",0.5,280,25,8,16,0],
+    ["fish","Fish, cooked (palm)",1,"palm","palms",0.5,120,25,0,2,0],
+    ["milk","Milk, skim (glass 250 ml)",1,"glass","glasses",0.5,85,8.5,12,0.2,1],
+    ["milk2","Milk, 2% (glass 250 ml)",1,"glass","glasses",0.5,125,8.5,12,5,1],
+    ["cofskim","Milk in coffee/tea (120 ml skim)",1,"cup","cups",1,42,4,6,0.2,1],
+    ["cof2","Milk in coffee/tea (120 ml 2%)",1,"cup","cups",1,60,4,6,2.4,1],
+    ["yogurt","Greek yogurt 0% (¾ cup, 170 g)",1,"serving","servings",0.5,100,17,6,0,1],
+    ["curd","Curd / dahi",1,"bowl","bowls",0.5,100,5,7,5,1],
+    ["roti","Roti / chapati (medium, no ghee)",1,"roti","roti",0.5,100,3,18,1.5,2],
+    ["bread","Bread, whole-grain",1,"slice","slices",1,80,4,14,1,2],
+    ["breadw","Bread, white",1,"slice","slices",1,75,2.5,14,1,2],
+    ["rice","Rice, cooked (bowl ~150 g)",1,"bowl","bowls",0.5,195,4,43,0.4,2],
+    ["oats","Oats (½ cup dry, 40 g)",1,"serving","servings",0.5,150,5,27,2.5,2],
+    ["pizza","Pizza (regular slice)",1,"slice","slices",1,285,12,36,10,2],
+    ["dal","Dal, cooked",1,"bowl","bowls",0.5,180,12,27,3,3],
+    ["rajma","Rajma, cooked",1,"bowl","bowls",0.5,200,13,35,1,3],
+    ["chana","Chana / chickpeas, cooked",1,"bowl","bowls",0.5,210,11,35,3.5,3],
+    ["chilla","Moong dal chilla",1,"chilla","chillas",1,120,7,16,3,3],
+    ["salad","Salad",1,"bowl","bowls",0.5,30,1,6,0.2,4],
+    ["palak","Palak / spinach sabzi (1 tsp oil)",1,"bowl","bowls",0.5,100,4,8,5.5,4],
+    ["palakpaneer","Palak paneer",1,"bowl","bowls",0.5,280,14,9,21,4],
+    ["sabzi","Sabzi, general mixed (1 tsp oil)",1,"bowl","bowls",0.5,120,3,12,6,4],
+    ["almonds","Almonds",10,"almonds","almonds",5,70,2.5,2.5,6,5],
+    ["walnut","Walnuts",4,"halves","halves",2,105,2.5,2,10.5,5],
+    ["chia","Chia seeds",1,"tbsp","tbsp",0.5,60,2,5,4,5],
+    ["sunflower","Sunflower seeds",1,"tbsp","tbsp",0.5,50,2,2,4.5,5],
+    ["pb","Peanut butter",1,"tbsp","tbsp",0.5,95,4,3,8,5],
+    ["banana","Banana, medium",1,"banana","bananas",0.5,105,1.3,27,0.4,6],
+    ["apple","Apple, medium",1,"apple","apples",0.5,95,0.5,25,0.3,6],
+    ["orange","Orange, medium",1,"orange","oranges",0.5,62,1.2,15,0.2,6],
+    ["berries","Berries (½ cup)",1,"serving","servings",0.5,35,0.5,8,0.2,6],
+    ["oil","Oil",1,"tsp","tsp",0.5,40,0,0,4.5,7],
+    ["ghee","Ghee",1,"tsp","tsp",0.5,45,0,0,5,7],
+    ["avo","Avocado",1,"tbsp","tbsp",1,24,0.3,1.3,2.2,7],
+    ["honey","Honey",1,"tsp","tsp",0.5,21,0,6,0,7],
+    ["whey","Whey protein",1,"scoop","scoops",0.5,120,24,3,1.5,8],
+    ["creatine","Creatine",5,"g","g",5,0,0,0,0,8],
+    ["cake","Cake",1,"slice","slices",0.5,350,4,50,15,9,1],
+    ["sweet","Indian sweet (gulab jamun / barfi)",1,"piece","pieces",1,150,2,22,6,9,1],
+    ["icecream","Ice cream",1,"scoop","scoops",1,140,2.5,16,7,9,1]
+  ].map(function(a){return {id:a[0],n:a[1],b:a[2],s:a[3],pl:a[4],st:a[5],k:a[6],p:a[7],c:a[8],f:a[9],sec:FSECS[a[10]],treat:!!a[11]};});
   var USUAL=[["Breakfast","egg",2],["Breakfast","eggw",3],["Breakfast","bread",1],["Breakfast","avo",1],["Breakfast","cofskim",1],
     ["Pre-gym","banana",1],["Post-gym","whey",1],["Post-gym","creatine",5],
-    ["Lunch","lfpaneer",100],["Lunch","oil",1],["Lunch","roti",2],["Lunch","salad",1],
-    ["Snack","yogurt",170],["Snack","whey",0.5],["Snack","berries",0.5],
-    ["Dinner","dal",1],["Dinner","sabzi",1],["Dinner","soya",40]];
+    ["Lunch","lfpaneer",1],["Lunch","oil",1],["Lunch","roti",2],["Lunch","salad",1],
+    ["Snack","yogurt",1],["Snack","whey",0.5],["Snack","berries",1],
+    ["Dinner","dal",1],["Dinner","sabzi",1],["Dinner","soya",1]];
   var USUAL_NAMES={"Breakfast":"Usual breakfast","Pre-gym":"Pre-gym banana","Post-gym":"Post-gym shake","Lunch":"Usual lunch","Snack":"Yogurt bowl","Dinner":"Usual dinner"};
-  var mdate=today, B=null, mSearch="", mOpen={}, flashId=null, plateMsg="";
+  var mdate=today, B=null, mSearch="", mOpen={}, flashId=null, plateMsg="", secOpen={};
   function myFoods(){var v=getJ("myfoods");return Array.isArray(v)?v:[];}
   function allFoods(){return FOODS.concat(myFoods());}
   function foodById(id){var a=allFoods();for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return null;}
@@ -607,7 +631,11 @@ body.noscroll{overflow:hidden}
   }
   function saveMeals(k,d){setJ("meals:"+k,{v:2,meals:d.meals});}
   function sortMeals(ms){return ms.slice().sort(function(a,b){var x=SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot);return x||((a.t||"")<(b.t||"")?-1:1);});}
-  function myMeals(){var v=getJ("mymeals");if(v===null){v=SLOTS.filter(function(sl){return USUAL_NAMES[sl];}).map(function(sl){return usualMeal(sl);});setJ("mymeals",v);}return Array.isArray(v)?v:[];}
+  function normItem(it){var fd=null;FOODS.forEach(function(f){if(f.id===it.fid)fd=f;});if(!fd||(it.b===fd.b&&it.s===fd.s))return false;
+    var perOld=it.k/it.b*it.a; if(it.k===null||Math.abs(it.k-fd.k)>0.5*fd.k)return false; // only if one old base ~ one new base
+    it.a=Math.max(fd.st,Math.round(it.a/it.b*fd.b/fd.st)*fd.st);it.b=fd.b;it.s=fd.s;it.pl=fd.pl;it.st=fd.st;it.n=fd.n;it.k=fd.k;it.p=fd.p;it.c=fd.c;it.f=fd.f;return true;}
+  function myMeals(){var v=getJ("mymeals");if(v===null){v=SLOTS.filter(function(sl){return USUAL_NAMES[sl];}).map(function(sl){return usualMeal(sl);});setJ("mymeals",v);}
+    if(!Array.isArray(v))return [];var ch=false;v.forEach(function(m){(m.items||[]).forEach(function(it){if(normItem(it))ch=true;});});if(ch)setJ("mymeals",v);return v;}
   function usualMeal(sl){return {id:uid("f"),name:USUAL_NAMES[sl],slot:sl,items:USUAL.filter(function(u){return u[0]===sl;}).map(function(u){return mkItem(foodById(u[1]),u[2]);})};}
   function pushRecent(fid){var rec=getJ("recentfoods");rec=Array.isArray(rec)?rec:[];rec=rec.filter(function(r){return r!==fid;});rec.unshift(fid);setJ("recentfoods",rec.slice(0,10));}
   // ---- Meals tab ----
@@ -690,30 +718,42 @@ body.noscroll{overflow:hidden}
     if(flashId!==null){var rr=$("plate").querySelector(".prow.flash");if(rr&&rr.scrollIntoView){var pr=$("plate").querySelector(".plrows");if(pr)pr.scrollTop=rr.offsetTop-pr.offsetTop-20;}}
     var sv=$("bSave"); sv.textContent=B.items.length?"Save meal · "+r0(t.k)+" kcal · "+r0(t.p)+" g P":"Add foods to save"; sv.disabled=!B.items.length;
     flashId=null;
+    var pl=$("plate"); if(pl)$("sheetBody").style.setProperty("--plh",(pl.offsetHeight-12)+"px");
   }
   function foodRow(fd){
-    var on=B.items.filter(function(it){return it.fid===fd.id;})[0];
+    var on=B.items.filter(function(it){return it.fid===fd.id&&it.b===fd.b&&it.s===fd.s;})[0];
     var mac=fd.k===null||fd.k===undefined?'❓ macros unknown':r0(fd.k)+' kcal · P '+r1m(fd.p||0)+' C '+r1m(fd.c||0)+' F '+r1m(fd.f||0);
-    return '<button class="frow'+(on?" in":"")+'" data-f="'+fd.id+'"><span class="fb"><span class="fn">'+esc(fd.n)+'</span><span class="fm">per '+qtyTxt({a:fd.b,b:fd.b,s:fd.s,pl:fd.pl})+' · '+mac+'</span></span><span class="fplus">'+(on?'<em>'+qtyTxt(on)+'</em>':'')+'＋</span></button>';
+    return '<button class="frow'+(on?" in":"")+'" data-f="'+fd.id+'"><span class="fb"><span class="fn">'+esc(fd.n)+(fd.treat?' <b class="treat">treat</b>':'')+'</span><span class="fm">per '+qtyTxt({a:fd.b,b:fd.b,s:fd.s,pl:fd.pl})+' · '+mac+'</span></span><span class="fplus">'+(on?'<em>'+qtyTxt(on)+'</em>':'')+'＋</span></button>';
   }
+  function secId(n){return "sec-"+n.toLowerCase().replace(/[^a-z]+/g,"");}
+  function secBlock(name,foods,open){var id=secId(name);
+    return '<div class="fsect'+(open?"":" shut")+'" id="'+id+'"><button class="fshd" data-sec="'+esc(name)+'"><span>'+esc(name)+' <i>'+foods.length+'</i></span><span class="caret">'+(open?"▾":"▸")+'</span></button><div class="fsb">'+(open?foods.map(foodRow).join(""):"")+'</div></div>';}
   function renderFoodList(){
     var q=mSearch.trim().toLowerCase(), h="";
-    if(q){var hit=allFoods().filter(function(f){return f.n.toLowerCase().indexOf(q)>=0;});h+=hit.length?hit.map(foodRow).join(""):'<div class="empty">No match. Add it as a custom item below.</div>';}
+    if(q){var hit=allFoods().filter(function(f){return (f.n+" "+(f.sec||"")).toLowerCase().indexOf(q)>=0;});h+=hit.length?hit.map(foodRow).join(""):'<div class="empty">No match. Add it as a custom item below.</div>';}
     else{
-      var fav=USUAL.filter(function(u){return u[0]===B.slot;}).map(function(u){return foodById(u[1]);});
-      if(fav.length)h+='<div class="fsec">Favourites · usual '+B.slot.toLowerCase()+'</div>'+fav.map(foodRow).join("");
+      var mf=myFoods(), names=[];
+      if(mf.length)names.push("My foods");
+      var fav=USUAL.filter(function(u){return u[0]===B.slot;}).map(function(u){return foodById(u[1]);}).filter(Boolean);
       var rec=(getJ("recentfoods")||[]).map(foodById).filter(Boolean).slice(0,6);
-      if(rec.length)h+='<div class="fsec">Recent</div>'+rec.map(foodRow).join("");
-      var mf=myFoods(); if(mf.length)h+='<div class="fsec">My foods</div>'+mf.map(foodRow).join("");
-      h+='<div class="fsec">All foods</div>'+FOODS.map(foodRow).join("");
+      if(fav.length)names.push("Favourites"); if(rec.length)names.push("Recent");
+      names=names.concat(FSECS);
+      h+='<div class="chips secchips">'+names.map(function(n){return '<button class="chip sj" data-jump="'+esc(n)+'">'+esc(n)+'</button>';}).join("")+'</div>';
+      function op(n,d){return secOpen[n]===undefined?d:secOpen[n];}
+      if(mf.length)h+=secBlock("My foods",mf,op("My foods",true));
+      if(fav.length)h+=secBlock("Favourites",fav,op("Favourites",true));
+      if(rec.length)h+=secBlock("Recent",rec,op("Recent",false));
+      FSECS.forEach(function(sn){h+=secBlock(sn,FOODS.filter(function(f){return f.sec===sn;}),op(sn,true));});
     }
     h+='<button class="fcustom" id="fCustom">Not in list? Add custom</button>';
     $("fList").innerHTML=h;
   }
+  function jumpSec(n){secOpen[n]=true;renderFoodList();var el=$(secId(n)),sb=$("sheetBody"),pl=$("plate");if(!el)return;
+    sb.scrollTop=el.getBoundingClientRect().top-sb.getBoundingClientRect().top+sb.scrollTop-(pl?pl.offsetHeight:0)+4;}
   function addToPlate(fd,a){
-    var i=-1;B.items.forEach(function(it,j){if(it.fid===fd.id)i=j;});
+    var i=-1;B.items.forEach(function(it,j){if(it.fid===fd.id&&it.b===fd.b&&it.s===fd.s)i=j;});
     if(i<0){B.items.push(mkItem(fd,a));i=B.items.length-1;}else B.items[i].a=Math.round((B.items[i].a+a)*100)/100;
-    flashId=i; plateMsg="Added "+qtyTxt({a:a,b:fd.b,s:fd.s,pl:fd.pl})+" "+shortName(fd.n)+" ✓";
+    flashId=i; var sn=shortName(fd.n);plateMsg="Added "+qtyTxt({a:a,b:fd.b,s:fd.s,pl:fd.pl})+(sn.indexOf(fd.s)===0?"":" "+sn)+" ✓";
   }
   $("sheetBody").addEventListener("input",function(e){
     if(e.target.id==="fSearch"){mSearch=e.target.value;renderFoodList();}
@@ -733,6 +773,8 @@ body.noscroll{overflow:hidden}
         if(nv<=0){B.items.splice(i,1);plateMsg="Removed "+shortName(it.n);}else{it.a=nv;flashId=i;plateMsg="";}}
       else return;
       renderPlate();renderFoodList();return;}
+    var sh=t.closest("[data-sec]"); if(B&&sh){var n=sh.dataset.sec,el=sh.parentNode;secOpen[n]=el.classList.contains("shut");renderFoodList();return;}
+    var jb=t.closest("[data-jump]"); if(B&&jb){jumpSec(jb.dataset.jump);return;}
     var fr=t.closest(".frow");
     if(B&&fr){var fd=foodById(fr.dataset.f);if(fd){addToPlate(fd,fd.b);renderPlate();renderFoodList();}return;}
     if(t.id==="bSave"&&B&&B.items.length){saveBuilder();return;}
