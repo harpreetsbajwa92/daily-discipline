@@ -70,6 +70,10 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
 .donebar.ok .sbtn{background:rgba(0,0,0,.25)}
 .exc{background:#222;border-radius:14px;padding:10px 12px 12px;margin-bottom:8px;border:2px solid #222}
 .exc.done{border-color:#2e7d32}
+.exc.warn{border-color:#ffa726}
+.exc.warn>.exh .chk{background:#ffa726;border-color:#ffa726;color:#111}
+.wmsg{display:none;font-size:13px;color:#ffa726;font-weight:600;margin-top:2px}
+.exc.warn .wmsg{display:block}
 .exh{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;padding:2px 0;min-height:44px}
 .exh .chk{flex-basis:30px;height:30px}
 .exc.done>.exh .chk{background:#2e7d32;border-color:#2e7d32;color:#fff}
@@ -124,15 +128,20 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
 
 <section class="page" id="p-habits">
   <h1>Daily Non-Negotiables</h1>
-  <div class="date"><span id="date"></span><button class="today-btn" id="todayBtn" hidden>Back to today</button></div>
+  <div class="dnav">
+    <button class="arrow" id="hPrev" aria-label="Previous day">‹</button>
+    <input type="date" class="dpick" id="hPick">
+    <button class="arrow" id="hNext" aria-label="Next day">›</button>
+  </div>
+  <div class="dsub" id="hSub"></div>
   <div class="top">
     <div class="row"><div class="score" id="score">0/8</div><div class="streak" id="streak"></div></div>
     <div class="bar"><div class="fill" id="fill"></div></div>
     <div class="perfect" id="perfect">Perfect day 💪</div>
   </div>
   <div class="cards" id="cards"></div>
-  <h2>Last 7 days</h2>
-  <div class="strip" id="strip"></div>
+  <h2 id="hWeekTitle">This week</h2>
+  <div class="week" id="hWeek"></div>
   <div class="note" id="note">Monday: send Fitness your weight, scale report, WHOOP screenshots and 3 photos.</div>
 </section>
 
@@ -187,7 +196,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   // ---- workout plans ----
-  var ABS=[["Hanging leg raises","3x10-15"],["Cable crunch","3x12-15"],["Ab wheel or plank","3x45s","sec"],["Cable woodchoppers","3x12/side"]];
+  var ABS=[["Hanging leg raises","3x10-15","bw"],["Cable crunch","3x12-15"],["Ab wheel or plank","3x45s","sec"],["Cable woodchoppers","3x12/side"]];
   var WALK=["Incline walk","15-20 min","min"];
   var PLANS={
     push:{n:"Push",x:[["Incline DB press","4x8-10"],["Machine/flat bench press","3x8-10"],["Seated DB shoulder press","3x8-10"],["Lateral raises","4x12-15"],["Rope pushdown","3x12"],["Overhead triceps extension","3x12"],["Incline walk","15-20 min, 10-12%, ~5 km/h","min"]]},
@@ -209,6 +218,20 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   }
   var EXINFO={};
   PLAN_ORDER.forEach(function(pid){exList(pid).forEach(function(e){if(!EXINFO[e.id])EXINFO[e.id]=e;});});
+  // An exercise counts as performed only if real numbers were entered:
+  // weighted rows need a weight; bodyweight rows need reps (or weight); time rows need minutes/seconds; Steps needs its tick.
+  function pf(x){return parseFloat(x)>0;}
+  function performed(e,x){
+    if(!x)return false;
+    if(e.kind==="chk")return !!x.d;
+    var ss=x.s||[];
+    if(e.kind==="w")return ss.some(function(t){return t&&pf(t[0]);});
+    if(e.kind==="bw")return ss.some(function(t){return t&&(pf(t[0])||pf(t[1]));});
+    return ss.some(function(t){return t&&pf(t[0]);});
+  }
+  function counted(e,x){return performed(e,x)&&!!x.d;}
+  function allCounted(pid,w){var l=exList(pid);return l.length>0&&l.every(function(e){return counted(e,w.ex[e.id]);});}
+  function doneBar(w,list){var nd=list.filter(function(e){return counted(e,w.ex[e.id]);}).length;return '<span>'+(w.done?"Workout done ✓ · Train checked":nd+"/"+list.length+" exercises done")+'</span><button class="sbtn" id="markDone">'+(w.done?"Undo":"Mark done")+'</button>';}
   function planName(pid){return pid==="none"?"Rest":(PLANS[pid]?PLANS[pid].n:"-");}
 
   // ---- dates & storage ----
@@ -263,8 +286,8 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   // ================= PAGE 1: HABITS =================
   function renderHabits(){
     var vd=parse(view), st=load(view), c=count(st), rest=(vd.getDay()===4||vd.getDay()===0);
-    $("date").textContent=vd.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
-    $("todayBtn").hidden=(view===today);
+    $("hPick").value=view;
+    $("hSub").innerHTML=(view===today?"Today":vd.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"})+' <button class="today-btn" id="hToday">Today</button>');
     $("score").textContent=c+"/"+N;
     $("fill").style.width=(c/N*100)+"%";
     $("fill").className="fill"+(c===N?" full":"");
@@ -277,20 +300,25 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
       html+='<button class="card'+(st[i]?" done":"")+'" data-i="'+i+'" aria-pressed="'+st[i]+'"><span class="chk">✓</span><span><div class="t">'+t+'</div><div class="s">'+sub+'</div></span></button>';
     });
     $("cards").innerHTML=html;
-    var sh="";
-    for(var n=6;n>=0;n--){
-      var d=addDays(parse(today),-n), k=key(d), sc=count(load(k));
-      sh+='<button class="day'+(k===view?" sel":"")+'" data-k="'+k+'"><span>'+(n===0?"Today":DOW[d.getDay()])+'</span><span class="mb"><i class="'+(sc===N?"full":"")+'" style="height:'+(sc/N*100)+'%"></i></span><b>'+sc+'</b></button>';
+    var mon=monday(view), wh="";
+    $("hWeekTitle").textContent=(mon===monday(today)?"This week":"Week of "+fmtShort(mon));
+    for(var i=0;i<7;i++){
+      var k=shift(mon,i), sc=count(load(k)), has=hasHab(k);
+      wh+='<button class="wd'+(k===view?" sel":"")+'" data-k="'+k+'"><span class="l">'+fmt(k)+(k===today?'<small>today</small>':'')+'</span><span class="p'+(sc===N?" ok":"")+'">'+(has||sc?sc+"/"+N+(sc===N?" ✓":""):"-")+'</span></button>';
     }
-    $("strip").innerHTML=sh;
+    $("hWeek").innerHTML=wh;
     $("note").className="note"+(parse(today).getDay()===1?" mon":"");
   }
   $("cards").addEventListener("click",function(e){
     var b=e.target.closest(".card"); if(!b)return;
     var st=load(view), i=+b.dataset.i; st[i]=!st[i]; save(view,st); renderHabits();
   });
-  $("strip").addEventListener("click",function(e){var b=e.target.closest(".day"); if(!b)return; view=b.dataset.k; renderHabits();});
-  $("todayBtn").addEventListener("click",function(){view=today;renderHabits();});
+  function setH(d){if(d){view=d;renderHabits();}}
+  $("hPrev").addEventListener("click",function(){setH(shift(view,-1));});
+  $("hNext").addEventListener("click",function(){setH(shift(view,1));});
+  $("hPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setH(this.value);});
+  $("hSub").addEventListener("click",function(e){if(e.target.id==="hToday")setH(today);});
+  $("hWeek").addEventListener("click",function(e){var b=e.target.closest(".wd");if(b){setH(b.dataset.k);window.scrollTo(0,0);}});
 
   // ================= PAGE 2: WORKOUT =================
   function lastFor(id,before){
@@ -310,8 +338,8 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     if(kind==="sec")return sets.map(function(s){return num(s[0])+"s";}).join(", ");
     var ws=sets.map(function(s){return num(s[0]);});
     var same=ws.every(function(w){return w&&w===ws[0];});
-    if(same)return ws[0]+"kg x "+sets.map(function(s){return num(s[1])||"?";}).join(", ");
-    return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+"kg x "+r:w?w+"kg":r+" reps";}).join(", ");
+    if(same)return ws[0]+" lbs x "+sets.map(function(s){return num(s[1])||"?";}).join(", ");
+    return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+" lbs x "+r:w?w+" lbs":r+" reps";}).join(", ");
   }
   function renderWorkout(){
     var w=loadWo(wdate), pid=planOf(wdate,w), sug=SUGGEST[parse(wdate).getDay()];
@@ -324,19 +352,20 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     if(pid==="none"){
       h='<div class="rest">Rest day. Go for a walk'+(parse(wdate).getDay()===0?' and take progress photos (front, side, back)':'')+'.<br><br>Gym open today after all? Pick a workout above.</div>';
     } else {
-      var list=exList(pid), nd=list.filter(function(e){return w.ex[e.id]&&w.ex[e.id].d;}).length;
-      h+='<div class="donebar'+(w.done?" ok":"")+'"><span>'+(w.done?"Workout done ✓ · Train checked":nd+"/"+list.length+" exercises done")+'</span><button class="sbtn" id="markDone">'+(w.done?"Undo":"Mark done")+'</button></div>';
+      var list=exList(pid);
+      h+='<div class="donebar'+(w.done?" ok":"")+'" id="doneBar">'+doneBar(w,list)+'</div>';
       list.forEach(function(e,i){
         if(PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[];
-        h+='<div class="exc'+(cur.d?" done":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="chk">✓</span><span class="exn"><div class="n">'+e.name+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'</span></button>';
+        var cnt=counted(e,cur), warn=cur.d&&!cnt;
+        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="chk">✓</span><span class="exn"><div class="n">'+e.name+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the weight")+' or it counts as skipped</div></span></button>';
         if(e.n){
           var nrows=Math.max(e.n,(cur.s||[]).length);
           h+='<div class="sets">';
           for(var s=0;s<nrows;s++){
             var cs=(cur.s&&cur.s[s])||[], ps=ls[s]||[];
-            if(e.kind==="w"){
-              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' kg"><span class="u">kg</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+            if(e.kind==="w"||e.kind==="bw"){
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' lbs"><span class="u">lbs</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else {
               var u=e.kind==="min"?"min":"sec";
               h+='<div class="set"><span class="sn">'+(e.n>1?(s+1):"")+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' '+u+'"><span class="u">'+u+'</span></div>';
@@ -374,8 +403,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     var b=e.target.closest(".exh"); if(!b)return;
     var w2=loadWo(wdate), pid=planOf(wdate,w2), id=b.dataset.id;
     w2.plan=pid; w2.ex[id]=w2.ex[id]||{s:[]}; w2.ex[id].d=!w2.ex[id].d;
-    var all=exList(pid).every(function(x){return w2.ex[x.id]&&w2.ex[x.id].d;});
-    if(all&&!w2.done){w2.done=true;trainHabit(wdate);}
+    if(allCounted(pid,w2)&&!w2.done){w2.done=true;trainHabit(wdate);}
     saveWo(wdate,w2); renderWorkout();
   });
   $("woBody").addEventListener("input",function(e){
@@ -383,7 +411,12 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     var v=t.value.replace(",",".").replace(/[^0-9.]/g,""); if(v!==t.value)t.value=v;
     var w=loadWo(wdate), id=t.dataset.id, s=+t.dataset.s, f=+t.dataset.f;
     w.plan=planOf(wdate,w); w.ex[id]=w.ex[id]||{s:[]}; var arr=w.ex[id].s=w.ex[id].s||[];
-    while(arr.length<=s)arr.push([]); arr[s][f]=v; saveWo(wdate,w);
+    while(arr.length<=s)arr.push([]); arr[s][f]=v;
+    var pid=w.plan, exd=exList(pid).filter(function(x){return x.id===id;})[0];
+    if(allCounted(pid,w)&&!w.done){w.done=true;trainHabit(wdate);}
+    saveWo(wdate,w);
+    var card=t.closest(".exc"); if(card&&exd){var c=counted(exd,w.ex[id]);card.classList.toggle("done",c);card.classList.toggle("warn",!!w.ex[id].d&&!c);}
+    var db=$("doneBar"); if(db){db.className="donebar"+(w.done?" ok":"");db.innerHTML=doneBar(w,exList(pid));}
   });
 
   // ================= PAGE 3: TRENDS =================
@@ -425,7 +458,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     function line(f,col,dash){var p=ss.map(function(s){return X(s).toFixed(1)+","+Y(s[f]).toFixed(1);}).join(" ");return '<polyline points="'+p+'" fill="none" stroke="'+col+'" stroke-width="2.5"'+(dash?' stroke-dasharray="5 4"':'')+'/>'+ss.map(function(s){return '<circle cx="'+X(s)+'" cy="'+Y(s[f])+'" r="3.5" fill="'+col+'"/>';}).join("");}
     g+=line("top","#66bb6a",true)+line("e1","#1e88e5",false);
     g+='<text x="'+L+'" y="'+(H-6)+'" fill="#888" font-size="11">'+fmtShort(ss[0].d)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" fill="#888" font-size="11" text-anchor="end">'+fmtShort(ss[ss.length-1].d)+'</text></svg>';
-    return g+'<div class="legend"><span><i style="background:#1e88e5"></i>Est. 1RM (kg)</span><span><i style="background:#66bb6a"></i>Top weight (kg)</span></div>';
+    return g+'<div class="legend"><span><i style="background:#1e88e5"></i>Est. 1RM (lbs)</span><span><i style="background:#66bb6a"></i>Top weight (lbs)</span></div>';
   }
   function svgBars(items,maxV,col,dec){
     var W=340,H=140,T=16,B=22,gap=8,bw=(W-gap*9)/8,g='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
@@ -453,7 +486,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
       if(ids.indexOf(selEx)<0)selEx=ids[0];
       var opt=ids.map(function(id){return '<option value="'+id+'"'+(id===selEx?" selected":"")+'>'+EXINFO[id].name+'</option>';}).join("");
       var ss=sessions(selEx), st=status(ss), L=ss[ss.length-1];
-      $("exArea").innerHTML='<select id="exSel">'+opt+'</select>'+svgLine(ss)+'<div class="extext '+st.c+'">'+st.t+'</div><div class="empty">Latest: '+L.top+' kg top set · est. 1RM '+r1(L.e1)+' kg · '+ss.length+' session'+(ss.length>1?"s":"")+'</div>';
+      $("exArea").innerHTML='<select id="exSel">'+opt+'</select>'+svgLine(ss)+'<div class="extext '+st.c+'">'+st.t+'</div><div class="empty">Latest: '+L.top+' lbs top set · est. 1RM '+r1(L.e1)+' lbs · '+ss.length+' session'+(ss.length>1?"s":"")+'</div>';
     }
     // habits weekly avg
     var habDates=allKeys().filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}).sort();
@@ -491,17 +524,21 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     for(var d=0;d<7;d++){
       var k2=shift(start,d), w=getJ("wo:"+k2); if(!woLogged(w))continue; w.ex=w.ex||{};
       var pid=planOf(k2,w); any=true;
-      out.push(fmt(k2)+" - "+planName(pid)+(w.done?" (done)":" (partial)"));
+      var lines=[], skipped=0;
       exList(pid).forEach(function(e){
-        var x=w.ex[e.id]; if(!x)return; var s=fmtSets(e.kind,x.s);
-        if(s)out.push("- "+e.name+": "+s); else if(x.d)out.push("- "+e.name+": done");
+        var x=w.ex[e.id];
+        if(!performed(e,x)){skipped++;lines.push("- "+e.name+": SKIPPED");return;}
+        lines.push("- "+e.name+": "+(e.kind==="chk"?"done":fmtSets(e.kind,x.s)));
       });
+      var nl=exList(pid).length;
+      out.push(fmt(k2)+" - "+planName(pid)+(w.done?" (done)":" (partial)")+(nl?" · "+(nl-skipped)+"/"+nl+" done, "+skipped+" skipped":""));
+      out.push.apply(out,lines);
     }
     if(!any)out.push("No workouts logged");
     out.push("","PROGRESS (est. 1RM, best set per session)");
     var ids=strengthIds();
     if(!ids.length)out.push("No strength data yet");
-    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+": "+s.t+" (top "+L.top+" kg, e1RM "+r1(L.e1)+" kg)");});
+    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+": "+s.t+" (top "+L.top+" lbs, e1RM "+r1(L.e1)+" lbs)");});
     return out.join("\n");
   }
   $("copyBtn").addEventListener("click",function(){
