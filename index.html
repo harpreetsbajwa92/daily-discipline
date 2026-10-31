@@ -506,8 +506,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   <textarea id="mBox" readonly hidden></textarea>
  </div>
  <div id="mLog" hidden>
-  <div class="lhead"><span class="ptitle">LOG MEAL</span><span class="ldate" id="lDate"></span></div>
-  <div class="lslots" id="lSlots"></div>
+  <div class="lhead"><span class="ptitle" id="lTitle">MEAL 1</span><span class="ldate" id="lDate"></span></div>
   <div id="lList"></div>
   <div class="lbar" id="lBar"><button type="button" class="lcancel" id="lCancel">Cancel</button><button type="button" class="lgo" id="lGo" disabled>LOG</button></div>
  </div>
@@ -845,9 +844,10 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     return {meals:meals,items:items};
   }
   function saveMeals(k,d){setJ("meals:"+k,{v:2,meals:d.meals});}
-  function sortMeals(ms){return ms.slice().sort(function(a,b){var x=SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot);return x||((a.t||"")<(b.t||"")?-1:1);});}
+  function mealNo(m){var r=/^Meal (\d+)$/.exec(m.slot||"");return r?+r[1]:0;}
+  function sortMeals(ms){return ms.slice().sort(function(a,b){var na=mealNo(a),nb=mealNo(b);if(na&&nb)return na-nb;if(a.t&&b.t&&a.t!==b.t)return a.t<b.t?-1:1;
+    var ia=na?99:SLOTS.indexOf(a.slot),ib=nb?99:SLOTS.indexOf(b.slot);return ia-ib||((a.t||"")<(b.t||"")?-1:1);});}
   // ---- Meals tab (simple) ----
-  var LSLOTS=["Breakfast","Lunch","Snack","Dinner"];
   var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats"];
   // [section, food id (macros come from FOODS), short name, unit label]
   // serving sizes: [label, multiplier of the food's base serving, optional other food id]
@@ -870,7 +870,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   function lSize(x){return x.sz.length?x.sz[L&&L.sz[x.id]!==undefined?L.sz[x.id]:x.d]:{l:"",m:1,fd:x.fd};}
   function lMac(x,n){var z=lSize(x);return {k:z.fd.k*z.m*n,p:z.fd.p*z.m*n,c:z.fd.c*z.m*n,f:z.fd.f*z.m*n};}
   var L=null; // log state {slot, cnt:{rowId:n}, sz:{rowId:sizeIdx}, ord:[rowId]}
-  function lslotDef(){var h=new Date().getHours();return h<11?"Breakfast":h<15?"Lunch":h<18?"Snack":"Dinner";}
+  function nextMealName(k){var ms=loadMeals(k).meals,mx=0;ms.forEach(function(m){mx=Math.max(mx,mealNo(m));});return "Meal "+(Math.max(mx,ms.length)+1);}
   function itemLabel(it){if(it.sn&&it.cnt)return it.cnt+" × "+it.sn+(it.sz?" ("+it.sz+")":"");var sn=it.sn;if(!sn)LFOODS.forEach(function(x){if(x.fd.id===it.fid)sn=x.sn;});if(sn)return fq(it.a/it.b)+" × "+sn;
     var nm=it.n.split(/[,(]/)[0].trim();return it.b===1?fq(it.a)+" × "+nm:qtyTxt(it)+" "+nm.toLowerCase();}
   function renderMeals(){
@@ -907,7 +907,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   function lTot(){var t={k:0,p:0,c:0,f:0,n:0};LFOODS.forEach(function(x){var n=L.cnt[x.id]||0;if(!n)return;var m=lMac(x,n);t.n+=n;t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});return t;}
   function renderLog(){
     $("lDate").textContent=mdate===today?"TODAY":pillLab(mdate);
-    $("lSlots").innerHTML=LSLOTS.map(function(s){return '<button type="button" class="lslot'+(L.slot===s?" on":"")+'" data-slot="'+s+'">'+s+'</button>';}).join("");
+    $("lTitle").textContent=L.slot.toUpperCase();
     var h="";
     LSECS.forEach(function(sn,i){h+='<div class="lsec">'+sn+'</div>';
       LFOODS.forEach(function(x){if(x.sec!==i)return;h+=lRow(x);});});
@@ -918,12 +918,10 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
       '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less '+esc(x.sn)+'">−</button><span class="ln">'+n+'</span><button type="button" class="lb" data-d="1" aria-label="More '+esc(x.sn)+'">+</button></div></div>'+
       (x.sz.length?'<div class="lsz">'+x.sz.map(function(z,j){return '<button type="button" class="lchip'+(j===si?" on":"")+'" data-z="'+j+'">'+esc(z.l)+'</button>';}).join("")+'</div>':'')+'</div>';}
   function lBar(){var t=lTot(),g=$("lGo");g.disabled=!t.n;g.textContent=t.n?"LOG · "+r0(t.k)+" kcal · "+r0(t.p)+" g protein":"LOG · pick foods";}
-  function openLog(){L={slot:lslotDef(),cnt:{},sz:{},ord:[]};renderMeals();window.scrollTo(0,0);}
+  function openLog(){L={slot:nextMealName(mdate),cnt:{},sz:{},ord:[]};renderMeals();window.scrollTo(0,0);}
   function closeLog(){L=null;renderMeals();window.scrollTo(0,0);}
   $("mLogBtn").addEventListener("click",openLog);
   $("lCancel").addEventListener("click",function(){if(L&&lTot().n&&!confirm("Discard this meal?"))return;closeLog();});
-  $("lSlots").addEventListener("click",function(e){var b=e.target.closest("[data-slot]");if(!b||!L)return;L.slot=b.dataset.slot;
-    [].forEach.call($("lSlots").children,function(c){c.classList.toggle("on",c===b);});});
   $("lList").addEventListener("click",function(e){if(!L)return;var r=e.target.closest(".lrow");if(!r)return;var id=r.dataset.f,x=lrowById(id);
     var zb=e.target.closest("[data-z]");
     if(zb){L.sz[id]=+zb.dataset.z;if(!L.cnt[id]){L.cnt[id]=1;if(L.ord.indexOf(id)<0)L.ord.push(id);}}
