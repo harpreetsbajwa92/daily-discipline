@@ -761,7 +761,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   var GOAL={k:1650,p:150,c:160,f:50};
   // [id, name, base amount, unit singular, unit plural, step, kcal, P, C, F]  (macros per base amount)
   // [id,name,base,unit,units,step,kcal,P,C,F,section,treat]  (ids are permanent: saved meals and favourites refer to them)
-  var FSECS=["Protein","Dairy","Breads & grains","Dals & beans","Veggies & greens","Nuts & seeds","Fruits","Fats & oils","Supplements","Treats"];
+  var FSECS=["Protein","Dairy","Breads & grains","Dals & beans","Veggies & greens","Nuts & seeds","Fruits","Fats & oils","Supplements","Treats","Coffee & tea"];
+  var LORDER=[0,10,1,2,3,4,5,6,7,8,9];
   var FOODS=[
     ["egg","Whole egg, boiled",1,"egg","eggs",1,72,6.3,0.4,4.8,0],
     ["eggw","Egg white",1,"white","whites",1,17,3.6,0.2,0.1,0],
@@ -809,6 +810,11 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     ["honey","Honey",1,"tsp","tsp",0.5,21,0,6,0,7],
     ["whey","Whey protein",1,"scoop","scoops",0.5,120,24,3,1.5,8],
     ["creatine","Creatine",5,"g","g",5,0,0,0,0,8],
+    ["coffee","Coffee, black",1,"cup","cups",1,2,0.3,0,0,1],
+    ["tea","Tea, black",1,"cup","cups",1,2,0,0.5,0,1],
+    ["cofmilk","Milk in coffee (creamer ~15 ml, 2%)",1,"creamer","creamers",1,8,0.5,0.7,0.3,1],
+    ["cream","Cream 10% (creamer ~15 ml)",1,"creamer","creamers",1,20,0.4,0.6,1.6,1],
+    ["sugar","Sugar",1,"tsp","tsp",1,16,0,4,0,1],
     ["cake","Cake",1,"slice","slices",0.5,350,4,50,15,9,1],
     ["sweet","Indian sweet (gulab jamun / barfi)",1,"piece","pieces",1,150,2,22,6,9,1],
     ["icecream","Ice cream",1,"scoop","scoops",1,140,2.5,16,7,9,1]
@@ -848,7 +854,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   function sortMeals(ms){return ms.slice().sort(function(a,b){var na=mealNo(a),nb=mealNo(b);if(na&&nb)return na-nb;if(a.t&&b.t&&a.t!==b.t)return a.t<b.t?-1:1;
     var ia=na?99:SLOTS.indexOf(a.slot),ib=nb?99:SLOTS.indexOf(b.slot);return ia-ib||((a.t||"")<(b.t||"")?-1:1);});}
   // ---- Meals tab (simple) ----
-  var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats"];
+  var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats","Coffee & tea"];
+  var LORDER=[0,10,1,2,3,4,5,6,7,8,9];
   // [section, food id (macros come from FOODS), short name, unit label]
   // serving sizes: [label, multiplier of the food's base serving, optional other food id]
   var SZ_BOWL=[["½ bowl",0.5],["1 bowl",1],["1½ bowl",1.5],["2 bowl",2]],SZ_PALM=[["Small",0.75],["Medium",1],["Large",1.5]],
@@ -864,7 +871,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     [6,"banana","Banana",""],[6,"apple","Apple",""],[6,"orange","Orange",""],
     [7,"oil","Oil","",SZ_TSP,0],[7,"ghee","Ghee","",SZ_TSP,0],[7,"avo","Avocado","",[["1 tbsp",1],["¼",0.5,"avohalf"],["½",1,"avohalf"],["Whole",2,"avohalf"]],0],
     [8,"whey","Protein scoop","1"],[8,"creatine","Creatine","5 g"],
-    [9,"cake","Cake","1 slice"],[9,"sweet","Sweet","1 piece"]
+    [9,"cake","Cake","1 slice"],[9,"sweet","Sweet","1 piece"],
+    [10,"coffee","Coffee","black, 1 cup"],[10,"tea","Tea","black, 1 cup"],[10,"cofmilk","Milk in coffee","1 creamer, 2%"],[10,"cream","Cream","1 creamer, 10%"],[10,"sugar","Sugar","1 tsp"]
   ].map(function(a){var fd=foodById(a[1]);return {sec:a[0],id:a[1],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
   function lrowById(id){return LFOODS.filter(function(q){return q.id===id;})[0];}
   function lSize(x){return x.sz.length?x.sz[L&&L.sz[x.id]!==undefined?L.sz[x.id]:x.d]:{l:"",m:1,fd:x.fd};}
@@ -909,7 +917,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     $("lDate").textContent=mdate===today?"TODAY":pillLab(mdate);
     $("lTitle").textContent=L.slot.toUpperCase();
     var h="";
-    LSECS.forEach(function(sn,i){h+='<div class="lsec">'+sn+'</div>';
+    LORDER.forEach(function(i){var sn=LSECS[i];h+='<div class="lsec">'+sn+'</div>';
       LFOODS.forEach(function(x){if(x.sec!==i)return;h+=lRow(x);});});
     $("lList").innerHTML=h; lBar();
   }
