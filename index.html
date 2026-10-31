@@ -506,6 +506,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #bkMsg{margin-top:8px;color:#7cc4f5}
 .bknudge{display:block;width:100%;min-height:44px;margin:4px 0 8px;border-radius:12px;border:1px solid rgba(0,147,231,.5);background:rgba(0,147,231,.1);color:#7cc4f5;font-size:15px;font-weight:600;touch-action:manipulation}
 .appver{text-align:center;color:#5d686f;font-size:11px;margin:18px 0 4px}
+.syhow{margin-top:10px;line-height:1.55}.syhow a{color:#7cc4ff}.syhr{border:0;border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px}.syerr{color:#ef8a87}
 </style>
 </head>
 <body>
@@ -594,12 +595,13 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   <div class="box"><h3>Habits: weekly average</h3><div class="empty" id="streakLine"></div><div id="habChart"></div></div>
   <div class="box"><h3>Workouts per week</h3><div id="woChart"></div></div>
   <div class="box bkcard"><h3>Data</h3>
+    <div id="syncBox" hidden></div>
     <div class="bkl" id="bkAuto">Last auto-backup: …</div><div class="bkl" id="bkFile">Last file backup: never</div>
     <button type="button" class="big" id="bkNow">Backup now</button>
     <div class="bkrow"><button type="button" class="bkb" id="bkRestFile">Restore from file</button><button type="button" class="bkb" id="bkRestAuto">Restore auto-backup</button></div>
     <input type="file" id="bkFileIn" accept="application/json,.json" hidden>
     <div id="bkList" hidden></div><div id="bkMsg" class="bkl"></div>
-    <div class="empty" style="margin-top:6px">Your logs live only on this phone. The app keeps a daily copy (last 14 days); Backup now saves a file to Files / iCloud.</div>
+    <div class="empty" style="margin-top:6px">Logs are saved on this device and, once sync is connected, shared with your other devices. The app also keeps a daily copy here (last 14 days); Backup now saves a file to Files / iCloud.</div>
   </div>
 </section>
 
@@ -614,7 +616,10 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-1";
+var APP_VERSION="2026.10.31-2";
+// ==== CLOUD SYNC via GitHub: all nn-v1:* keys live in data/sync.json of this repo. Inert until a device connects its own key
+// (stored only in that device's localStorage as nn-sync:token; never in code, never in sync.json). No token here, ever.
+var SYNC_CONFIG={api:"https://api.github.com",repo:"harpreetsbajwa92/daily-discipline",path:"data/sync.json",branch:"main"};
 (function(){
   var ITEMS=[
     ["~1,650 kcal, eat the diet chart","Palm of protein, 1 spoon oil, no roti at dinner"],
@@ -707,7 +712,7 @@ var APP_VERSION="2026.10.31-1";
   function fmt(k){var d=parse(k);return DOW[d.getDay()]+" "+MON[d.getMonth()]+" "+d.getDate();}
   function fmtShort(k){var d=parse(k);return MON[d.getMonth()]+" "+d.getDate();}
   function getJ(k){try{return JSON.parse(localStorage.getItem(PREFIX+k));}catch(e){return null;}}
-  function setJ(k,v){try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch(e){}}
+  function setJ(k,v){try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch(e){}syncTouch(PREFIX+k);}
   function allKeys(){var a=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PREFIX)===0)a.push(k.slice(PREFIX.length));}return a;}
   function hasHab(k){return Array.isArray(getJ(k));}
   function load(k){var v=getJ(k);if(Array.isArray(v)&&v.length===NS)return v.map(Boolean);return new Array(NS).fill(false);}
@@ -1518,6 +1523,98 @@ var APP_VERSION="2026.10.31-1";
     }
     if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok,fallback);}else fallback();
   });
+  // ================= CLOUD SYNC (GitHub data/sync.json; only when this device has connected a key) =================
+  // File format: {"_rev":n, "nn-v1:KEY":{"v":"<raw localStorage string>","t":editTimeMs} | {"t":ms,"d":1} (deleted)}. localStorage stays the working copy (offline-first).
+  // Writes are compare-and-swap on the file sha: on 409/422 re-read, merge, retry (max 3). _rev guards against stale reads right after a write.
+  // Device bookkeeping (outside nn-v1, never synced): nn-sync:token, nn-sync:sh (hash of last synced value per key), nn-sync:mt (local edit time per key), nn-sync:rev, nn-sync:at.
+  var SY={busy:false,again:false,timer:null,err:""};
+  var SY_KEY_URL="https://github.com/settings/personal-access-tokens/new?name=Daily%20Discipline%20sync&description=Sync%20data%2Fsync.json%20of%20daily-discipline&target_name=harpreetsbajwa92&expires_in=366&contents=write";
+  function syGet(k,d){try{var v=JSON.parse(localStorage.getItem("nn-sync:"+k));return v===null||v===undefined?d:v;}catch(e){return d;}}
+  function sySet(k,v){try{if(v===null)localStorage.removeItem("nn-sync:"+k);else localStorage.setItem("nn-sync:"+k,JSON.stringify(v));}catch(e){}}
+  function syTok(){try{return localStorage.getItem("nn-sync:token")||"";}catch(e){return "";}}
+  function syHash(str){var h=5381;for(var i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return (h>>>0).toString(36)+"."+str.length;}
+  function syOn(){return !!(SYNC_CONFIG&&SYNC_CONFIG.repo&&window.fetch);}
+  function syncTouch(fk){if(!syOn()||!syTok())return;var mt=syGet("mt",{});mt[fk]=Date.now();sySet("mt",mt);if(SY){clearTimeout(SY.timer);SY.timer=setTimeout(syncNow,2000);}}
+  function syReq(url,opt,tok){opt=opt||{};var h={"Accept":opt.accept||"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28","Authorization":"Bearer "+tok};if(opt.body)h["Content-Type"]="application/json";
+    return fetch(url,{method:opt.method||"GET",headers:h,body:opt.body,cache:"no-store"}).then(function(r){return r.text().then(function(t){if(!r.ok){var j=syParse(t)||{},er=new Error(j.message||("HTTP "+r.status));er.status=r.status;throw er;}return opt.accept?t:syParse(t);});});}
+  function syURL(){return SYNC_CONFIG.api.replace(/\/$/,"")+"/repos/"+SYNC_CONFIG.repo+"/contents/"+SYNC_CONFIG.path;}
+  function syB64dec(b){var bin=atob(String(b).replace(/\s/g,"")),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);}
+  function syB64enc(str){var u=new TextEncoder().encode(str),bin="";for(var i=0;i<u.length;i+=8192)bin+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(bin);}
+  function syRead(tok){return syReq(syURL()+"?ref="+encodeURIComponent(SYNC_CONFIG.branch)+"&_="+Date.now(),{},tok).then(function(j){
+      if(j&&j.content)return {doc:syParse(syB64dec(j.content))||{},sha:j.sha};
+      if(j&&j.size>0&&j.git_url)return syReq(j.git_url,{accept:"application/vnd.github.raw"},tok).then(function(t){return {doc:syParse(t)||{},sha:j.sha};}); // >1 MB file
+      return {doc:{},sha:j&&j.sha||null};},function(e){if(e.status===404)return {doc:{},sha:null};throw e;});}
+  function sySer(d){var ks=Object.keys(d).sort();return "{\n"+ks.map(function(k){return JSON.stringify(k)+":"+JSON.stringify(d[k]);}).join(",\n")+"\n}\n";}
+  function syDev(){var u=navigator.userAgent;return /iPhone/.test(u)?"iPhone":/iPad/.test(u)?"iPad":/Android/.test(u)?"Android":/Mac/.test(u)?"Mac":/Windows/.test(u)?"Windows":"device";}
+  function syErrText(e){var s=e&&e.status;return s===401?"Sync key rejected or expired: Disconnect and connect a new key":s===403||s===404?"This key can't save: it needs daily-discipline with Contents: Read and write":!s?"Offline or GitHub unreachable: will sync automatically":(e&&e.message)||"sync failed";}
+  function syncNow(){
+    var tok=syTok(); if(!syOn()||!tok)return Promise.resolve();
+    if(SY.busy){SY.again=true;return Promise.resolve();}
+    SY.busy=true;var changed=false;syUI();
+    function attempt(n){return syRead(tok).then(function(rd){
+      var D=rd.doc||{},sh=syGet("sh",{}),mt=syGet("mt",{}),now=Date.now();
+      if((+D._rev||0)<syGet("rev",0)){var se=new Error("stale");se.stale=true;throw se;}   // GitHub replica lag right after our own write: try again shortly
+      Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)!==0)return;var r=D[k]||{};
+        var loc=localStorage.getItem(k),rv=r.d?null:(typeof r.v==="string"?r.v:null),dirty=loc===null?sh[k]!==undefined:syHash(loc)!==sh[k];
+        if(loc===rv){if(rv===null)delete sh[k];else sh[k]=syHash(rv);return;}
+        var nv=dirty?syMerge(k,loc,rv,mt[k]||(sh[k]!==undefined?now:0),+r.t||0):rv;
+        if(nv!==loc){try{if(nv===null)localStorage.removeItem(k);else localStorage.setItem(k,nv);changed=true;}catch(e){return;}}
+        if(nv!==rv)mt[k]=Math.max(now,(+r.t||0)+1);else delete mt[k];});
+      // desired file = remote + every local key that differs + tombstones for keys deleted here
+      var N={},diff=false,sent={};
+      Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)===0&&!(D[k]&&D[k].d&&now-(+D[k].t||0)>180*864e5))N[k]=D[k];});
+      syLocalKeys().forEach(function(k){var v=localStorage.getItem(k);sent[k]=v;if(!D[k]||D[k].d||D[k].v!==v){N[k]={v:v,t:mt[k]||now};diff=true;}});
+      Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)===0&&D[k]&&!D[k].d&&localStorage.getItem(k)===null){N[k]={t:now,d:1};diff=true;}});
+      function done(){var sh2={};Object.keys(sent).forEach(function(k){sh2[k]=syHash(sent[k]);});var mt2=syGet("mt",{});
+        Object.keys(mt2).forEach(function(k){if(localStorage.getItem(k)===sent[k])delete mt2[k];});sySet("sh",sh2);sySet("mt",mt2);}
+      sySet("mt",mt);
+      if(!diff){done();return;}
+      N._rev=(+D._rev||0)+1;
+      var tm=new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}).toLowerCase();
+      var body={message:"sync: "+syDev()+" "+key(new Date())+" "+tm,content:syB64enc(sySer(N)),branch:SYNC_CONFIG.branch};if(rd.sha)body.sha=rd.sha;
+      return syReq(syURL(),{method:"PUT",body:JSON.stringify(body)},tok).then(function(){sySet("rev",N._rev);done();},
+        function(e){if((e.status===409||e.status===422)&&n<3)return attempt(n+1);throw e;});   // someone else saved first: re-read, merge, retry
+    });}
+    return attempt(1).then(function(){SY.err="";sySet("at",new Date().toISOString());},function(e){
+        if(e&&e.stale){SY.err="";setTimeout(syncNow,4000);return;}SY.err=syErrText(e);})
+      .then(function(){SY.busy=false;syUI();if(changed)syRerender();if(SY.again){SY.again=false;return syncNow();}});
+  }
+  function syParse(x){try{return JSON.parse(x);}catch(e){return null;}}
+  // merge two versions of one key when BOTH sides changed (or first sync): union where it is safe, else newer wins
+  function syMerge(fk,a,b,ta,tb){
+    var newS=ta>=tb?a:b, oldS=ta>=tb?b:a; if(a===null||b===null)return newS;
+    var N=syParse(newS),O=syParse(oldS),k=fk.slice(PREFIX.length); if(N===null||O===null)return newS;
+    function byId(o,n){var m={},out=[];(o||[]).forEach(function(x){if(x&&x.id!==undefined)m[x.id]=x;});(n||[]).forEach(function(x){if(x&&x.id!==undefined)m[x.id]=x;});
+      (n||[]).concat(o||[]).forEach(function(x){if(x&&x.id!==undefined&&m[x.id]){out.push(m[x.id]);delete m[x.id];}});return out;}
+    function or(x,y){var r=[];for(var i=0;i<Math.max(x.length,y.length);i++)r.push(!!x[i]||!!y[i]);return r;}
+    if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(N)&&Array.isArray(O))return JSON.stringify(or(N,O));
+    if(/^meals:/.test(k)&&Array.isArray(N.meals)&&Array.isArray(O.meals)){var r={};for(var q in N)r[q]=N[q];r.meals=byId(O.meals,N.meals);return JSON.stringify(r);}
+    if(k==="myfoods"&&Array.isArray(N)&&Array.isArray(O))return JSON.stringify(byId(O,N));
+    if(/^sun:/.test(k)){var sn=Array.isArray(N)?{t:N,v:{}}:N,so=Array.isArray(O)?{t:O,v:{}}:O,v={},z;for(z in (so.v||{}))v[z]=so.v[z];for(z in (sn.v||{}))v[z]=sn.v[z];
+      return JSON.stringify({t:or(sn.t||[],so.t||[]),u:sn.u||so.u||"cm",v:v});}
+    if(/^wo:/.test(k)&&typeof N==="object"&&typeof O==="object"&&!Array.isArray(N)){var w={},e={},y;for(y in O)w[y]=O[y];for(y in N)w[y]=N[y];for(y in (O.ex||{}))e[y]=O.ex[y];for(y in (N.ex||{}))e[y]=N.ex[y];
+      w.ex=e;w.done=!!(N.done||O.done);w.plan=N.plan||O.plan||null;return JSON.stringify(w);}
+    return newS;}
+  function syLocalKeys(){var a=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PREFIX)===0)a.push(k);}return a;}
+  function syRerender(){var ae=document.activeElement;if(L||(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA")))return;show(tab);}
+  function syUI(){var el=$("syncBox");if(!el)return;if(!syOn()){el.hidden=true;return;}el.hidden=false;var tok=syTok(),at=syGet("at",null);
+    if(!tok){if(el.dataset.mode==="out")return;el.dataset.mode="out";
+      el.innerHTML='<div class="bkl">☁️ Sync: <b>Not connected</b>. Logs are saved on this device.</div><button type="button" class="bkb" id="syShow">Connect sync</button>'+
+      '<div id="syForm" hidden><label class="lfl" style="margin-top:10px"><span>GitHub sync key</span><input id="syK" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>'+
+      '<button type="button" class="big" id="syIn">Connect</button><div class="bkl syerr" id="syErr"></div>'+
+      '<div class="bkl syhow"><a href="'+SY_KEY_URL+'" target="_blank" rel="noopener">How to get the key ↗</a><br>1. Repository access → Only select repositories → <b>daily-discipline</b><br>2. Permissions → Contents → <b>Read and write</b> (expiry is pre-set to 1 year)<br>3. Generate token, copy it, paste it here</div></div><hr class="syhr">';
+      var f=$("appVer");if(f)f.textContent="App v"+APP_VERSION;return;}
+    el.dataset.mode="in";
+    el.innerHTML='<div class="bkl">'+(SY.err?'⚠️ '+esc(SY.err)+' (your data is safe on this device)':SY.busy?'☁️ Syncing…':'☁️ Synced '+(at?bkWhen(at):'—'))+'</div><div class="bkrow"><button type="button" class="bkb" id="syNow">Sync now</button><button type="button" class="bkb" id="syOut">Disconnect</button></div><hr class="syhr">';
+    var f2=$("appVer");if(f2)f2.textContent="App v"+APP_VERSION+(at&&!SY.err?" · synced "+bkWhen(at):"");}
+  if($("syncBox"))$("syncBox").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+    if(b.id==="syShow"){$("syForm").hidden=false;b.hidden=true;$("syK").focus();}
+    if(b.id==="syIn"){var k=$("syK").value.trim();if(!k){$("syErr").textContent="Paste your GitHub sync key";return;}b.disabled=true;$("syErr").textContent="Checking key…";
+      syReq(SYNC_CONFIG.api.replace(/\/$/,"")+"/repos/"+SYNC_CONFIG.repo,{},k).then(function(){
+        try{localStorage.setItem("nn-sync:token",k);}catch(er){}sySet("sh",null);sySet("rev",null);$("syncBox").dataset.mode="";SY.err="";syUI();return syncNow();},
+        function(er){b.disabled=false;$("syErr").textContent=er.status===401?"That key isn't valid. Copy it again from GitHub.":"Couldn't check the key: "+(er.message||"offline?");});}
+    if(b.id==="syNow")syncNow();
+    if(b.id==="syOut"){if(!confirm("Disconnect sync on this device? Your data stays on this device."))return;try{localStorage.removeItem("nn-sync:token");}catch(er){}SY.err="";$("syncBox").dataset.mode="";syUI();}});
   // ================= BACKUP (separate store: IndexedDB "nn-backup", fallback localStorage "nn-bk:*"; never inside nn-v1:) =================
   var BK_LS="nn-bk:snaps", BK_FILE="nn-bk:lastfile", bkDb=null;
   function bkOpen(){if(bkDb)return bkDb;bkDb=new Promise(function(res){try{if(!window.indexedDB)return res(null);var r=indexedDB.open("nn-backup",1);
@@ -1717,7 +1814,7 @@ var APP_VERSION="2026.10.31-1";
       location.replace(location.pathname+"?v="+encodeURIComponent(j.v)+location.hash);
     }).catch(function(){});}catch(e){}
   }
-  document.addEventListener("visibilitychange",function(){if(!document.hidden)checkUpdate();});
+  document.addEventListener("visibilitychange",function(){if(!document.hidden){checkUpdate();syncNow();}});
   // no service worker was ever shipped from this repo; remove any stray one scoped over this app, just in case
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){var base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),hit=false;
     rs.forEach(function(r){if(r.scope&&base.indexOf(r.scope)===0){hit=true;r.unregister();}});
@@ -1725,6 +1822,7 @@ var APP_VERSION="2026.10.31-1";
   show(location.hash.slice(1));
   bkDaily();
   checkUpdate();
+  if(syOn()){syUI();syncNow();window.addEventListener("online",function(){syncNow();});setInterval(function(){if(!document.hidden)syncNow();},120000);}  // all no-ops until a key is connected
   window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText};
 })();
 </script>
