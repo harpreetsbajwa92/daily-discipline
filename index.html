@@ -102,6 +102,13 @@ h2{font-size:14px;color:#9a9a9a;font-weight:600;text-transform:uppercase;letter-
 /* trends */
 .box{background:#222;border-radius:16px;padding:14px;margin-top:12px}
 .box h3{font-size:17px;font-weight:800;margin-bottom:8px}
+.bm{background:#1a1a1a;border-radius:12px;padding:10px 12px;margin-top:8px}
+.bm .bt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:#9a9a9a;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+.bm .bv{font-size:24px;font-weight:800;color:#fff;margin-top:2px}
+.bm .bv small{font-size:15px;color:#bbb;font-weight:700}
+.bm .bd{font-size:13px;margin-top:2px;display:flex;gap:12px;flex-wrap:wrap}
+.bm .bd .neu{color:#9a9a9a}
+.bm svg{margin-top:6px}
 .big{display:block;width:100%;background:#1e88e5;border:0;border-radius:14px;padding:16px;font-size:18px;font-weight:800;color:#fff;margin-top:14px}
 .big.ok{background:#2e7d32}
 .empty{color:#9a9a9a;font-size:14px;padding:6px 0}
@@ -164,6 +171,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
 
 <section class="page" id="p-trends">
   <h1>Trends</h1>
+  <div class="box" id="bodyBox"><h3>Body (weekly)</h3><div id="bodyArea"><div class="empty">Loading…</div></div><div class="empty" style="margin-top:6px">Updated by Fitness every Sunday from your check-in.</div></div>
   <button class="big" id="copyBtn">Copy report for Fitness</button>
   <div class="empty" style="text-align:center;margin-top:6px">Every Sunday: tap, then paste it into the Fitness chat with your check-in.</div>
   <div id="copyHint"></div>
@@ -505,7 +513,65 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     return g+'</svg>';
   }
   var selEx=null;
+  // ---- Body (weekly), maintained by Fitness in body.json ----
+  var BODY_METRICS=[
+    {k:"weight_kg",n:"Weight",u:"kg",good:"down",dec:2,lbs:true},
+    {k:"body_fat_pct",n:"Body fat",u:"%",good:"down",dec:1},
+    {k:"avg_calories_burned",n:"Avg calories burned / day",u:"kcal",good:"up",dec:0},
+    {k:"avg_steps",n:"Avg steps / day",u:"",good:"up",dec:0},
+    {k:"skeletal_muscle_kg",n:"Skeletal muscle",u:"kg",good:"upflat",dec:1}
+  ];
+  var bodyData=null, bodyState="loading";
+  function fnum(v,dec){return Number(v).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+  function toLbs(kg){return (Math.round(kg*2.20462*10)/10).toFixed(1);}
+  function bodyDelta(m,cur,ref,label){
+    if(ref===undefined||ref===null)return "";
+    var d=cur-ref, eps=m.dec?0.05:0.5, flat=Math.abs(d)<eps;
+    var good=m.good==="down"?d<0:m.good==="up"?d>0:d>=-eps;
+    var cls=flat&&m.good!=="upflat"?"neu":(good?"up":"down");
+    var arrow=flat?"→":(d>0?"▲":"▼");
+    var txt=(d>0?"+":d<0?"−":"±")+fnum(Math.abs(d),m.dec)+(m.u==="%"?" pts":m.u?" "+m.u:"");
+    if(m.lbs)txt+=" ("+(d>0?"+":d<0?"−":"±")+(Math.round(Math.abs(d)*2.20462*10)/10).toFixed(1)+" lbs)";
+    return '<span class="'+cls+'">'+arrow+" "+txt+" "+label+'</span>';
+  }
+  function bodySpark(pts,m){
+    var W=320,H=64,L=6,R=6,T=10,B=14,vals=pts.map(function(p){return p.v;});
+    var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);if(mx-mn<1e-9){mx+=1;mn-=1;}
+    function X(i){return L+(W-L-R)*i/(pts.length-1);}
+    function Y(v){return T+(H-T-B)*(1-(v-mn)/(mx-mn));}
+    var poly=pts.map(function(p,i){return X(i).toFixed(1)+","+Y(p.v).toFixed(1);}).join(" ");
+    var g='<svg viewBox="0 0 '+W+' '+H+'" role="img"><polyline points="'+poly+'" fill="none" stroke="#1e88e5" stroke-width="2.5"/>';
+    pts.forEach(function(p,i){g+='<circle cx="'+X(i)+'" cy="'+Y(p.v)+'" r="3" fill="#1e88e5"/>';});
+    g+='<text x="'+L+'" y="'+(H-2)+'" fill="#888" font-size="10">'+fmtShort(pts[0].w)+'</text><text x="'+(W-R)+'" y="'+(H-2)+'" fill="#888" font-size="10" text-anchor="end">'+fmtShort(pts[pts.length-1].w)+'</text></svg>';
+    return g;
+  }
+  function renderBody(){
+    var el=$("bodyArea"); if(!el)return;
+    var data=(bodyData||[]).filter(function(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.week);}).sort(function(a,b){return a.week<b.week?-1:1;});
+    if(!data.length){el.innerHTML='<div class="empty">'+(bodyState==="loading"?"Loading…":bodyState==="offline"?"Can't load body stats right now (offline?). They'll show next time you're online.":"No check-ins yet. Your first Sunday check-in shows up here.")+'</div>';return;}
+    var last=data[data.length-1], h='<div class="empty">Latest: '+fmt(last.week)+(last.label?' · '+last.label:'')+(bodyState==="offline"?' · offline copy':'')+'</div>';
+    BODY_METRICS.forEach(function(m){
+      var pts=data.filter(function(e){return typeof e[m.k]==="number";}).map(function(e){return {w:e.week,v:e[m.k]};});
+      if(!pts.length)return;
+      var L=pts[pts.length-1], v=fnum(L.v,m.dec)+(m.u==="%"?"%":m.u?" <small>"+m.u+"</small>":"");
+      if(m.lbs)v+=' <small>· '+toLbs(L.v)+' lbs</small>';
+      h+='<div class="bm"><div class="bt"><span>'+m.n+'</span><span>'+fmtShort(L.w)+'</span></div><div class="bv">'+v+'</div>';
+      if(pts.length<2){h+='<div class="bd"><span class="neu">Trend starts after next Sunday\'s check-in</span></div>';}
+      else{h+='<div class="bd">'+bodyDelta(m,L.v,pts[pts.length-2].v,"vs last week")+(pts.length>2?bodyDelta(m,L.v,pts[0].v,"vs start"):"")+'</div>'+bodySpark(pts,m);}
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }
+  function loadBody(){
+    try{var c=JSON.parse(localStorage.getItem("nn-body-cache"));if(Array.isArray(c)&&!bodyData)bodyData=c;}catch(e){}
+    fetch("body.json?v="+Date.now(),{cache:"no-store"}).then(function(r){if(!r.ok)throw 0;return r.json();}).then(function(d){
+      if(!Array.isArray(d))throw 0; bodyData=d; bodyState="ok";
+      try{localStorage.setItem("nn-body-cache",JSON.stringify(d));}catch(e){}
+      renderBody();
+    }).catch(function(){bodyState=bodyData&&bodyData.length?"offline":"offline";renderBody();});
+  }
   function renderTrends(){
+    renderBody(); if(bodyState!=="ok")loadBody();
     var ids=strengthIds();
     // summary
     if(!ids.length){$("sumList").innerHTML='<div class="empty">No strength data yet. Log weights and reps on the Workout tab and your progress shows up here.</div>';}
