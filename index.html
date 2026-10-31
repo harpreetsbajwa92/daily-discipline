@@ -1128,14 +1128,22 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     {s:"muscle",k:"skeletal_muscle_kg",n:"Skeletal muscle",i:"💪",u:"kg",good:"upflat",dec:1,t:"line"},
     {s:"fatmass",k:"_fat_mass",n:"Fat mass",i:"🧈",u:"kg",good:"down",dec:1,t:"line",calc:1},
     {s:"leanmass",k:"_lean_mass",n:"Lean mass",i:"🦴",u:"kg",good:"upflat",dec:1,t:"line",calc:1},
-    {s:"waist",k:"waist_cm",n:"Waist",i:"📏",u:"cm",good:"down",dec:1,t:"line"},
     {s:"visceral",k:"visceral_fat",n:"Visceral fat",i:"🎯",u:"",good:"down",dec:1,mind:0,t:"line"},
     {s:"calories",k:"avg_calories_burned",n:"Avg calories burned",i:"🔥",u:"kcal",good:"up",dec:0,t:"bar"},
     {s:"steps",k:"avg_steps",n:"Avg steps",i:"👟",u:"",good:"up",dec:0,t:"bar"},
     {s:"sleep",k:"avg_sleep_hours",n:"Avg sleep",i:"😴",u:"h",good:"up",dec:2,ad:1,t:"bar"},
     {s:"recovery",k:"avg_recovery_pct",n:"Avg recovery",i:"🔋",u:"%",good:"up",dec:0,t:"bar"},
     {s:"hrv",k:"avg_hrv",n:"Avg HRV",i:"💓",u:"ms",good:"up",dec:0,t:"line"},
-    {s:"rhr",k:"avg_rhr",n:"Avg resting heart rate",i:"❤️",u:"bpm",good:"down",dec:0,t:"line"}
+    {s:"rhr",k:"avg_rhr",n:"Avg resting heart rate",i:"❤️",u:"bpm",good:"down",dec:0,t:"line"},
+    {s:"bicep-l",k:"bicep_l_cm",n:"Bicep L",i:"💪",u:"cm",good:"up",dec:1,t:"line",grp:"m"},
+    {s:"bicep-r",k:"bicep_r_cm",n:"Bicep R",i:"💪",u:"cm",good:"up",dec:1,t:"line",grp:"m"},
+    {s:"chest",k:"chest_cm",n:"Chest",i:"📏",u:"cm",good:"up",dec:1,t:"line",grp:"m"},
+    {s:"waist",k:"waist_cm",n:"Waist",i:"📏",u:"cm",good:"down",dec:1,t:"line",grp:"m"},
+    {s:"hips",k:"hips_cm",n:"Hips / butt",i:"📏",u:"cm",good:"down",dec:1,t:"line",grp:"m"},
+    {s:"thigh-l",k:"thigh_l_cm",n:"Thigh L",i:"🦵",u:"cm",good:"neutral",dec:1,t:"line",grp:"m"},
+    {s:"thigh-r",k:"thigh_r_cm",n:"Thigh R",i:"🦵",u:"cm",good:"neutral",dec:1,t:"line",grp:"m"},
+    {s:"calf-l",k:"calf_l_cm",n:"Calf L",i:"🦵",u:"cm",good:"neutral",dec:1,t:"line",grp:"m"},
+    {s:"calf-r",k:"calf_r_cm",n:"Calf R",i:"🦵",u:"cm",good:"neutral",dec:1,t:"line",grp:"m"}
   ];
   var NUTRI=[
     {s:"kcal-eaten",k:"k",src:"meals",n:"Avg calories eaten",i:"🍽️",u:"kcal",good:"down",dec:0,t:"bar"},
@@ -1149,7 +1157,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   function exMetric(id){if(!EXINFO[id]||EXINFO[id].kind!=="w")return null;return EXM[id]||(EXM[id]={s:"ex-"+id,k:"e1",src:"ex",ex:id,n:EXINFO[id].name+" · est. 1RM",i:"🏋️",u:"lbs",good:"up",dec:1,t:"line"});}
   function metricBySlug(s){var a=BODY_METRICS.concat(NUTRI);for(var i=0;i<a.length;i++)if(a[i].s===s)return a[i];if(s&&s.indexOf("ex-")===0)return exMetric(s.slice(3));return null;}
   function seriesFor(m,rows){return m.src==="meals"?mealDaily(m.k):m.src==="ex"?sessions(m.ex).map(function(x){return {w:x.d,v:r1(x.e1)};}):series(m,rows);}
-  function goodCls(m,d){var eps=m.dec?0.05:0.5;if(Math.abs(d)<eps)return m.good==="upflat"?"g":"n";var g=m.good==="down"?d<0:d>0;return g?"g":"b";}
+  function goodCls(m,d){var eps=m.dec?0.05:0.5;if(m.good==="neutral")return "n";if(Math.abs(d)<eps)return m.good==="upflat"?"g":"n";var g=m.good==="down"?d<0:d>0;return g?"g":"b";}
   function unitTxt(m){return m.u==="%"?"%":m.u?" "+m.u:"";}
   function bodyRows(){
     return (bodyData||[]).filter(function(e){return e&&/^\d{4}-\d{2}-\d{2}$/.test(e.week);}).sort(function(a,b){return a.week<b.week?-1:1;}).map(function(e){
@@ -1165,12 +1173,14 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     else{
       if(!rows.length)h+='<div class="empty">'+(bodyState==="offline"?"Can't load body stats right now (offline?).":"No check-ins yet.")+'</div>';
       else h+='<div class="empty" style="margin-bottom:6px">Latest check-in: '+fmt(rows[rows.length-1].week)+(bodyState==="offline"?' · offline copy':'')+'</div>';
+      var mg=false;
       BODY_METRICS.forEach(function(m){
+        if(m.grp==="m"&&!mg){mg=true;h+='<div class="drg">Measurements · tape, cm, Sundays</div>';}
         var p=series(m,rows), L=p[p.length-1], P=p[p.length-2], right;
         if(!L)right='<div class="dv">—</div><div class="dp">After first check-in</div>';
         else{
           var arr="";
-          if(P){var c=goodCls(m,L.v-P.v);arr='<i class="da '+c+'">'+(c==="n"||Math.abs(L.v-P.v)<(m.dec?0.05:0.5)?"●":(L.v>P.v?"▲":"▼"))+'</i>';}
+          if(P){var c=goodCls(m,L.v-P.v);arr='<i class="da '+c+'">'+(Math.abs(L.v-P.v)<(m.dec?0.05:0.5)?"●":(L.v>P.v?"▲":"▼"))+'</i>';}
           right='<div class="dv">'+fnum(L.v,m.dec,m.mind)+'<small>'+unitTxt(m)+'</small>'+arr+'</div><div class="dp">'+(P?fnum(P.v,m.dec,m.mind)+unitTxt(m)+' last week':'Start · trend after next check-in')+'</div>';
         }
         h+='<button class="drow" data-m="'+m.s+'"><span class="di">'+m.i+'</span><span class="dn">'+m.n+(m.calc?' <em>calc</em>':'')+'</span><span class="dr">'+right+'</span></button>';
@@ -1254,7 +1264,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
     var s=(m.k.indexOf("avg_")===0?"Your weekly average "+nm:"Your average "+nm)+" over this period was "+fnum(av,ad,m.mind)+u;
     if(pts.length<2)return s+". Only one check-in so far, so the trend starts after next Sunday.";
     var d=pts[pts.length-1].v-pts[0].v, c=goodCls(m,d);
-    if(c==="n"||Math.abs(d)<(m.dec?0.05:0.5))return s+", flat since the start of the period.";
+    if(Math.abs(d)<(m.dec?0.05:0.5))return s+", flat since the start of the period.";
     return s+", "+(d<0?"down ":"up ")+fnum(Math.abs(d),ad,m.mind)+(m.u==="%"?" pts":u)+" from the start"+(c==="g"?" 👍":"")+".";
   }
   function renderTV(){
@@ -1395,22 +1405,29 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   // ================= SUNDAY CHECK-IN (ticks only, nn-v1:sun:DATE) =================
   var SUN=[
     ["Scale",[["Weight","Smart scale report screenshot/PDF"],["Body fat %","From the scale report"],["Skeletal muscle (kg)","From the scale report"],["Visceral fat","From the scale report"]]],
-    ["Tape",[["Waist at belly button (cm)","Relaxed, tape level, morning"]]],
+    ["Tape measurements (cm)|same morning, before eating",[
+      ["Bicep L","Relaxed, arm hanging, at the thickest point",13],["Bicep R","Relaxed, arm hanging, at the thickest point",14],
+      ["Chest","At nipple line, arms down, relaxed",15],["Waist","At belly button, relaxed, after a normal exhale",4],
+      ["Hips / butt","Widest point, feet together",16],
+      ["Thigh L","Midway between hip crease and knee",17],["Thigh R","Midway between hip crease and knee",18],
+      ["Calf L","Widest point, standing, weight even",19],["Calf R","Widest point, standing, weight even",20]]],
     ["WHOOP|week view, Sun-Sat averages",[["Avg calories burned","Trend view > Calories > W"],["Avg steps","Trend view > Steps > W"],["Avg sleep hours","Trend view > Sleep > W"],["Avg recovery %","Trend view > Recovery > W"],["Avg HRV + resting heart rate","Trend view > W"]]],
     ["Photos",[["Front, side, back","Same spot, same light, relaxed + flexed"]]],
     ["App",[["Copied workout report","Trends tab > Copy report for Fitness"]]],
     ["Notes",[["How the week felt","Hunger, energy, cravings, any alcohol, missed days"]]]
   ];
-  var SUN_N=SUN.reduce(function(a,s){return a+s[1].length;},0);
+  // storage slot per item: explicit 3rd element, else the original position (0-12 as before the tape group)
+  (function(){var i=0;SUN.forEach(function(sec){sec[1].forEach(function(it){if(it.length<3){it.push(i);i++;}else if(it[2]===4)i=5;});});})();
+  var SUN_N=SUN.reduce(function(a,s){return a+s[1].length;},0), SUN_SLOTS=21;
   function sunDate(){var d=parse(today);return shift(today,(7-d.getDay())%7);}
   function renderSunday(){
     var sd=sunDate(), st=getJ("sun:"+sd); if(!Array.isArray(st))st=[];
-    var c=0,i=0,h="";
+    var c=0,h="";
     $("sSub").textContent=(sd===today?"Today · ":"Upcoming · ")+parse(sd).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
     SUN.forEach(function(sec){
       var tt=sec[0].split("|");
       h+='<div class="sec">'+tt[0]+(tt[1]?' <small>('+tt[1]+')</small>':'')+'</div><div class="cards">';
-      sec[1].forEach(function(it){var on=!!st[i];if(on)c++;h+='<button class="card sm'+(on?" done":"")+'" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button>';i++;});
+      sec[1].forEach(function(it){var i=it[2],on=!!st[i];if(on)c++;h+='<button class="card sm'+(on?" done":"")+'" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button>';});
       h+='</div>';
     });
     $("sList").innerHTML=h;
@@ -1422,10 +1439,10 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   $("sList").addEventListener("click",function(e){
     var b=e.target.closest("[data-si]"); if(!b)return;
     var sd=sunDate(), st=getJ("sun:"+sd); if(!Array.isArray(st))st=[];
-    var i=+b.dataset.si; while(st.length<SUN_N)st.push(false); st[i]=!st[i]; setJ("sun:"+sd,st); renderSunday();
+    var i=+b.dataset.si; while(st.length<SUN_SLOTS)st.push(false); st[i]=!st[i]; setJ("sun:"+sd,st); renderSunday();
   });
   function sunTemplate(){
-    return "Sunday check-in "+fmt(sunDate())+"\nWeight kg: \nBody fat %: \nSkeletal muscle kg: \nVisceral fat: \nWaist cm: \nWHOOP avg calories burned/day: \nAvg steps/day: \nAvg sleep h: \nAvg recovery %: \nAvg HRV ms: \nAvg resting HR bpm: \nNotes: ";
+    return "Sunday check-in "+fmt(sunDate())+"\nWeight kg: \nBody fat %: \nSkeletal muscle kg: \nVisceral fat: \n\nTAPE (cm, same morning, before eating)\nBicep L: __ cm\nBicep R: __ cm\nChest: __ cm\nWaist (belly button): __ cm\nHips/butt: __ cm\nThigh L: __ cm\nThigh R: __ cm\nCalf L: __ cm\nCalf R: __ cm\n\nWHOOP avg calories burned/day: \nAvg steps/day: \nAvg sleep h: \nAvg recovery %: \nAvg HRV ms: \nAvg resting HR bpm: \nNotes: ";
   }
   $("sCopy").addEventListener("click",function(){
     var t=sunTemplate(), box=$("sBox"), btn=this;
