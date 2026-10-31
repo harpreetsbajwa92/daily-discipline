@@ -125,6 +125,11 @@ svg{display:block;width:100%;height:auto}
 textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#eee;border:1px solid #3a3a3a;border-radius:12px;padding:10px;font:13px/1.4 ui-monospace,Menlo,monospace;-webkit-user-select:text;user-select:text}
 .hint{font-size:13px;color:#ffa726;margin-top:8px}
 .export{display:block;text-align:center;color:#8ab4f8;font-size:14px;margin:18px 0 4px;background:none;border:0;width:100%;text-decoration:underline}
+/* sunday */
+.sec{margin:20px 0 8px;font-size:14px;color:#9a9a9a;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.sec small{text-transform:none;letter-spacing:0;font-weight:600;color:#777}
+.card.sm{min-height:64px;padding:12px 14px}
+.card.sm .t{font-size:17px}
 /* tabs */
 .tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:#1a1a1a;border-top:1px solid #2c2c2c;padding-bottom:env(safe-area-inset-bottom);z-index:10}
 .tabs button{flex:1;background:none;border:0;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#8a8a8a;font-size:13px;font-weight:700;min-height:62px}
@@ -169,6 +174,18 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
   <div class="week" id="week"></div>
 </section>
 
+<section class="page" id="p-sunday">
+  <h1>Sunday check-in</h1>
+  <div class="dsub" id="sSub"></div>
+  <div class="top"><div class="row"><div class="score" id="sScore">0/13</div><div class="streak">ticked</div></div><div class="bar"><div class="fill" id="sFill"></div></div></div>
+  <div class="tip">Weigh in after waking, after the bathroom, before food or water.</div>
+  <div id="sList"></div>
+  <button class="big" id="sCopy">Copy checklist</button>
+  <div class="empty" style="text-align:center;margin-top:6px">Paste it into the Fitness chat and fill in your numbers.</div>
+  <div id="sHint"></div>
+  <textarea id="sBox" readonly hidden></textarea>
+</section>
+
 <section class="page" id="p-trends">
   <h1>Trends</h1>
   <div class="box" id="bodyBox"><h3>Body (weekly)</h3><div id="bodyArea"><div class="empty">Loading…</div></div><div class="empty" style="margin-top:6px">Updated by Fitness every Sunday from your check-in.</div></div>
@@ -187,6 +204,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
 <nav class="tabs" id="tabs">
   <button data-t="habits"><span class="ic">✅</span>Habits</button>
   <button data-t="workout"><span class="ic">🏋️</span>Workout</button>
+  <button data-t="sunday"><span class="ic">📋</span>Sunday</button>
   <button data-t="trends"><span class="ic">📈</span>Trends</button>
 </nav>
 <script>
@@ -519,10 +537,16 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     {k:"body_fat_pct",n:"Body fat",u:"%",good:"down",dec:1},
     {k:"avg_calories_burned",n:"Avg calories burned / day",u:"kcal",good:"up",dec:0},
     {k:"avg_steps",n:"Avg steps / day",u:"",good:"up",dec:0},
-    {k:"skeletal_muscle_kg",n:"Skeletal muscle",u:"kg",good:"upflat",dec:1}
+    {k:"skeletal_muscle_kg",n:"Skeletal muscle",u:"kg",good:"upflat",dec:1},
+    {k:"visceral_fat",n:"Visceral fat",u:"",good:"down",dec:1,mind:0},
+    {k:"waist_cm",n:"Waist (belly button)",u:"cm",good:"down",dec:1},
+    {k:"avg_sleep_hours",n:"Avg sleep",u:"h",good:"up",dec:2},
+    {k:"avg_recovery_pct",n:"Avg recovery",u:"%",good:"up",dec:0},
+    {k:"avg_hrv",n:"Avg HRV",u:"ms",good:"up",dec:0},
+    {k:"avg_rhr",n:"Avg resting heart rate",u:"bpm",good:"down",dec:0}
   ];
   var bodyData=null, bodyState="loading";
-  function fnum(v,dec){return Number(v).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+  function fnum(v,dec,mind){return Number(v).toLocaleString(undefined,{minimumFractionDigits:mind===undefined?dec:mind,maximumFractionDigits:dec});}
   function toLbs(kg){return (Math.round(kg*2.20462*10)/10).toFixed(1);}
   function bodyDelta(m,cur,ref,label){
     if(ref===undefined||ref===null)return "";
@@ -553,7 +577,7 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     BODY_METRICS.forEach(function(m){
       var pts=data.filter(function(e){return typeof e[m.k]==="number";}).map(function(e){return {w:e.week,v:e[m.k]};});
       if(!pts.length)return;
-      var L=pts[pts.length-1], v=fnum(L.v,m.dec)+(m.u==="%"?"%":m.u?" <small>"+m.u+"</small>":"");
+      var L=pts[pts.length-1], v=fnum(L.v,m.dec,m.mind)+(m.u==="%"?"%":m.u?" <small>"+m.u+"</small>":"");
       if(m.lbs)v+=' <small>· '+toLbs(L.v)+' lbs</small>';
       h+='<div class="bm"><div class="bt"><span>'+m.n+'</span><span>'+fmtShort(L.w)+'</span></div><div class="bv">'+v+'</div>';
       if(pts.length<2){h+='<div class="bd"><span class="neu">Trend starts after next Sunday\'s check-in</span></div>';}
@@ -660,13 +684,60 @@ textarea{width:100%;min-height:220px;margin-top:10px;background:#161616;color:#e
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
   });
 
+  // ================= SUNDAY CHECK-IN (ticks only, nn-v1:sun:DATE) =================
+  var SUN=[
+    ["Scale",[["Weight","Smart scale report screenshot/PDF"],["Body fat %","From the scale report"],["Skeletal muscle (kg)","From the scale report"],["Visceral fat","From the scale report"]]],
+    ["Tape",[["Waist at belly button (cm)","Relaxed, tape level, morning"]]],
+    ["WHOOP|week view, Sun-Sat averages",[["Avg calories burned","Trend view > Calories > W"],["Avg steps","Trend view > Steps > W"],["Avg sleep hours","Trend view > Sleep > W"],["Avg recovery %","Trend view > Recovery > W"],["Avg HRV + resting heart rate","Trend view > W"]]],
+    ["Photos",[["Front, side, back","Same spot, same light, relaxed + flexed"]]],
+    ["App",[["Copied workout report","Trends tab > Copy report for Fitness"]]],
+    ["Notes",[["How the week felt","Hunger, energy, cravings, any alcohol, missed days"]]]
+  ];
+  var SUN_N=SUN.reduce(function(a,s){return a+s[1].length;},0);
+  function sunDate(){var d=parse(today);return shift(today,(7-d.getDay())%7);}
+  function renderSunday(){
+    var sd=sunDate(), st=getJ("sun:"+sd); if(!Array.isArray(st))st=[];
+    var c=0,i=0,h="";
+    $("sSub").textContent=(sd===today?"Today · ":"Upcoming · ")+parse(sd).toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+    SUN.forEach(function(sec){
+      var tt=sec[0].split("|");
+      h+='<div class="sec">'+tt[0]+(tt[1]?' <small>('+tt[1]+')</small>':'')+'</div><div class="cards">';
+      sec[1].forEach(function(it){var on=!!st[i];if(on)c++;h+='<button class="card sm'+(on?" done":"")+'" data-si="'+i+'" aria-pressed="'+on+'"><span class="chk">✓</span><span><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span></button>';i++;});
+      h+='</div>';
+    });
+    $("sList").innerHTML=h;
+    $("sScore").textContent=c+"/"+SUN_N;
+    $("sFill").style.width=(c/SUN_N*100)+"%";
+    $("sFill").className="fill"+(c===SUN_N?" full":"");
+  }
+  $("sList").addEventListener("click",function(e){
+    var b=e.target.closest("[data-si]"); if(!b)return;
+    var sd=sunDate(), st=getJ("sun:"+sd); if(!Array.isArray(st))st=[];
+    var i=+b.dataset.si; while(st.length<SUN_N)st.push(false); st[i]=!st[i]; setJ("sun:"+sd,st); renderSunday();
+  });
+  function sunTemplate(){
+    return "Sunday check-in "+fmt(sunDate())+"\nWeight: \nBody fat %: \nMuscle kg: \nVisceral fat: \nWaist cm: \nWHOOP avg calories: \nAvg steps: \nAvg sleep: \nAvg recovery %: \nHRV / RHR: \nNotes: ";
+  }
+  $("sCopy").addEventListener("click",function(){
+    var t=sunTemplate(), box=$("sBox"), btn=this;
+    box.value=t;
+    function ok(){btn.textContent="Copied ✓ Paste it in the Fitness chat";btn.classList.add("ok");box.hidden=true;$("sHint").innerHTML="";setTimeout(function(){btn.textContent="Copy checklist";btn.classList.remove("ok");},4000);}
+    function fallback(){
+      box.hidden=false; box.focus(); box.select(); box.setSelectionRange(0,t.length);
+      var done=false; try{done=document.execCommand("copy");}catch(e){}
+      if(done)ok(),box.hidden=false;
+      $("sHint").innerHTML='<div class="hint">'+(done?"Copied. The text is also below.":"Couldn't copy automatically. Press and hold the text below, Select All, then Copy.")+'</div>';
+    }
+    if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(t).then(ok,fallback);}else fallback();
+  });
+
   // ================= TABS =================
-  var TABS=["habits","workout","trends"], tab="habits";
+  var TABS=["habits","workout","sunday","trends"], tab="habits";
   function show(t,scroll){
     if(TABS.indexOf(t)<0)t="habits"; tab=t;
     TABS.forEach(function(x){$("p-"+x).classList.toggle("on",x===t);});
     [].forEach.call(document.querySelectorAll(".tabs button"),function(b){b.classList.toggle("on",b.dataset.t===t);});
-    if(t==="habits")renderHabits(); else if(t==="workout")renderWorkout(); else renderTrends();
+    if(t==="habits")renderHabits(); else if(t==="workout")renderWorkout(); else if(t==="sunday")renderSunday(); else renderTrends();
     if(scroll)window.scrollTo(0,0);
   }
   $("tabs").addEventListener("click",function(e){
