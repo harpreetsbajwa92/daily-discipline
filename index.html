@@ -516,6 +516,43 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .lnomatch{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#cfd6db;font-size:15px;text-align:left;touch-action:manipulation}.lnomatch u{color:#7cc4f5}
 .cgrp{margin:6px 2px -2px;font-family:var(--fc);font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#7f8b93}
 .cgrp:first-child{margin-top:0}
+/* ---- compact one-screen Home ---- */
+.wrap:has(#p-habits.on){padding-top:calc(env(safe-area-inset-top) + 8px);padding-bottom:calc(env(safe-area-inset-bottom) + 66px)}
+#p-habits .hhead{min-height:40px}
+#p-habits .hwm{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 0 0;min-height:18px}
+#p-habits .wordmark{font-size:13px;letter-spacing:4px;margin:0;color:#cfd6db}
+#p-habits .dsub{margin:0;min-height:0}
+#p-habits .today-btn{font-size:12px;padding:3px 10px}
+#p-habits .rings{margin:4px -4px 0}
+#p-habits .ring{width:56px!important;height:56px!important}
+#p-habits .rin b{font-size:16px}#p-habits .rin b.sm{font-size:14px}#p-habits .rin b small{font-size:12px}
+#p-habits .rbox{padding:2px 0;gap:2px;min-height:44px}
+#p-habits .rbox .rl,#p-habits .rbox .rs{margin:0;line-height:1.15}
+#p-habits .rl{font-size:12px;letter-spacing:1.2px}
+#p-habits .rs{font-size:12px}
+#p-habits .tcard{margin:4px 0 0;padding:6px 12px;border-radius:12px;gap:10px;cursor:pointer;min-height:44px}
+#p-habits .tcard .tt{font-size:14px}
+#p-habits .tcard .tb{font-size:12px;line-height:1.3;margin-top:1px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden}
+#p-habits .tcard .tn{flex:0 0 30px;font-size:13px;padding:2px 0;align-self:center}
+#p-habits .tx{font-style:normal;color:#7f8b93;font-size:12px;margin-left:2px}
+#p-habits .mdh{display:none}
+#p-habits .cards{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+#p-habits .cgrp{grid-column:1/-1;margin:0 2px -3px;font-size:12px;line-height:14px}
+#p-habits .card{min-height:44px;padding:4px 8px;gap:7px;border-radius:12px}
+#p-habits .hic{flex:0 0 30px;height:30px;border-radius:9px;font-size:16px}
+#p-habits .card .t{font-size:13.5px;letter-spacing:.5px;line-height:1.15}
+#p-habits .card .s{display:none}
+#p-habits .card .chk{flex:0 0 20px;height:20px;border-width:1.5px;font-size:12px}
+#p-habits h2{margin:6px 0 3px;font-size:12px;line-height:14px}
+#p-habits .wstrip{gap:4px}
+#p-habits .wdc{flex-direction:row;justify-content:center;gap:4px;padding:0 2px;border-radius:10px;min-height:40px}
+#p-habits .wdc .ring{width:18px!important;height:18px!important}
+#p-habits .wdc .wdl,#p-habits .wdc .wds{font-size:12px}
+#p-habits .note{display:block;width:100%;text-align:left;margin-top:6px;padding:0 12px;min-height:40px;line-height:38px;border-radius:12px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-width:1px}
+#p-habits .appver{margin:6px 0 0;font-size:11px;line-height:13px}
+#p-habits.hexp .card .s{display:block;font-size:12px;line-height:1.25;margin-top:2px}
+#p-habits.hexp .tcard .tb{-webkit-line-clamp:unset;display:block}
+#p-habits.hexp .note{white-space:normal;line-height:1.4;padding:9px 12px}
 </style>
 </head>
 <body>
@@ -523,15 +560,14 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 
 <section class="page" id="p-habits">
   <div class="hhead"><span class="flame" id="streak">🔥 0</span><div class="pnav"><button class="pa" id="hPrev" aria-label="Previous day">‹</button><label class="pl"><span id="hLab">TODAY</span><input type="date" class="dpick" id="hPick" aria-label="Pick a date"></label><button class="pa" id="hNext" aria-label="Next day">›</button></div><span class="hsp"></span></div>
-  <div class="wordmark">NON&#8209;NEGOTIABLES</div>
-  <div class="dsub" id="hSub"></div>
+  <div class="hwm"><div class="wordmark">NON&#8209;NEGOTIABLES</div><div class="dsub" id="hSub"></div></div>
   <div class="rings" id="hRings"></div>
   <div class="tcard" id="hTarget"></div>
   <div class="mdh"><span>My Day</span></div>
   <div class="cards myrows" id="cards"></div>
   <h2 id="hWeekTitle">This week</h2>
   <div class="wstrip" id="hWeek"></div>
-  <div class="note" id="note">Sunday: send Fitness your weight, scale report, WHOOP screenshots, 3 photos and the copied report.</div>
+  <button type="button" class="note" id="note" aria-expanded="false">Sunday: send Fitness your weight, scale report, WHOOP screenshots, 3 photos and the copied report.</button>
   <div class="appver" id="appVer"></div>
 </section>
 
@@ -626,7 +662,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-6";
+var APP_VERSION="2026.10.31-7";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -765,6 +801,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     return '<div class="ring '+(cls||"")+'" style="width:'+size+'px;height:'+size+'px"><svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="#323b42" stroke-width="'+sw+'"/>'+
       (p>0?'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+(c*p).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>':'')+'</svg><div class="rin">'+inner+'</div></div>';}
   function recCol(f){return f>=0.83?"#16EC06":f>=0.5?"#FFDE00":"#FF0026";}
+  var CT=["Calories","Protein","No sugar / alcohol","4 L water","8,000+ steps","Train","Supplements","7+ h sleep","Self-improvement","Prayer"]; // compact Home titles
   var HIC=["🔥","🥚","🚫","💧","👟","🏋️","💊","😴","📚","🙏"];
   function streak(){
     var d=parse(today), s=0;
@@ -789,14 +826,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(c===N&&pOk){tt="Perfect day 💪";tb="All "+N+" habits done and you hit "+GOAL.p+" g protein"+(over?", but calories are "+r0(mt.k-GOAL.k)+" over.":". Keep it going.");}
     else if(c===N){tt="Habit target reached";tb="All "+N+" habits done. "+(mt.n?r0(GOAL.p-mt.p)+" g protein to go to hit "+GOAL.p+" g.":"Log your meals to track protein and calories.");}
     else{tt=(N-c)+" habit"+(N-c>1?"s":"")+" left "+(view===today?"today":"this day");tb="Still to do: "+left.join(", ")+". "+(pOk?"Protein target reached ✓":mt.n?r0(GOAL.p-mt.p)+" g protein to go.":"No meals logged yet.");}
-    $("hTarget").innerHTML='<div><div class="tt">'+tt+'</div><div class="tb">'+tb+'</div></div><div class="tn'+(c===N?" ok":"")+'"><span>✓</span>'+c+'</div>';
+    $("hTarget").innerHTML='<div><div class="tt">'+tt+' <i class="tx">'+(hExp?"▴":"▾")+'</i></div><div class="tb">'+tb+'</div></div><div class="tn'+(c===N?" ok":"")+'"><span>✓</span>'+c+'</div>';
     var html="";
     ACT.forEach(function(i){
       if(i===BODY[0])html+='<div class="cgrp">Body</div>';
       if(i===MIND[0])html+='<div class="cgrp">Mind</div>';
       var it=ITEMS[i], t=it[0], sub=it[1];
-      if(i===TRAIN&&rest){t="Rest day: walk";sub="Thu & Sun are rest days";}
-      html+='<button class="card'+(st[i]?" done":"")+'" data-i="'+i+'" aria-pressed="'+st[i]+'"><span class="hic">'+HIC[i]+'</span><span class="cb"><div class="t">'+t+'</div><div class="s">'+sub+'</div></span><span class="chk">✓</span></button>';
+      var ct=CT[i];
+      if(i===TRAIN&&rest){t="Rest day: walk";ct="Rest: walk";sub="Thu & Sun are rest days";}
+      html+='<button type="button" class="card'+(st[i]?" done":"")+'" data-i="'+i+'" aria-pressed="'+st[i]+'" aria-label="'+esc(t)+'"><span class="hic">'+HIC[i]+'</span><span class="cb"><div class="t">'+(hExp?t:ct)+'</div><div class="s">'+sub+'</div></span><span class="chk">✓</span></button>';
     });
     $("cards").innerHTML=html;
     var mon=monday(view), wh="";
@@ -818,6 +856,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("hNext").addEventListener("click",function(){setH(shift(view,1));});
   $("hPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setH(this.value);});
   $("hSub").addEventListener("click",function(e){if(e.target.id==="hToday")setH(today);});
+  // compact Home: tap the summary card or the Sunday note to show/hide full details (habit subtitles, full text)
+  var hExp=false;
+  function hToggle(){hExp=!hExp;$("p-habits").classList.toggle("hexp",hExp);$("note").setAttribute("aria-expanded",hExp);renderHabits();}
+  $("hTarget").addEventListener("click",hToggle);
+  $("note").addEventListener("click",hToggle);
   $("hWeek").addEventListener("click",function(e){var b=e.target.closest(".wd");if(b)setH(b.dataset.k);});
   
 
