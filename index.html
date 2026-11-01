@@ -791,7 +791,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-19";
+var APP_VERSION="2026.10.31-20";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -831,21 +831,25 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     rdf:{tag:"Dumbbells / pec-deck",unit:"lbs each",rule:"dumbbells: lbs per dumbbell · pec-deck: stack lbs",rep:"DB each / pec-deck stack"},
     bw:{tag:"Bodyweight",kind:"bw",unit:"reps",rule:"reps only, no weight",rep:"bodyweight"},
     plank:{tag:"Bodyweight",kind:"sec",unit:"sec",rule:"plank: seconds · ab wheel: enter reps",rep:"bodyweight, sec"},
+    plank2:{tag:"Bodyweight",kind:"sec",unit:"sec",rule:"log seconds",rep:"bodyweight, sec"},
+    smith:{tag:"Smith machine",unit:"plates lbs",rule:"log plates only (total of both sides), not the Smith bar",rep:"Smith plates only"},
+    db1:{tag:"Dumbbell",unit:"lbs",rule:"log the dumbbell lbs",rep:"single DB"},
+    cable1:{tag:"Cable",unit:"stack lbs",rule:"log stack weight for one leg",rep:"cable stack, one leg"},
     tread:{tag:"Treadmill",kind:"min",unit:"min",rule:"log minutes",rep:"treadmill"},
     steps:{tag:"Steps",kind:"chk",unit:"",rule:"tick when done",rep:"steps"}
   };
   // [id (kept stable so history carries over), name, sets, reps, equipment, note]
-  var ABS=[["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["cable-crunch","Cable crunch",3,"12-15","cable"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
+  var ABS=[["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["cable-crunch","Cable crunch",3,"12-15","cable"],["plank","Plank",3,"45s","plank2"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
   var WALK=["incline-walk","Incline walk",1,"15-20 min","tread","10-12% incline, ~5 km/h"];
   var PLANS={
-    push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
+    push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["smith-flat-press","Smith machine flat press",3,"8-10","smith","start ~50 lbs plates"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
     pull:{n:"Pull + Abs",abs:1,x:[["lat-pulldown","Lat pulldown",4,"8-10","cable"],["chest-supported-row","Chest-supported dumbbell row",4,"8-10","db"],["seated-cable-row","Seated cable row",3,"10-12","cable"],["face-pulls","Face pulls",3,"15","cable"],["db-curl","Dumbbell curl",3,"10-12","db"],["hammer-curl","Hammer curl",3,"12","db"]]},
-    legs:{n:"Legs",x:[["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["romanian-deadlift","Romanian deadlift",3,"8-10","bb"],["leg-press","Leg press",3,"10-12","plates"],["cable-leg-curl","Cable leg curl",3,"12","cable","ankle strap, curl heel to glute"],["calf-raises","Calf raises",4,"15","machine"],WALK]},
-    upper:{n:"Upper + Abs",abs:1,x:[["incline-press","Incline barbell press",3,"8-10","bb"],["lat-pulldown","Lat pulldown",3,"10","cable"],["lateral-raises","Lateral raises",4,"15","db"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["superset-db-curl","Dumbbell curl (superset)",3,"12","db","back to back, no rest"],["superset-rope-pushdown","Rope pushdown (superset)",3,"12","cable","back to back, no rest"],WALK]},
-    lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["cable-leg-extension","Cable leg extension",3,"12","cable","ankle strap, seated on bench facing away from the stack, extend knee to straight"],["cable-leg-curl","Cable leg curl",3,"12","cable","ankle strap, curl heel to glute"]]},
+    legs:{n:"Legs",x:[["smith-squat","Smith machine squat",4,"6-8","smith","start ~50 lbs plates"],["romanian-deadlift","Romanian deadlift",3,"8-10","bb"],["heels-elevated-goblet-squat","Heels-elevated dumbbell goblet squat",3,"10-12","db1","quad focus, heels on a small plate · start 40–50 lb dumbbell"],["cable-leg-curl","Cable leg curl",3,"12","cable1","ankle strap, curl heel to glute · start 20–30 lbs stack","each leg"],["smith-calf-raise","Smith machine standing calf raise",4,"15","smith","toes on a plate · start ~70 lbs plates"],WALK]},
+    upper:{n:"Upper + Abs",abs:1,x:[["smith-incline-press","Smith machine incline press",3,"8-10","smith","bench at 30° · start ~50 lbs plates"],["lat-pulldown","Lat pulldown",3,"10","cable"],["lateral-raises","Lateral raises",4,"15","db"],["cable-reverse-fly","Cable reverse fly",3,"15","cable","handles/ankle straps at shoulder height · start 10 lbs stack"],["superset-db-curl","Dumbbell curl (superset)",3,"12","db","back to back, no rest"],["superset-rope-pushdown","Rope pushdown (superset)",3,"12","cable","back to back, no rest"],WALK]},
+    lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["cable-leg-extension","Cable leg extension",3,"12","cable1","ankle strap, seated on bench facing away from the stack, extend knee to straight · start 25–30 lbs stack","each leg"],["cable-leg-curl","Cable leg curl",3,"12","cable1","ankle strap, curl heel to glute · start 20–30 lbs stack","each leg"]]},
     active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]},
     // retired exercises: not in any day's plan, kept so their logged history still shows in Trends
-    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"]]}
+    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"],["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["leg-press","Leg press",3,"10-12","plates"],["calf-raises","Calf raises",4,"15","machine"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["incline-press","Incline barbell press",3,"8-10","bb"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"]]}
   };
   // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
   var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
@@ -855,8 +859,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var p=PLANS[pid]; if(!p)return [];
     return (p.abs?p.x.concat(ABS):p.x).map(function(e){
       var q=EQ[e[4]], kind=q.kind||"w", timed=kind==="min"||kind==="chk";
-      var short=timed?e[3]:e[2]+" x "+e[3];
-      var full=timed?e[3]:e[2]+" sets x "+e[3]+(kind==="sec"?"":" reps");
+      var short=timed?e[3]:e[2]+" x "+e[3]+(e[6]?" "+e[6]:"");
+      var full=timed?e[3]:e[2]+" sets x "+e[3]+(kind==="sec"?"":" reps")+(e[6]?" "+e[6]:"");
       return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],eq:q,note:e[5]||"",
         target:short+" · "+q.tag+(e[5]?" · "+e[5]:""),
         goal:"Target: "+full+" · "+q.tag+" · "+q.rule+(e[5]?" · "+e[5]:"")};
