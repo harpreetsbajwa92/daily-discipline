@@ -791,7 +791,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-17";
+var APP_VERSION="2026.10.31-18";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -840,10 +840,12 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   var PLANS={
     push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
     pull:{n:"Pull + Abs",abs:1,x:[["lat-pulldown","Lat pulldown",4,"8-10","cable"],["chest-supported-row","Chest-supported dumbbell row",4,"8-10","db"],["seated-cable-row","Seated cable row",3,"10-12","cable"],["face-pulls","Face pulls",3,"15","cable"],["db-curl","Dumbbell curl",3,"10-12","db"],["hammer-curl","Hammer curl",3,"12","db"]]},
-    legs:{n:"Legs",x:[["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["romanian-deadlift","Romanian deadlift",3,"8-10","bb"],["leg-press","Leg press",3,"10-12","plates"],["leg-curl","Leg curl",3,"12","machine"],["calf-raises","Calf raises",4,"15","machine"],WALK]},
+    legs:{n:"Legs",x:[["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["romanian-deadlift","Romanian deadlift",3,"8-10","bb"],["leg-press","Leg press",3,"10-12","plates"],["cable-leg-curl","Cable leg curl",3,"12","cable","ankle strap, curl heel to glute"],["calf-raises","Calf raises",4,"15","machine"],WALK]},
     upper:{n:"Upper + Abs",abs:1,x:[["incline-press","Incline barbell press",3,"8-10","bb"],["lat-pulldown","Lat pulldown",3,"10","cable"],["lateral-raises","Lateral raises",4,"15","db"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["superset-db-curl","Dumbbell curl (superset)",3,"12","db","back to back, no rest"],["superset-rope-pushdown","Rope pushdown (superset)",3,"12","cable","back to back, no rest"],WALK]},
-    lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["leg-extension","Leg extension",3,"12","machine"],["leg-curl","Leg curl",3,"12","machine"]]},
-    active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]}
+    lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["leg-extension","Leg extension",3,"12","machine"],["cable-leg-curl","Cable leg curl",3,"12","cable","ankle strap, curl heel to glute"]]},
+    active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]},
+    // retired exercises: not in any day's plan, kept so their logged history still shows in Trends
+    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"]]}
   };
   // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
   var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
@@ -861,7 +863,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     });
   }
   var EXINFO={};
-  PLAN_ORDER.forEach(function(pid){exList(pid).forEach(function(e){if(!EXINFO[e.id])EXINFO[e.id]=e;});});
+  PLAN_ORDER.concat(["retired"]).forEach(function(pid){exList(pid).forEach(function(e){if(!EXINFO[e.id])EXINFO[e.id]=e;});});
   // An exercise counts as performed only if real numbers were entered:
   // weighted rows need a weight; bodyweight rows need reps (or weight); time rows need minutes/seconds; Steps needs its tick.
   function pf(x){return parseFloat(x)>0;}
