@@ -791,7 +791,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-16";
+var APP_VERSION="2026.10.31-17";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1078,7 +1078,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     ["oil_ml","Oil",100,"ml","ml",5,813,0,0,92,7],
     ["ghee_g","Ghee",100,"g","g",5,900,0,0,99.5,7],
     ["avo_g","Avocado",100,"g","g",15,160,2,8.5,14.7,7],
-    ["cofmilk30","Milk in coffee (2%)",30,"ml","ml",30,15,1,1.4,0.6,1]
+    ["cofmilk30","Milk in coffee (2%)",30,"ml","ml",30,15,1,1.4,0.6,1],
+    // Sealtest 2% partly skimmed milk — label per 250 mL: 130 kcal, fat 5 g, carb 13 g, protein 9 g (sealtest.ca/en/products/milks/2-milk); stored per 100 ml / per 30 ml
+    ["milk2s_ml","Milk 2% (Sealtest)",100,"ml","ml",50,52,3.6,5.2,2,1],
+    ["cofmilk30s","Milk in coffee (Sealtest 2%)",30,"ml","ml",30,15.6,1.08,1.56,0.6,1]
   ].map(function(a){return {id:a[0],n:a[1],b:a[2],s:a[3],pl:a[4],st:a[5],k:a[6],p:a[7],c:a[8],f:a[9],sec:FSECS[a[10]],treat:!!a[11]};});
   var mdate=today;
   function myFoods(){var v=getJ("myfoods");return Array.isArray(v)?v:[];}
@@ -1132,7 +1135,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   var G_MEAT=szM("g",[50,100,150,200]),G_BOWL=szM("g",[100,150,200,250,300]),G_NUT=szM("g",[10,15,20,30]),G_SEED=szM("g",[5,10,15,20]);
   // [section, row id, food id, short name, unit label, sizes, default size index]  (row ids stay stable for search/edit; food ids carry the macros)
   var LFOODS=[[0,"egg","egg","Egg","boiled, 1 · 50 g"],[0,"eggw","eggw","Egg white","1 · 33 g"],[0,"omelette","omelette","Omelette","1 egg"],[0,"paneer","paneer_g","Paneer","regular",G_MEAT,1],[0,"tofu","tofu_g","Tofu","firm",G_MEAT,1],[0,"chicken","chicken_g","Chicken","breast, cooked",G_MEAT,1],[0,"soya","soya_g","Soya chunks","soaked/cooked",G_MEAT,1],
-    [1,"milk","milk_ml","Milk","skim",szM("ml",[100,150,200,250]),3],[1,"yogurt","yogurt_g","Greek yogurt","0%",szM("g",[100,150,200,250]),1],[1,"curd","curd_g","Curd","",szM("g",[100,150,200,250]),1],
+    [1,"milk2s","milk2s_ml","Milk 2%","Sealtest",szM("ml",[100,150,200,250]),3],[1,"milk","milk_ml","Milk","skim",szM("ml",[100,150,200,250]),3],[1,"yogurt","yogurt_g","Greek yogurt","0%",szM("g",[100,150,200,250]),1],[1,"curd","curd_g","Curd","",szM("g",[100,150,200,250]),1],
     [2,"roti","roti","Roti","1 · 40 g"],[2,"bread","bread","Bread","1 slice · 35 g"],[2,"rice","rice_g","Rice","cooked",G_BOWL,1],[2,"oats","oats_g","Oats","dry",szM("g",[20,30,40,60,80]),2],[2,"pizza","pizza","Pizza","1 slice · 107 g"],
     [3,"dal","dal_g","Dal","cooked",G_BOWL,2],[3,"rajma","rajma_g","Rajma","cooked",G_BOWL,2],[3,"chana","chana_g","Chana","cooked",G_BOWL,1],
     [4,"salad","salad_g","Salad","",G_BOWL,1],[4,"palak","palak_g","Palak","cooked",G_BOWL,1],[4,"sabzi","sabzi_g","Sabzi","cooked",G_BOWL,1],
@@ -1141,7 +1144,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     [7,"oil","oil_ml","Oil","",szM("ml",[5,10,15,30]),0],[7,"ghee","ghee_g","Ghee","",szM("g",[5,10,15]),0],[7,"avo","avo_g","Avocado","",szM("g",[15,30,50,75,100,150]),2],
     [8,"whey","whey","Protein scoop","1 · 30 g"],[8,"creatine","creatine","Creatine","5 g"],
     [9,"cake","cake","Cake","1 slice"],[9,"sweet","sweet","Sweet","1 piece"],
-    [10,"coffee","coffee","Coffee","black, 240 ml"],[10,"tea","tea","Tea","black, 240 ml"],[10,"cofmilk","cofmilk30","Milk in coffee","30 ml, 2%"],[10,"cream","cream","Cream","15 ml, 10%"],[10,"sugar","sugar","Sugar","4 g"]
+    [10,"coffee","coffee","Coffee","black, 240 ml"],[10,"tea","tea","Tea","black, 240 ml"],[10,"cofmilk","cofmilk30s","Milk in coffee","30 ml, Sealtest 2%"],[10,"cream","cream","Cream","15 ml, 10%"],[10,"sugar","sugar","Sugar","4 g"]
   ].map(function(a){a=[a[0],a[2],a[3],a[4],a[5],a[6],a[1]];var fd=foodById(a[1]);if(!fd)throw new Error("food "+a[1]);return {sec:a[0],id:a[6],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
   LFOODS.forEach(function(x){x.met=x.fd.b===100&&(x.fd.s==="g"||x.fd.s==="ml")&&x.sz.every(function(z){return z.fd===x.fd;});});
   // ---- tap a food's name/row: macros per 10 g / 10 ml (pieces: per piece + per 10 g by known weight; no gram basis: per serving) ----
@@ -1229,7 +1232,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     $("lList").innerHTML=h; lBar(); lFilter();
   }
   // ---- live search (only hides rows; counts/sizes in L stay untouched) ----
-  var LALIAS=[["dal","daal","dhal","lentil"],["roti","chapati","chapatti","phulka"],["curd","yogurt","yoghurt","dahi"],["paneer","cottage cheese"],["egg","anda"],["chai","tea"],["ghee","clarified butter"],["sabzi","sabji","vegetable","veggie"],["rice","chawal"],["chicken","murgh"],["oat","oats","oatmeal"],["whey","protein powder","shake"]];
+  var LALIAS=[["dal","daal","dhal","lentil"],["roti","chapati","chapatti","phulka"],["curd","yogurt","yoghurt","dahi"],["paneer","cottage cheese"],["egg","anda"],["chai","tea"],["ghee","clarified butter"],["sabzi","sabji","vegetable","veggie"],["rice","chawal"],["chicken","murgh"],["oat","oats","oatmeal"],["whey","protein powder","shake"],["milk","doodh","dudh"]];
   function lNorm(t){return String(t||"").toLowerCase().replace(/\s+/g," ").trim();}
   function lTerms(q){var t=[q];if(q.length>=3)LALIAS.forEach(function(g){if(g.some(function(a){return a.indexOf(q)===0||q.indexOf(a)===0;}))t=t.concat(g);});return t;}
   function lFilter(){var inp=$("lQ"),box=$("lList");if(!inp||!box)return;var q=lNorm(inp.value);$("lQx").hidden=!q;
