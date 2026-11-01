@@ -776,7 +776,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-9";
+var APP_VERSION="2026.10.31-10";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1092,10 +1092,14 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         if(its.length)meals.push({id:uid("m"),slot:sl,name:"",t:"",items:its.map(function(it){var x={};for(var q in it)if(q!=="slot"&&q!=="id")x[q]=it[q];return x;})});});
       setJ("meals:"+k,{v:2,meals:meals});
     }
+    var del=(v&&v.del&&typeof v.del==="object"&&!Array.isArray(v.del))?v.del:{};
+    meals=meals.filter(function(m){return !(m&&del[m.id]&&del[m.id]>=(+m.u||0));});
     var items=[];meals.forEach(function(m){m.items=m.items||[];items=items.concat(m.items);});
-    return {meals:meals,items:items};
+    return {meals:meals,items:items,del:del};
   }
-  function saveMeals(k,d){setJ("meals:"+k,{v:2,meals:d.meals});}
+  // meal-level edit time m.u (ms) and per-day tombstones del:{mealId:deletedAtMs}; both drive the sync merge so a delete sticks on every device
+  function saveMeals(k,d){var o={v:2,meals:d.meals};if(d.del&&Object.keys(d.del).length)o.del=d.del;setJ("meals:"+k,o);}
+  function delMeal(d,id){d.meals=d.meals.filter(function(q){return q.id!==id;});d.del=d.del||{};d.del[id]=Date.now();}
   function mealNo(m){var r=/^Meal (\d+)$/.exec(m.slot||"");return r?+r[1]:0;}
   function sortMeals(ms){return ms.slice().sort(function(a,b){var na=mealNo(a),nb=mealNo(b);if(na&&nb)return na-nb;if(a.t&&b.t&&a.t!==b.t)return a.t<b.t?-1:1;
     var ia=na?99:SLOTS.indexOf(a.slot),ib=nb?99:SLOTS.indexOf(b.slot);return ia-ib||((a.t||"")<(b.t||"")?-1:1);});}
@@ -1167,7 +1171,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var x=e.target.closest("[data-del]"); if(!x)return;
     var id=x.dataset.del, d=loadMeals(mdate), m=d.meals.filter(function(q){return q.id===id;})[0]; if(!m)return;
     if(!confirm("Delete this "+m.slot.toLowerCase()+"?"))return;
-    d.meals=d.meals.filter(function(q){return q.id!==id;}); saveMeals(mdate,d); renderMeals();
+    delMeal(d,id); saveMeals(mdate,d); renderMeals();
   });
   // ---- Log meal page ----
   function lTot(){var t={k:0,p:0,c:0,f:0,n:0};LFOODS.forEach(function(x){var n=L.cnt[x.id]||0;if(!n)return;var m=lMac(x,n);t.n+=n;t.k+=m.k;t.p+=m.p;t.c+=m.c;t.f+=m.f;});
@@ -1280,10 +1284,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var x=lrowById(id),n=L.cnt[id];if(!x||!n)return;var z=lSize(x),it=mkItem(z.fd,n*z.m*z.fd.b);it.sn=x.sn;it.cnt=n;if(z.l)it.sz=z.l;items.push(it);});
     var d=loadMeals(mdate);
     if(L.edit){var em=d.meals.filter(function(q){return q.id===L.edit;})[0];if(!em){closeLog();return;}
-      if(!items.length){if(!confirm("Delete this "+em.slot.toLowerCase()+"?"))return;d.meals=d.meals.filter(function(q){return q.id!==L.edit;});}
-      else em.items=items;
+      if(!items.length){if(!confirm("Delete this "+em.slot.toLowerCase()+"?"))return;delMeal(d,L.edit);}
+      else{em.items=items;em.u=Date.now();}
       saveMeals(mdate,d);closeLog();return;}
-    if(!items.length)return;d.meals.push({id:uid("m"),slot:L.slot,name:"",t:mdate===today?nowHM():"",items:items});saveMeals(mdate,d);closeLog();});
+    if(!items.length)return;d.meals.push({id:uid("m"),slot:L.slot,name:"",t:mdate===today?nowHM():"",items:items,u:Date.now()});saveMeals(mdate,d);closeLog();});
   function mealsText(k){
     var d=loadMeals(k), t=dayTot(d.items), out=["Meals "+fmt(k)];
     if(!d.meals.length){out.push("Nothing logged");return out.join("\n");}
@@ -1754,7 +1758,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function sySet(k,v){try{if(v===null)localStorage.removeItem("nn-sync:"+k);else localStorage.setItem("nn-sync:"+k,JSON.stringify(v));}catch(e){}}
   function syHash(str){var h=5381;for(var i=0;i<str.length;i++)h=((h<<5)+h+str.charCodeAt(i))|0;return (h>>>0).toString(36)+"."+str.length;}
   function syOn(){return !!(SYNC_CONFIG&&SYNC_CONFIG.url&&window.fetch);}
-  function syncTouch(fk){if(!syOn())return;var mt=syGet("mt",{});mt[fk]=Date.now();sySet("mt",mt);if(SY){clearTimeout(SY.timer);SY.timer=setTimeout(syncNow,2000);}}
+  function syncTouch(fk){if(!syOn())return;var mt=syGet("mt",{});mt[fk]=Date.now();sySet("mt",mt);if(SY){clearTimeout(SY.timer);SY.timer=setTimeout(updThenSync,2000);}}
   function syHttp(opt){var ctl=window.AbortController?new AbortController():null,to=setTimeout(function(){if(ctl)ctl.abort();},15000);
     return fetch(SYNC_CONFIG.url+(opt?"":"?_="+Date.now()),{method:opt?"POST":"GET",headers:opt?{"Content-Type":"application/json"}:{},body:opt?opt.body:undefined,cache:"no-store",signal:ctl?ctl.signal:undefined})
       .then(function(r){clearTimeout(to);return r.text().then(function(t){if(!r.ok){var er=new Error("HTTP "+r.status);er.status=r.status;throw er;}return syParse(t);});},function(e){clearTimeout(to);throw e;});}
@@ -1771,7 +1775,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)!==0)return;var r=D[k]||{};
         var loc=localStorage.getItem(k),rv=r.d?null:(typeof r.v==="string"?r.v:null),dirty=loc===null?sh[k]!==undefined:syHash(loc)!==sh[k];
         if(loc===rv){if(rv===null)delete sh[k];else sh[k]=syHash(rv);return;}
-        var nv=dirty?syMerge(k,loc,rv,mt[k]||(sh[k]!==undefined?now:0),+r.t||0):rv;
+        var remoteSame=rv!==null&&sh[k]===syHash(rv);   // nobody else changed this key since our last sync
+        var nv=dirty?(remoteSame?loc:syMerge(k,loc,rv,mt[k]||(sh[k]!==undefined?now:0),+r.t||0)):rv;
+        if(!dirty&&loc!==null&&rv!==null&&/^nn-v1:meals:/.test(k))nv=syMealsMerge(rv,loc,true);   // an old app version may have dropped our tombstones
         if(nv!==loc){try{if(nv===null)localStorage.removeItem(k);else localStorage.setItem(k,nv);changed=true;}catch(e){return;}}
         if(rv===null)delete sh[k];else sh[k]=syHash(rv);
         if(nv!==rv)mt[k]=Math.max(now,(+r.t||0)+1);else delete mt[k];});
@@ -1802,13 +1808,23 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       (n||[]).concat(o||[]).forEach(function(x){if(x&&x.id!==undefined&&m[x.id]){out.push(m[x.id]);delete m[x.id];}});return out;}
     function or(x,y){var r=[];for(var i=0;i<Math.max(x.length,y.length);i++)r.push(!!x[i]||!!y[i]);return r;}
     if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&Array.isArray(N)&&Array.isArray(O))return JSON.stringify(or(N,O));
-    if(/^meals:/.test(k)&&Array.isArray(N.meals)&&Array.isArray(O.meals)){var r={};for(var q in N)r[q]=N[q];r.meals=byId(O.meals,N.meals);return JSON.stringify(r);}
+    if(/^meals:/.test(k)&&Array.isArray(N.meals)&&Array.isArray(O.meals))return syMealsMerge(newS,oldS,false);
     if(k==="myfoods"&&Array.isArray(N)&&Array.isArray(O))return JSON.stringify(byId(O,N));
     if(/^sun:/.test(k)){var sn=Array.isArray(N)?{t:N,v:{}}:N,so=Array.isArray(O)?{t:O,v:{}}:O,v={},z;for(z in (so.v||{}))v[z]=so.v[z];for(z in (sn.v||{}))v[z]=sn.v[z];
       return JSON.stringify({t:or(sn.t||[],so.t||[]),u:sn.u||so.u||"cm",v:v});}
     if(/^wo:/.test(k)&&typeof N==="object"&&typeof O==="object"&&!Array.isArray(N)){var w={},e={},y;for(y in O)w[y]=O[y];for(y in N)w[y]=N[y];for(y in (O.ex||{}))e[y]=O.ex[y];for(y in (N.ex||{}))e[y]=N.ex[y];
       w.ex=e;w.done=!!(N.done||O.done);w.plan=N.plan||O.plan||null;return JSON.stringify(w);}
     return newS;}
+  // meals:DATE merge: tombstones (del) are unioned (latest time wins); each meal id keeps the copy with the newer meal-level edit time u;
+  // a meal whose tombstone is newer than (or equal to) its last edit is dropped. delOnly: keep a's meals as-is and just apply b's tombstones.
+  function syMealsMerge(a,b,delOnly){var A=syParse(a),B=syParse(b);if(!A||!B||!Array.isArray(A.meals)||!Array.isArray(B.meals))return a;
+    var del={},q,r={};[A.del,B.del].forEach(function(x){if(x&&typeof x==="object")for(var i in x)if(+x[i]>(del[i]||0))del[i]=+x[i];});
+    var m={},out=[];
+    A.meals.forEach(function(x){if(x&&x.id!==undefined)m[x.id]=x;});
+    if(!delOnly)B.meals.forEach(function(x){if(x&&x.id!==undefined&&(!m[x.id]||(+x.u||0)>(+m[x.id].u||0)))m[x.id]=x;});
+    A.meals.concat(delOnly?[]:B.meals).forEach(function(x){if(x&&x.id!==undefined&&m[x.id]){var y=m[x.id];delete m[x.id];if(!(del[y.id]&&del[y.id]>=(+y.u||0)))out.push(y);}});
+    for(q in A)r[q]=A[q];r.meals=out;if(Object.keys(del).length)r.del=del;
+    var o=JSON.stringify(r);return delOnly&&JSON.stringify(syParse(a))===o?a:o;}
   function syLocalKeys(){var a=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PREFIX)===0)a.push(k);}return a;}
   function syRerender(){var ae=document.activeElement;if(L||(ae&&(ae.tagName==="INPUT"||ae.tagName==="TEXTAREA")))return;show(tab);}
   function syUI(){var el=$("syncBox");if(!el)return;if(!syOn()){el.hidden=true;return;}el.hidden=false;var at=syGet("at",null);
@@ -2006,23 +2022,25 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   setInterval(checkDay,60000);
   // ---- self-update: version.json vs APP_VERSION; reload once per new version (sessionStorage guard). Never touches localStorage. ----
   $("appVer").textContent="App v"+APP_VERSION;
+  // resolves true when the page is reloading into a newer version, so callers skip syncing from an outdated copy
   function checkUpdate(){
-    if(L)return; // don't reload while a meal is being logged/edited; checked again next time the app comes back
-    try{fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(j){
-      if(!j||typeof j.v!=="string"||!j.v||j.v===APP_VERSION)return;
-      var g="nn-upd:"+j.v;try{if(sessionStorage.getItem(g))return;sessionStorage.setItem(g,"1");}catch(e){return;}
-      location.replace(location.pathname+"?v="+encodeURIComponent(j.v)+location.hash);
-    }).catch(function(){});}catch(e){}
+    if(L)return Promise.resolve(false); // don't reload while a meal is being logged/edited; checked again next time the app comes back
+    try{return fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(j){
+      if(!j||typeof j.v!=="string"||!j.v||j.v===APP_VERSION)return false;
+      var g="nn-upd:"+j.v;try{if(sessionStorage.getItem(g))return false;sessionStorage.setItem(g,"1");}catch(e){return false;}
+      location.replace(location.pathname+"?v="+encodeURIComponent(j.v)+location.hash);return true;
+    }).catch(function(){return false;});}catch(e){return Promise.resolve(false);}
   }
-  document.addEventListener("visibilitychange",function(){if(!document.hidden){checkUpdate();syncNow();}});
+  function updThenSync(){return checkUpdate().then(function(re){if(!re)return syncNow();});}
+  document.addEventListener("visibilitychange",function(){if(!document.hidden)updThenSync();});
   // no service worker was ever shipped from this repo; remove any stray one scoped over this app, just in case
   try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(function(rs){var base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),hit=false;
     rs.forEach(function(r){if(r.scope&&base.indexOf(r.scope)===0){hit=true;r.unregister();}});
     if(hit&&window.caches)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}).catch(function(){});}catch(e){}
   show(location.hash.slice(1));
   bkDaily();
-  checkUpdate();
-  if(syOn()){syUI();syncNow();window.addEventListener("online",function(){syncNow();});setInterval(function(){if(!document.hidden)syncNow();},60000);}
+  if(syOn()){syUI();updThenSync();window.addEventListener("online",function(){updThenSync();});setInterval(function(){if(!document.hidden)updThenSync();},60000);}
+  else checkUpdate();
   window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText};
 })();
 </script>
