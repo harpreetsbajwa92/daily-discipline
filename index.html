@@ -791,7 +791,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-20";
+var APP_VERSION="2026.10.31-21";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1053,6 +1053,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     ["honey","Honey",1,"tsp","tsp",0.5,21,0,6,0,7],
     ["whey","Whey protein",1,"scoop","scoops",0.5,120,24,3,1.5,8],
     ["creatine","Creatine",5,"g","g",5,0,0,0,0,8],
+    // generic supplement servings (no brand values): multivitamin & CoQ10 ~0 kcal; fish oil 1 g softgel = 1 g fat ≈ 9 kcal
+    ["multivit","Multivitamin",1,"tablet","tablets",1,0,0,0,0,8],
+    ["coq10","CoQ10 (100 mg)",1,"softgel","softgels",1,0,0,0,0,8],
+    ["fishoil","Fish oil (1 g softgel)",1,"softgel","softgels",1,9,0,0,1,8],
     ["coffee","Coffee, black",1,"cup","cups",1,2,0.3,0,0,1],
     ["tea","Tea, black",1,"cup","cups",1,2,0,0.5,0,1],
     ["cofmilk","Milk in coffee (creamer ~15 ml, 2%)",1,"creamer","creamers",1,8,0.5,0.7,0.3,1],
@@ -1148,7 +1152,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     [5,"almonds","almonds_g","Almonds","10 g ≈ 8",G_NUT,0],[5,"walnut","walnut_g","Walnuts","10 g ≈ 5 halves",G_NUT,0],[5,"chia","chia_g","Chia seeds","",G_SEED,1],[5,"sunflower","sunflower_g","Sunflower seeds","",G_SEED,1],
     [6,"banana","banana","Banana","medium · 118 g"],[6,"apple","apple","Apple","medium · 180 g"],[6,"orange","orange","Orange","medium · 130 g"],
     [7,"oil","oil_ml","Oil","",szM("ml",[5,10,15,30]),0],[7,"ghee","ghee_g","Ghee","",szM("g",[5,10,15]),0],[7,"avo","avo_g","Avocado","",szM("g",[15,30,50,75,100,150]),2],
-    [8,"whey","whey","Protein scoop","1 · 30 g"],[8,"creatine","creatine","Creatine","5 g"],
+    [8,"whey","whey","Protein scoop","1 · 30 g"],[8,"creatine","creatine","Creatine","5 g"],[8,"multivit","multivit","Multivitamin","1 tablet"],[8,"coq10","coq10","CoQ10","1 softgel · 100 mg"],[8,"fishoil","fishoil","Fish oil","1 softgel · 1 g"],
     [9,"cake","cake","Cake","1 slice"],[9,"sweet","sweet","Sweet","1 piece"],
     [10,"coffee","coffee","Coffee","black, 240 ml"],[10,"tea","tea","Tea","black, 240 ml"],[10,"cofmilk","cofmilk30s","Milk in coffee","30 ml, Sealtest 2%"],[10,"cream","cream","Cream","15 ml, 10%"],[10,"sugar","sugar","Sugar","4 g"]
   ].map(function(a){a=[a[0],a[2],a[3],a[4],a[5],a[6],a[1]];var fd=foodById(a[1]);if(!fd)throw new Error("food "+a[1]);return {sec:a[0],id:a[6],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
@@ -1157,7 +1161,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   var PIECE_G={egg:[50,"g"],eggw:[33,"g"],roti:[40,"g"],bread:[35,"g"],breadw:[35,"g"],pizza:[107,"g"],banana:[118,"g"],apple:[180,"g"],orange:[130,"g"],whey:[30,"g"],sugar:[4,"g"],coffee:[240,"ml"],tea:[240,"ml"],cream:[15,"ml"],cofmilk:[15,"ml"]};
   function d1(v){return (Math.round((+v||0)*10)/10).toFixed(1);}
   function macLine(lab,k,p,c,f){return lab+" · "+d1(k)+" kcal · P "+d1(p)+" g · C "+d1(c)+" g · F "+d1(f)+" g";}
+  var SUPP_SERV={creatine:"1 serving (5 g)",multivit:"1 tablet",coq10:"1 softgel (100 mg)",fishoil:"1 softgel (~1 g)"};
   function infoFor(o){if(!o||o.k===null||o.k===undefined)return ["No macros saved"];var b=+o.b||1,k=+o.k,p=+o.p||0,c=+o.c||0,f=+o.f||0,fid=o.fid||o.id;
+    if(SUPP_SERV[fid])return [macLine(SUPP_SERV[fid],k,p,c,f)];
     if((o.s==="g"||o.s==="ml")&&b>0){var r=10/b;return [macLine("Per 10 "+o.s,k*r,p*r,c*r,f*r)];}
     var pg=PIECE_G[fid];if(pg){var q=1/b,r2=10/(pg[0]);return [macLine("1 "+(o.s||"piece")+" ("+pg[0]+" "+pg[1]+")",k*q,p*q,c*q,f*q),macLine("Per 10 "+pg[1],k*q*r2,p*q*r2,c*q*r2,f*q*r2)];}
     return [macLine("Per "+fq(b)+" "+(b===1?(o.s||"serving"):(o.pl||o.s||"servings")),k,p,c,f)];}
