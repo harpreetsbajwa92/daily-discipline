@@ -776,7 +776,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-8";
+var APP_VERSION="2026.10.31-9";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1039,7 +1039,31 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     ["sugar","Sugar",1,"tsp","tsp",1,16,0,4,0,1],
     ["cake","Cake",1,"slice","slices",0.5,350,4,50,15,9,1],
     ["sweet","Indian sweet (gulab jamun / barfi)",1,"piece","pieces",1,150,2,22,6,9,1],
-    ["icecream","Ice cream",1,"scoop","scoops",1,140,2.5,16,7,9,1]
+    ["icecream","Ice cream",1,"scoop","scoops",1,140,2.5,16,7,9,1],
+    // metric (per 100 g / 100 ml) foods for the Log sheet's g/ml chips; older ids above stay for already-logged meals
+    ["paneer_g","Paneer, regular",100,"g","g",50,265,18.3,1.2,20.8,0],
+    ["tofu_g","Tofu, firm",100,"g","g",50,144,17.3,2.8,8.7,0],
+    ["chicken_g","Chicken breast, cooked",100,"g","g",50,165,31,0,3.6,0],
+    ["soya_g","Soya chunks, soaked/cooked",100,"g","g",50,115,17.3,11,0.2,0],
+    ["milk_ml","Milk, skim",100,"ml","ml",50,34,3.4,4.9,0.1,1],
+    ["yogurt_g","Greek yogurt 0%",100,"g","g",50,59,10.2,3.6,0.4,1],
+    ["curd_g","Curd / dahi",100,"g","g",50,61,3.5,4.7,3.3,1],
+    ["rice_g","Rice, cooked",100,"g","g",50,130,2.7,28.2,0.3,2],
+    ["oats_g","Oats, dry",100,"g","g",10,379,13.2,67.7,6.5,2],
+    ["dal_g","Dal, cooked (light tadka)",100,"g","g",50,115,6.5,15,3.3,3],
+    ["rajma_g","Rajma, cooked",100,"g","g",50,127,8.7,22.8,0.5,3],
+    ["chana_g","Chana / chickpeas, cooked",100,"g","g",50,164,8.9,27.4,2.6,3],
+    ["salad_g","Salad (raw veggies)",100,"g","g",50,20,1,4,0.2,4],
+    ["palak_g","Palak / spinach sabzi (with oil)",100,"g","g",50,60,3,4,4.3,4],
+    ["sabzi_g","Sabzi, general mixed (with oil)",100,"g","g",50,80,2,8,4,4],
+    ["almonds_g","Almonds",100,"g","g",5,579,21.2,21.6,49.9,5],
+    ["walnut_g","Walnuts",100,"g","g",5,654,15.2,13.7,65.2,5],
+    ["chia_g","Chia seeds",100,"g","g",5,486,16.5,42.1,30.7,5],
+    ["sunflower_g","Sunflower seeds",100,"g","g",5,584,20.8,20,51.5,5],
+    ["oil_ml","Oil",100,"ml","ml",5,813,0,0,92,7],
+    ["ghee_g","Ghee",100,"g","g",5,900,0,0,99.5,7],
+    ["avo_g","Avocado",100,"g","g",15,160,2,8.5,14.7,7],
+    ["cofmilk30","Milk in coffee (2%)",30,"ml","ml",30,15,1,1.4,0.6,1]
   ].map(function(a){return {id:a[0],n:a[1],b:a[2],s:a[3],pl:a[4],st:a[5],k:a[6],p:a[7],c:a[8],f:a[9],sec:FSECS[a[10]],treat:!!a[11]};});
   var mdate=today;
   function myFoods(){var v=getJ("myfoods");return Array.isArray(v)?v:[];}
@@ -1076,7 +1100,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function sortMeals(ms){return ms.slice().sort(function(a,b){var na=mealNo(a),nb=mealNo(b);if(na&&nb)return na-nb;if(a.t&&b.t&&a.t!==b.t)return a.t<b.t?-1:1;
     var ia=na?99:SLOTS.indexOf(a.slot),ib=nb?99:SLOTS.indexOf(b.slot);return ia-ib||((a.t||"")<(b.t||"")?-1:1);});}
   // ---- Meals tab (simple) ----
-  var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked, by bowl)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats","Coffee & tea"];
+  var LSECS=["Protein","Dairy","Breads & grains","Dals (cooked)","Veggies","Nuts & seeds","Fruits","Oils","Supplements","Treats","Coffee & tea"];
   var LORDER=[0,10,1,2,3,4,5,6,7,8,9];
   // [section, food id (macros come from FOODS), short name, unit label]
   // serving sizes: [label, multiplier of the food's base serving, optional other food id]
@@ -1084,18 +1108,22 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     SZ_TSP=[["1 tsp",1],["1 tbsp",3],["2 tbsp",6]],SZ_TBSP=[["1 tsp",1/3],["1 tbsp",1],["2 tbsp",2]],SZ_HAND=[["½ handful",1],["1 handful",2]];
   function szG(u){return [["½ "+u,0.5],["1 "+u,1],["1½ "+u,1.5]];}
   // [section, food id, short name, unit label, sizes, default size index]
-  var LFOODS=[[0,"egg","Egg","boiled, 1"],[0,"eggw","Egg white","1"],[0,"omelette","Omelette","1 egg"],[0,"paneer","Paneer","palm",SZ_PALM,1],[0,"tofu","Tofu","palm",SZ_PALM,1],[0,"chicken","Chicken","palm",SZ_PALM,1],[0,"soya","Soya chunks","",SZ_BOWL,1],
-    [1,"milk","Milk","",szG("glass"),1],[1,"yogurt","Greek yogurt","",szG("cup"),1],[1,"curd","Curd","",SZ_BOWL,1],
-    [2,"roti","Roti","1"],[2,"bread","Bread","1 slice"],[2,"rice","Rice","",SZ_BOWL,1],[2,"oats","Oats","dry",[["¼ cup",0.5],["½ cup",1],["¾ cup",1.5],["1 cup",2]],1],[2,"pizza","Pizza","1 slice"],
-    [3,"dal","Dal","",SZ_BOWL,1],[3,"rajma","Rajma","",SZ_BOWL,1],[3,"chana","Chana","",SZ_BOWL,1],
-    [4,"salad","Salad","",SZ_BOWL,1],[4,"palak","Palak","",SZ_BOWL,1],[4,"sabzi","Sabzi","",SZ_BOWL,1],
-    [5,"almonds","Almonds","½ handful = 10",SZ_HAND,0],[5,"walnut","Walnuts","½ handful = 4 halves",SZ_HAND,0],[5,"chia","Chia seeds","",SZ_TBSP,1],[5,"sunflower","Sunflower seeds","",SZ_TBSP,1],
-    [6,"banana","Banana",""],[6,"apple","Apple",""],[6,"orange","Orange",""],
-    [7,"oil","Oil","",SZ_TSP,0],[7,"ghee","Ghee","",SZ_TSP,0],[7,"avo","Avocado","",[["1 tbsp",1],["¼",0.5,"avohalf"],["½",1,"avohalf"],["Whole",2,"avohalf"]],0],
-    [8,"whey","Protein scoop","1"],[8,"creatine","Creatine","5 g"],
-    [9,"cake","Cake","1 slice"],[9,"sweet","Sweet","1 piece"],
-    [10,"coffee","Coffee","black, 1 cup"],[10,"tea","Tea","black, 1 cup"],[10,"cofmilk","Milk in coffee","1 creamer, 2%"],[10,"cream","Cream","1 creamer, 10%"],[10,"sugar","Sugar","1 tsp"]
-  ].map(function(a){var fd=foodById(a[1]);return {sec:a[0],id:a[1],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
+  // metric chips: [label, multiplier of the food's 100 g / 100 ml base]
+  function szM(u,list){return list.map(function(v){return [v+" "+u,v/100];});}
+  var G_MEAT=szM("g",[50,100,150,200]),G_BOWL=szM("g",[100,150,200,250,300]),G_NUT=szM("g",[10,15,20,30]),G_SEED=szM("g",[5,10,15,20]);
+  // [section, row id, food id, short name, unit label, sizes, default size index]  (row ids stay stable for search/edit; food ids carry the macros)
+  var LFOODS=[[0,"egg","egg","Egg","boiled, 1 · 50 g"],[0,"eggw","eggw","Egg white","1 · 33 g"],[0,"omelette","omelette","Omelette","1 egg"],[0,"paneer","paneer_g","Paneer","regular",G_MEAT,1],[0,"tofu","tofu_g","Tofu","firm",G_MEAT,1],[0,"chicken","chicken_g","Chicken","breast, cooked",G_MEAT,1],[0,"soya","soya_g","Soya chunks","soaked/cooked",G_MEAT,1],
+    [1,"milk","milk_ml","Milk","skim",szM("ml",[100,150,200,250]),3],[1,"yogurt","yogurt_g","Greek yogurt","0%",szM("g",[100,150,200,250]),1],[1,"curd","curd_g","Curd","",szM("g",[100,150,200,250]),1],
+    [2,"roti","roti","Roti","1 · 40 g"],[2,"bread","bread","Bread","1 slice · 35 g"],[2,"rice","rice_g","Rice","cooked",G_BOWL,1],[2,"oats","oats_g","Oats","dry",szM("g",[20,30,40,60,80]),2],[2,"pizza","pizza","Pizza","1 slice · 107 g"],
+    [3,"dal","dal_g","Dal","cooked",G_BOWL,2],[3,"rajma","rajma_g","Rajma","cooked",G_BOWL,2],[3,"chana","chana_g","Chana","cooked",G_BOWL,1],
+    [4,"salad","salad_g","Salad","",G_BOWL,1],[4,"palak","palak_g","Palak","cooked",G_BOWL,1],[4,"sabzi","sabzi_g","Sabzi","cooked",G_BOWL,1],
+    [5,"almonds","almonds_g","Almonds","10 g ≈ 8",G_NUT,0],[5,"walnut","walnut_g","Walnuts","10 g ≈ 5 halves",G_NUT,0],[5,"chia","chia_g","Chia seeds","",G_SEED,1],[5,"sunflower","sunflower_g","Sunflower seeds","",G_SEED,1],
+    [6,"banana","banana","Banana","medium · 118 g"],[6,"apple","apple","Apple","medium · 180 g"],[6,"orange","orange","Orange","medium · 130 g"],
+    [7,"oil","oil_ml","Oil","",szM("ml",[5,10,15,30]),0],[7,"ghee","ghee_g","Ghee","",szM("g",[5,10,15]),0],[7,"avo","avo_g","Avocado","",szM("g",[15,30,50,75,100,150]),2],
+    [8,"whey","whey","Protein scoop","1 · 30 g"],[8,"creatine","creatine","Creatine","5 g"],
+    [9,"cake","cake","Cake","1 slice"],[9,"sweet","sweet","Sweet","1 piece"],
+    [10,"coffee","coffee","Coffee","black, 240 ml"],[10,"tea","tea","Tea","black, 240 ml"],[10,"cofmilk","cofmilk30","Milk in coffee","30 ml, 2%"],[10,"cream","cream","Cream","15 ml, 10%"],[10,"sugar","sugar","Sugar","4 g"]
+  ].map(function(a){a=[a[0],a[2],a[3],a[4],a[5],a[6],a[1]];var fd=foodById(a[1]);if(!fd)throw new Error("food "+a[1]);return {sec:a[0],id:a[6],fd:fd,sn:a[2],u:a[3],sz:(a[4]||[]).map(function(z){return {l:z[0],m:z[1],fd:z[2]?foodById(z[2]):fd};}),d:a[5]||0};});
   function lrowById(id){return LFOODS.filter(function(q){return q.id===id;})[0];}
   function lSize(x){return x.sz.length?x.sz[L&&L.sz[x.id]!==undefined?L.sz[x.id]:x.d]:{l:"",m:1,fd:x.fd};}
   function lMac(x,n){var z=lSize(x);return {k:z.fd.k*z.m*n,p:z.fd.p*z.m*n,c:z.fd.c*z.m*n,f:z.fd.f*z.m*n};}
@@ -1249,7 +1277,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("lGo").addEventListener("click",function(){if(!L)return;var items=[];
     L.ord.forEach(function(id){if(L.fx[id]){var f=L.fx[id];if(!f.n)return;var c=JSON.parse(JSON.stringify(f.it));c.a=c.a*f.n;if(c.cnt)c.cnt=c.cnt*f.n;items.push(c);return;}
       var my=myById(id);if(my){var mc=L.cnt[id];if(!mc)return;var ci=mkItem(my,mc*my.b);ci.sn=my.n;ci.cnt=mc;ci.sz=myAmt(my);items.push(ci);return;}
-      var x=lrowById(id),n=L.cnt[id];if(!x||!n)return;var z=lSize(x),it=mkItem(z.fd,n*z.m*z.fd.b);it.sn=x.sn;it.cnt=n;if(z.l)it.sz=x.u==="palm"?z.l.toLowerCase()+" palm":x.id==="avo"&&z.fd!==x.fd?z.l.toLowerCase()+" avocado":z.l;items.push(it);});
+      var x=lrowById(id),n=L.cnt[id];if(!x||!n)return;var z=lSize(x),it=mkItem(z.fd,n*z.m*z.fd.b);it.sn=x.sn;it.cnt=n;if(z.l)it.sz=z.l;items.push(it);});
     var d=loadMeals(mdate);
     if(L.edit){var em=d.meals.filter(function(q){return q.id===L.edit;})[0];if(!em){closeLog();return;}
       if(!items.length){if(!confirm("Delete this "+em.slot.toLowerCase()+"?"))return;d.meals=d.meals.filter(function(q){return q.id!==L.edit;});}
