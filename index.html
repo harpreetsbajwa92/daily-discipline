@@ -651,6 +651,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #sList .gcard .gv{font-size:18px;font-weight:700;color:#fff;line-height:1.25}#sList .gcard .gv small{font-size:12px;color:#a3adb4;font-weight:600;margin-left:2px}
 #sList .gcard .gn{font-size:12px;color:#a3adb4;line-height:1.25}
 #sList .gcard.wide{grid-column:1/-1}
+#sList #sHeight .sct{display:flex;padding:6px 8px 0;min-height:40px}
 /* trends */
 #p-trends #bodyArea,#p-trends #exArea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
 #p-trends .drow{width:auto;min-width:0}
@@ -782,7 +783,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-12";
+var APP_VERSION="2026.10.31-13";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1527,7 +1528,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       if(!m){m={week:l.week,_local:true};rows.push(m);}
       TAPE_KEYS.forEach(function(k){if(typeof m[k]!=="number"&&typeof l[k]==="number")m[k]=l[k];});
       if(typeof l._sw==="number"&&typeof m._sw!=="number")m._sw=l._sw;});
-    rows.forEach(function(r){var v={weight_kg:typeof r.weight_kg==="number"?r.weight_kg:r._sw};TAPE_KEYS.forEach(function(k){v[k]=r[k];});var g=grokCalc(v);
+    rows.forEach(function(r){var v={weight_kg:typeof r.weight_kg==="number"?r.weight_kg:r._sw,height_cm:sunHeight(r.week)};TAPE_KEYS.forEach(function(k){v[k]=r[k];});var g=grokCalc(v);
       if(g.bf!==undefined){r._g_bf=g.bf;r._fat_mass=g.fat;r._lean_mass=g.lean;}if(g.bmr!==undefined)r._g_bmr=g.bmr;if(g.wht!==undefined)r._g_wht=g.wht;});
     return rows.sort(function(a,b){return a.week<b.week?-1:1;});}
   function series(m,rows){return rows.filter(function(e){return typeof e[m.k]==="number";}).map(function(e){return {w:e.week,v:e[m.k]};});}
@@ -1930,8 +1931,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     "Avg HRV + resting heart rate":[["avg_hrv_ms","ms HRV"],["avg_rhr_bpm","bpm RHR"]]};
   var TAPE_KEYS=["neck_cm","shoulders_cm","bicep_l_cm","bicep_r_cm","chest_cm","waist_cm","hips_cm","thigh_l_cm","thigh_r_cm","calf_l_cm","calf_r_cm"];
   // ---- Grok estimate: body composition from scale weight + tape + height (male). Same function for the Sunday tab and Trends. ----
-  var HEIGHT_CM=178, AGE=33;
-  function grokCalc(v){var r={},num=function(x){return typeof x==="number"&&isFinite(x)&&x>0;},H=HEIGHT_CM,hm=H/100,w=v.weight_kg,wa=v.waist_cm,ne=v.neck_cm,bf=null;
+  var HEIGHT_CM=178, AGE=33;   // HEIGHT_CM is only the fallback; the Sunday "Height" card (sun values height_cm) wins
+  // height for a Sunday: that Sunday's height_cm, else the latest earlier Sunday that has one, else 178
+  function sunHeight(sd){var best=null,bk="";allKeys().forEach(function(k){if(!/^sun:\d{4}-\d{2}-\d{2}$/.test(k))return;var d=k.slice(4);if(d>sd||d<bk)return;var x=sunLoad(d).v.height_cm;if(typeof x==="number"&&x>0){best=x;bk=d;}});return best||HEIGHT_CM;}
+  function grokCalc(v){var r={},num=function(x){return typeof x==="number"&&isFinite(x)&&x>0;},H=num(v.height_cm)?v.height_cm:HEIGHT_CM,hm=H/100,w=v.weight_kg,wa=v.waist_cm,ne=v.neck_cm,bf=null;
     if(num(w)){r.bmr=Math.round(10*w+6.25*H-5*AGE+5);r.bmi=w/(hm*hm);}
     if(num(wa)){r.wht=wa/H;if(num(v.hips_cm))r.whip=wa/v.hips_cm;if(num(v.chest_cm))r.cw=v.chest_cm/wa;if(num(v.shoulders_cm))r.sw=v.shoulders_cm/wa;
       if(num(ne)&&wa>ne){bf=86.010*Math.log10((wa-ne)/2.54)-70.041*Math.log10(H/2.54)+36.76;r.method="navy";}
@@ -1940,7 +1943,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     return r;}
   // that Sunday's inputs: form values first, then the body.json entry for the same week (±3 days)
   function sunGrokInputs(sd,o){var b=null;(bodyData||[]).forEach(function(e){if(e&&e.week&&Math.abs(dDiff(e.week,sd))<=3&&(!b||Math.abs(dDiff(e.week,sd))<Math.abs(dDiff(b.week,sd))))b=e;});
-    var v={};["weight_kg"].concat(TAPE_KEYS).forEach(function(k){if(typeof o.v[k]==="number")v[k]=o.v[k];else if(b&&typeof b[k]==="number")v[k]=b[k];});return v;}
+    var v={height_cm:sunHeight(sd)};["weight_kg"].concat(TAPE_KEYS).forEach(function(k){if(typeof o.v[k]==="number")v[k]=o.v[k];else if(b&&typeof b[k]==="number")v[k]=b[k];});return v;}
   function grokHtml(sd,o){var v=sunGrokInputs(sd,o),g=grokCalc(v),D="—";
     function c(l,val,u,note,wide){return '<div class="gcard'+(wide?" wide":"")+'"><div class="gl">'+l+'</div><div class="gv">'+(val===null?D:val+(u?'<small>'+u+'</small>':''))+'</div>'+(note?'<div class="gn">'+note+'</div>':'')+'</div>';}
     var need=typeof v.weight_kg!=="number"?"add weight":typeof v.waist_cm!=="number"?"add waist (and neck)":"";
@@ -1980,8 +1983,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         if(!ins){h+='<button type="button" class="card sm'+(on?" done":"")+'" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button>';return;}
         h+='<div class="card sm sinp'+(on?" done":"")+'" id="sc'+i+'"><button type="button" class="sct" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button><div class="sin">'+
           ins.map(function(q){return '<label class="sinl"><input type="text" inputmode="decimal" autocomplete="off" data-k="'+q[0]+'" data-slot="'+i+'" value="'+sinShow(q[0],q[1],o)+'" placeholder="—" aria-label="'+it[0]+' '+(q[1]==="T"?U:q[1])+'"><span>'+(q[1]==="T"?U:q[1])+'</span></label>';}).join("")+'</div></div>';});
+      if(tt[0]==="Scale")h+='<div class="card sm sinp" id="sHeight"><div class="sct"><span class="cb"><div class="t">Height</div><div class="s">Used for the Grok estimate</div></span></div><div class="sin"><label class="sinl"><input type="text" inputmode="decimal" autocomplete="off" data-k="height_cm" data-h="1" value="'+f1(sunHeight(sd)).replace(/\.0$/,"")+'" placeholder="'+HEIGHT_CM+'" aria-label="Height cm"><span>cm</span></label></div></div>';
       h+='</div>';
-      if(tt[0]==="Scale")h+='<div class="sec">Grok estimate · body composition</div><div class="gsub">calculated from weight + tape · height '+HEIGHT_CM+' cm · age '+AGE+'</div><div class="cards" id="sGrok">'+grokHtml(sd,o)+'</div>';
+      if(tt[0]==="Scale")h+='<div class="sec">Grok estimate · body composition</div><div class="gsub">calculated from weight + tape · height <span id="sGH">'+f1(sunHeight(sd)).replace(/\.0$/,"")+'</span> cm · age '+AGE+'</div><div class="cards" id="sGrok">'+grokHtml(sd,o)+'</div>';
     });
     $("sList").innerHTML=h; sunScore(st); bkNudge();
     if(bodyState==="loading"&&!sunBodyAsked){sunBodyAsked=true;loadBody();}   // body.json weight fallback for the Grok estimate
@@ -2000,6 +2004,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var i=+b.dataset.si; while(st.length<SUN_SLOTS)st.push(false); st[i]=!st[i]; sunSave(sd,o); renderSunday();
   });
   $("sList").addEventListener("input",function(e){var x=e.target;if(!x.dataset||!x.dataset.k)return;
+    if(x.dataset.h){var sh=sunDate(),oh=sunLoad(sh),rh=x.value.trim().replace(",","."),nh=Number(rh);   // Height: info only, no tick
+      if(rh===""){delete oh.v.height_cm;}else if(isNaN(nh)||nh<100||nh>250)return;else oh.v.height_cm=nh;
+      sunSave(sh,oh);var gh=$("sGH");if(gh)gh.textContent=f1(sunHeight(sh)).replace(/\.0$/,"");grokRefresh();return;}
     var sd=sunDate(),o=sunLoad(sd),k=x.dataset.k,raw=x.value.trim().replace(",","."),n=raw===""?null:Number(raw),tape=TAPE_KEYS.indexOf(k)>=0;
     if(raw!==""&&(isNaN(n)||n<0))return;
     if(n===null)delete o.v[k];else{o.v[k]=tape&&sunUnit(o)==="in"?n*2.54:n;var i=+x.dataset.slot;while(o.t.length<SUN_SLOTS)o.t.push(false);
