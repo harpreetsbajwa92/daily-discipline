@@ -652,6 +652,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #sList .gcard .gn{font-size:12px;color:#a3adb4;line-height:1.25}
 #sList .gcard.wide{grid-column:1/-1}
 #sList #sHeight .sct{display:flex;padding:6px 8px 0;min-height:40px}
+#sList .snote{grid-column:1/-1}#sList .snote .sct{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 0;min-height:32px}
+#sList .snote textarea{width:100%;box-sizing:border-box;min-height:96px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:#1b2226;color:#fff;font:inherit;font-size:16px;line-height:1.35;padding:8px 10px;resize:vertical}
 /* trends */
 #p-trends #bodyArea,#p-trends #exArea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
 #p-trends .drow{width:auto;min-width:0}
@@ -783,7 +785,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-13";
+var APP_VERSION="2026.10.31-14";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1918,12 +1920,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       ["Calf L","Widest point, standing, weight even",19],["Calf R","Widest point, standing, weight even",20]]],
     ["WHOOP|week view, Sun-Sat averages",[["Avg calories burned","Trend view > Calories > W",5],["Avg steps","Trend view > Steps > W",6],["Avg sleep hours","Trend view > Sleep > W",7],["Avg recovery %","Trend view > Recovery > W",8],["Avg HRV + resting heart rate","Trend view > W",9]]],
     ["Photos",[["Front, side, back","Same spot, same light, relaxed + flexed",10]]],
-    ["App",[["Copied workout report","Trends tab > Copy report for Fitness",11]]],
     ["Notes",[["How the week felt","Hunger, energy, cravings, any alcohol, missed days",12]]]
   ];
-  // storage slot per item is the explicit 3rd element (never reuse a slot). Retired: 1 body fat %, 2 skeletal muscle, 3 visceral fat (old ticks/values stay stored).
+  // storage slot per item is the explicit 3rd element (never reuse a slot). Retired: 1 body fat %, 2 skeletal muscle, 3 visceral fat, 11 copied workout report (old ticks/values stay stored).
   var SUN_N=SUN.reduce(function(a,s){return a+s[1].length;},0), SUN_SLOTS=23;
-  // values (optional): nn-v1:sun:DATE = {t:[ticks], u:"cm"|"in", v:{body.json key: number}}; old plain tick arrays still load. Tape stored in cm.
+  // values (optional): nn-v1:sun:DATE = {t:[ticks], u:"cm"|"in", v:{body.json key: number, notes: string}}; old plain tick arrays still load. Tape stored in cm.
   var SIN={"Weight":[["weight_kg","kg"]],"Body fat %":[["body_fat_pct","%"]],"Skeletal muscle (kg)":[["skeletal_muscle_kg","kg"]],"Visceral fat":[["visceral_fat",""]],
     "Neck":[["neck_cm","T"]],"Shoulders":[["shoulders_cm","T"]],"Bicep L":[["bicep_l_cm","T"]],"Bicep R":[["bicep_r_cm","T"]],"Chest":[["chest_cm","T"]],"Waist":[["waist_cm","T"]],"Hips / butt":[["hips_cm","T"]],
     "Thigh L":[["thigh_l_cm","T"]],"Thigh R":[["thigh_r_cm","T"]],"Calf L":[["calf_l_cm","T"]],"Calf R":[["calf_r_cm","T"]],
@@ -1980,6 +1981,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       if(tape)h+='<div class="sunit" role="group" aria-label="Tape unit"><button type="button" class="lchip'+(U==="cm"?" on":"")+'" data-unit="cm" aria-pressed="'+(U==="cm")+'">cm</button><button type="button" class="lchip'+(U==="in"?" on":"")+'" data-unit="in" aria-pressed="'+(U==="in")+'">in</button></div>';
       h+='<div class="cards">';
       sec[1].forEach(function(it){var i=it[2],on=!!st[i],ins=SIN[it[0]];
+        if(it[0]==="How the week felt"){h+='<div class="card sm sinp snote'+(on?" done":"")+'" id="sc'+i+'"><div class="sct"><span class="cb"><div class="t">'+it[0]+'</div></span><span class="chk">✓</span></div><div class="sin"><textarea id="sNotes" rows="4" data-k="notes" data-txt="1" data-slot="'+i+'" placeholder="Hunger, energy, cravings, any alcohol, missed days…" aria-label="How the week felt">'+esc(typeof o.v.notes==="string"?o.v.notes:"")+'</textarea></div></div>';return;}
         if(!ins){h+='<button type="button" class="card sm'+(on?" done":"")+'" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button>';return;}
         h+='<div class="card sm sinp'+(on?" done":"")+'" id="sc'+i+'"><button type="button" class="sct" data-si="'+i+'" aria-pressed="'+on+'"><span class="cb"><div class="t">'+it[0]+'</div><div class="s">'+it[1]+'</div></span><span class="chk">✓</span></button><div class="sin">'+
           ins.map(function(q){return '<label class="sinl"><input type="text" inputmode="decimal" autocomplete="off" data-k="'+q[0]+'" data-slot="'+i+'" value="'+sinShow(q[0],q[1],o)+'" placeholder="—" aria-label="'+it[0]+' '+(q[1]==="T"?U:q[1])+'"><span>'+(q[1]==="T"?U:q[1])+'</span></label>';}).join("")+'</div></div>';});
@@ -2004,6 +2006,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var i=+b.dataset.si; while(st.length<SUN_SLOTS)st.push(false); st[i]=!st[i]; sunSave(sd,o); renderSunday();
   });
   $("sList").addEventListener("input",function(e){var x=e.target;if(!x.dataset||!x.dataset.k)return;
+    if(x.dataset.txt){var sn=sunDate(),on=sunLoad(sn),txt=x.value,si=+x.dataset.slot,has=txt.trim()!=="";   // Notes: free text, ticked automatically when non-empty
+      if(has)on.v.notes=txt;else delete on.v.notes;while(on.t.length<SUN_SLOTS)on.t.push(false);on.t[si]=has;
+      var cn=$("sc"+si);if(cn)cn.classList.toggle("done",has);sunSave(sn,on);sunScore(on.t);return;}
     if(x.dataset.h){var sh=sunDate(),oh=sunLoad(sh),rh=x.value.trim().replace(",","."),nh=Number(rh);   // Height: info only, no tick
       if(rh===""){delete oh.v.height_cm;}else if(isNaN(nh)||nh<100||nh>250)return;else oh.v.height_cm=nh;
       sunSave(sh,oh);var gh=$("sGH");if(gh)gh.textContent=f1(sunHeight(sh)).replace(/\.0$/,"");grokRefresh();return;}
@@ -2026,7 +2031,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     function t(lbl,k){return lbl+": "+(typeof v[k]==="number"?f1(v[k])+" cm ("+f1(v[k]/2.54)+" in)":"__ cm");}
     return "Sunday check-in "+fmt(sunDate())+"\nWeight kg: "+n("weight_kg")+
       "\n\nTAPE (cm, same morning, before eating)\n"+[t("Neck","neck_cm"),t("Shoulders","shoulders_cm"),t("Bicep L","bicep_l_cm"),t("Bicep R","bicep_r_cm"),t("Chest","chest_cm"),t("Waist (belly button)","waist_cm"),t("Hips/butt","hips_cm"),t("Thigh L","thigh_l_cm"),t("Thigh R","thigh_r_cm"),t("Calf L","calf_l_cm"),t("Calf R","calf_r_cm")].join("\n")+
-      "\n\nWHOOP avg calories burned/day: "+n("avg_calories_burned")+"\nAvg steps/day: "+n("avg_steps")+"\nAvg sleep h: "+n("avg_sleep_hours")+"\nAvg recovery %: "+n("avg_recovery_pct")+"\nAvg HRV ms: "+n("avg_hrv_ms")+"\nAvg resting HR bpm: "+n("avg_rhr_bpm")+"\nNotes: ";
+      "\n\nWHOOP avg calories burned/day: "+n("avg_calories_burned")+"\nAvg steps/day: "+n("avg_steps")+"\nAvg sleep h: "+n("avg_sleep_hours")+"\nAvg recovery %: "+n("avg_recovery_pct")+"\nAvg HRV ms: "+n("avg_hrv_ms")+"\nAvg resting HR bpm: "+n("avg_rhr_bpm")+"\nNotes: "+(typeof v.notes==="string"?v.notes:"");
   }
   $("sCopy").addEventListener("click",function(){
     var t=sunTemplate(), box=$("sBox"), btn=this;
