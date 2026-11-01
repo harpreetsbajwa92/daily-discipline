@@ -507,6 +507,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .bknudge{display:block;width:100%;min-height:44px;margin:4px 0 8px;border-radius:12px;border:1px solid rgba(0,147,231,.5);background:rgba(0,147,231,.1);color:#7cc4f5;font-size:15px;font-weight:600;touch-action:manipulation}
 .appver{text-align:center;color:#5d686f;font-size:11px;margin:18px 0 4px}
 .syhow{margin-top:10px;line-height:1.55}.syhow a{color:#7cc4ff}.syhr{border:0;border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px}.syerr{color:#ef8a87}
+.dsets{display:block;font-size:12px;color:#8c979f;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -591,7 +592,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   <div id="copyHint"></div>
   <textarea id="reportBox" readonly hidden></textarea>
   <div class="box"><h3>Strength progress</h3><div id="sumList"></div></div>
-  <h2>Strength · est. 1RM · tap for trend view</h2><div id="exArea"></div>
+  <h2>Strength · avg weight per set · tap for trend view</h2><div id="exArea"></div>
   <div class="box"><h3>Habits: weekly average</h3><div class="empty" id="streakLine"></div><div id="habChart"></div></div>
   <div class="box"><h3>Workouts per week</h3><div id="woChart"></div></div>
   <div class="box bkcard"><h3>Data</h3>
@@ -616,7 +617,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-3";
+var APP_VERSION="2026.10.31-4";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1197,31 +1198,32 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var out=[];
     woDates().forEach(function(d){
       var e=loadWo(d).ex[id]; if(!e||!e.s)return;
-      var best=0, top=0;
-      e.s.forEach(function(s){var w=parseFloat(s&&s[0]), r=parseFloat(s&&s[1]); if(w>0){top=Math.max(top,w); if(r>0)best=Math.max(best,w*(1+r/30));}});
-      if(best>0)out.push({d:d,e1:best,top:top});
+      // session value = AVERAGE weight across logged sets (blank/0 weight = skipped set, ignored)
+      var ws=[], top=0;
+      e.s.forEach(function(s){var w=parseFloat(s&&s[0]); if(w>0){ws.push(w);top=Math.max(top,w);}});
+      if(ws.length)out.push({d:d,avg:ws.reduce(function(a,b){return a+b;},0)/ws.length,ws:ws,top:top});
     });
     return out;
   }
   function r1(x){return Math.round(x*10)/10;}
   function status(ss){
     if(ss.length<2)return {c:"neu",t:"1 session so far - keep logging",f:"new"};
-    var L=ss[ss.length-1], prev=ss.slice(0,-1), prevBest=Math.max.apply(null,prev.map(function(s){return s.e1;}));
-    var allBest=Math.max(prevBest,L.e1), bestDate=null;
-    ss.forEach(function(s){if(!bestDate&&s.e1>=allBest*0.995)bestDate=s.d;});
+    var L=ss[ss.length-1], prev=ss.slice(0,-1), prevBest=Math.max.apply(null,prev.map(function(s){return s.avg;}));
+    var allBest=Math.max(prevBest,L.avg), bestDate=null;
+    ss.forEach(function(s){if(!bestDate&&s.avg>=allBest*0.995)bestDate=s.d;});
     var sinceBest=daysBetween(bestDate,L.d);
-    var rb=Math.max.apply(null,prev.slice(-3).map(function(s){return s.e1;}));
-    if(L.e1<rb*0.95)return {c:"down",t:"Down "+Math.round((1-L.e1/rb)*100)+"% vs recent best - check sleep, food and recovery",f:"dropping"};
+    var rb=Math.max.apply(null,prev.slice(-3).map(function(s){return s.avg;}));
+    if(L.avg<rb*0.95)return {c:"down",t:"Down "+Math.round((1-L.avg/rb)*100)+"% vs recent best - check sleep, food and recovery",f:"dropping"};
     if(sinceBest>=21){var wk=Math.floor(sinceBest/7);return {c:"flat",t:"Flat for "+wk+" weeks - consider adding a rep or changing the variation",f:"flat"};}
     var base=null; prev.forEach(function(s){if(!base&&daysBetween(s.d,L.d)<=28)base=s;}); if(!base)base=prev[prev.length-1];
-    var pct=(L.e1-base.e1)/base.e1*100, weeks=Math.max(1,Math.round(daysBetween(base.d,L.d)/7));
+    var pct=(L.avg-base.avg)/base.avg*100, weeks=Math.max(1,Math.round(daysBetween(base.d,L.d)/7));
     if(pct>=0.5)return {c:"up",t:"Up "+Math.round(pct)+"% in "+weeks+" week"+(weeks>1?"s":""),f:"progressing"};
     return {c:"neu",t:"Holding steady",f:"steady"};
   }
   function strengthIds(){return Object.keys(EXINFO).filter(function(id){return EXINFO[id].kind==="w"&&sessions(id).length;});}
   function svgLine(ss){
     var W=340,H=180,L=36,R=10,T=12,B=26;
-    var vals=[];ss.forEach(function(s){vals.push(s.e1,s.top);});
+    var vals=[];ss.forEach(function(s){vals.push(s.avg,s.top);});
     var mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals);if(mx-mn<1){mx+=1;mn-=1;}var pad=(mx-mn)*0.08;mn-=pad;mx+=pad;
     var d0=ss[0].d, span=Math.max(1,daysBetween(d0,ss[ss.length-1].d));
     function X(s){return ss.length===1?(L+W-R)/2:L+(W-L-R)*daysBetween(d0,s.d)/span;}
@@ -1229,9 +1231,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var g='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
     [mx-pad,(mx+mn)/2,mn+pad].forEach(function(v){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#3a444c"/><text x="'+(L-4)+'" y="'+(Y(v)+4)+'" fill="#8c979f" font-size="11" text-anchor="end">'+Math.round(v)+'</text>';});
     function line(f,col,dash){var p=ss.map(function(s){return X(s).toFixed(1)+","+Y(s[f]).toFixed(1);}).join(" ");return '<polyline points="'+p+'" fill="none" stroke="'+col+'" stroke-width="2.5"'+(dash?' stroke-dasharray="5 4"':'')+'/>'+ss.map(function(s){return '<circle cx="'+X(s)+'" cy="'+Y(s[f])+'" r="3.5" fill="'+col+'"/>';}).join("");}
-    g+=line("top","#16EC06",true)+line("e1","#0093E7",false);
+    g+=line("top","#16EC06",true)+line("avg","#0093E7",false);
     g+='<text x="'+L+'" y="'+(H-6)+'" fill="#8c979f" font-size="11">'+fmtShort(ss[0].d)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" fill="#8c979f" font-size="11" text-anchor="end">'+fmtShort(ss[ss.length-1].d)+'</text></svg>';
-    return g+'<div class="legend"><span><i style="background:#0093E7"></i>Est. 1RM (lbs)</span><span><i style="background:#16EC06"></i>Top weight (lbs)</span></div>';
+    return g+'<div class="legend"><span><i style="background:#0093E7"></i>Avg weight per set (lbs)</span><span><i style="background:#16EC06"></i>Top weight (lbs)</span></div>';
   }
   function svgBars(items,maxV,col,dec){
     var W=340,H=140,T=16,B=22,gap=8,bw=(W-gap*9)/8,g='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
@@ -1278,9 +1280,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function fnum(v,dec,mind){return Number(v).toLocaleString(undefined,{minimumFractionDigits:mind===undefined?dec:mind,maximumFractionDigits:dec});}
   function toLbs(kg){return (Math.round(kg*2.20462*10)/10).toFixed(1);}
   var EXM={};
-  function exMetric(id){if(!EXINFO[id]||EXINFO[id].kind!=="w")return null;return EXM[id]||(EXM[id]={s:"ex-"+id,k:"e1",src:"ex",ex:id,n:EXINFO[id].name+" · est. 1RM",i:"🏋️",u:"lbs",good:"up",dec:1,t:"line"});}
+  function exMetric(id){if(!EXINFO[id]||EXINFO[id].kind!=="w")return null;return EXM[id]||(EXM[id]={s:"ex-"+id,k:"avg",src:"ex",ex:id,n:EXINFO[id].name+" · avg weight",i:"🏋️",u:"lbs",good:"up",dec:0,t:"line"});}
   function metricBySlug(s){var a=BODY_METRICS.concat(NUTRI);for(var i=0;i<a.length;i++)if(a[i].s===s)return a[i];if(s&&s.indexOf("ex-")===0)return exMetric(s.slice(3));return null;}
-  function seriesFor(m,rows){return m.src==="meals"?mealDaily(m.k):m.src==="ex"?sessions(m.ex).map(function(x){return {w:x.d,v:r1(x.e1)};}):series(m,rows);}
+  function seriesFor(m,rows){return m.src==="meals"?mealDaily(m.k):m.src==="ex"?sessions(m.ex).map(function(x){return {w:x.d,v:Math.round(x.avg)};}):series(m,rows);}
   function goodCls(m,d){var eps=m.dec?0.05:0.5;if(m.good==="neutral")return "n";if(Math.abs(d)<eps)return m.good==="upflat"?"g":"n";var g=m.good==="down"?d<0:d>0;return g?"g":"b";}
   function unitTxt(m){return m.u==="%"?"%":m.u?" "+m.u:"";}
   function bodyRows(){
@@ -1413,7 +1415,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     $("tvNext").disabled=w.all||tvOff===0;
     $("tvInsight").textContent=insight(m,pts,av,w);
     $("tvChart").innerHTML=tvChart(m,cpts,w,av);
-    $("tvFoot").textContent=m.src==="ex"?"Estimated 1RM (lbs) from your best set each session. Log weights on the Workout tab.":m.src==="meals"?(m.daily?"One bar per logged day. ":"One bar per week (average of logged days). ")+"From your Meals log; ❓ items aren't counted until filled in.":(rows.length?"Last check-in: "+fmt(rows[rows.length-1].week)+". ":"")+(m.calc?"Calculated from weight × body fat %. ":"")+"Updated by Fitness every Sunday.";
+    $("tvFoot").textContent=m.src==="ex"?"Average weight per set (lbs) each session; blank sets are skipped. Log weights on the Workout tab.":m.src==="meals"?(m.daily?"One bar per logged day. ":"One bar per week (average of logged days). ")+"From your Meals log; ❓ items aren't counted until filled in.":(rows.length?"Last check-in: "+fmt(rows[rows.length-1].week)+". ":"")+(m.calc?"Calculated from weight × body fat %. ":"")+"Updated by Fitness every Sunday.";
   }
   $("bodyArea").addEventListener("click",function(e){
     var b=e.target.closest("[data-m]"); if(!b)return;
@@ -1448,8 +1450,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(!ids.length){$("exArea").innerHTML='<div class="empty">Charts appear after your first logged session 💪</div>';}
     else{
       $("exArea").innerHTML=ids.map(function(id){var ss=sessions(id),L=ss[ss.length-1],P=ss[ss.length-2],arr="";
-        if(P){var d=L.e1-P.e1;arr='<i class="da '+(Math.abs(d)<0.05?"n":d>0?"g":"b")+'">'+(Math.abs(d)<0.05?"●":d>0?"▲":"▼")+'</i>';}
-        return '<button class="drow" data-m="ex-'+id+'"><span class="di">🏋️</span><span class="dn">'+EXINFO[id].name+'</span><span class="dr"><div class="dv">'+fnum(r1(L.e1),1,0)+'<small> lbs</small>'+arr+'</div><div class="dp">'+(P?fnum(r1(P.e1),1,0)+' lbs prev':ss.length+' session')+'</div></span></button>';}).join("");
+        if(P){var d=Math.round(L.avg)-Math.round(P.avg);arr='<i class="da '+(d===0?"n":d>0?"g":"b")+'">'+(d===0?"●":d>0?"▲":"▼")+'</i>';}
+        return '<button class="drow" data-m="ex-'+id+'"><span class="di">🏋️</span><span class="dn">'+EXINFO[id].name+'<small class="dsets">'+L.ws.map(function(w){return fnum(w,1,0);}).join(" · ")+'</small></span><span class="dr"><div class="dv">'+Math.round(L.avg)+'<small> lbs</small>'+arr+'</div><div class="dp">'+ss.length+' session'+(ss.length>1?'s':'')+(P?' · prev '+Math.round(P.avg):'')+'</div></span></button>';}).join("");
     }
     // habits weekly avg
     var habDates=allKeys().filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}).sort();
@@ -1505,10 +1507,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       out.push.apply(out,lines);
     }
     if(!any)out.push("No workouts logged");
-    out.push("","PROGRESS (est. 1RM, best set per session)");
+    out.push("","PROGRESS (average weight per set, per session)");
     var ids=strengthIds();
     if(!ids.length)out.push("No strength data yet");
-    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+" ["+EXINFO[id].eq.rep+"]: "+s.t+" (top "+L.top+" lbs, e1RM "+r1(L.e1)+" lbs)");});
+    ids.forEach(function(id){var ss=sessions(id),s=status(ss),L=ss[ss.length-1];var sym={up:"↑",flat:"→",down:"↓",neu:"•"}[s.c];out.push(sym+" "+EXINFO[id].name+" ["+EXINFO[id].eq.rep+"]: "+s.t+" (avg "+Math.round(L.avg)+" lbs/set: "+L.ws.join(", ")+"; top "+L.top+" lbs)");});
     return out.join("\n");
   }
   $("copyBtn").addEventListener("click",function(){
