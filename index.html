@@ -514,6 +514,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .lsrch input:focus{outline:none;border-color:var(--blue)}
 #lQx{flex:0 0 46px;height:46px;border-radius:12px;border:0;background:#2b343b;color:#e6eaec;font-size:18px;touch-action:manipulation}
 .lnomatch{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#cfd6db;font-size:15px;text-align:left;touch-action:manipulation}.lnomatch u{color:#7cc4f5}
+.cgrp{margin:6px 2px -2px;font-family:var(--fc);font-size:13px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#7f8b93}
+.cgrp:first-child{margin-top:0}
 </style>
 </head>
 <body>
@@ -624,7 +626,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-5";
+var APP_VERSION="2026.10.31-6";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -637,11 +639,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     ["8,000+ steps","Walk after meals and on calls"],
     ["Train (5 days/week)","Push, Pull, Legs, Upper, Lower + abs 3x"],
     ["Supplements","Fish oil, CoQ10, multivitamin, 5 g creatine"],
-    ["7+ hours sleep","In bed by 12, up by 8"]
+    ["7+ hours sleep","In bed by 12, up by 8"],
+    ["Self-improvement","Watch/read something on business & mindset"],
+    ["Prayer","Path or go to Gurdwara 🙏"]
   ];
-  var SHORT=["Calories","Protein","No sugar/alcohol","Water","Steps","Train","Supplements","Sleep"];
+  var SHORT=["Calories","Protein","No sugar/alcohol","Water","Steps","Train","Supplements","Sleep","Self-improvement","Prayer"];
   // Calories + protein moved to the Meals tab. Storage keeps all 8 slots (old ticks untouched); only ACT are shown/scored.
-  var ACT=[2,3,4,5,6,7], NS=ITEMS.length, N=ACT.length, PREFIX="nn-v1:", TRAIN=5;
+  // MIND habits (8, 9) added 2026-11-01. Days before MIND_FROM only needed the 6 BODY ticks for a full day / the streak.
+  var BODY=[2,3,4,5,6,7], MIND=[8,9], MIND_FROM="2026-11-01";
+  var ACT=BODY.concat(MIND), NS=ITEMS.length, N=ACT.length, PREFIX="nn-v1:", TRAIN=5;
   var DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
   var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -723,9 +729,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function setJ(k,v){try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch(e){}syncTouch(PREFIX+k);}
   function allKeys(){var a=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(PREFIX)===0)a.push(k.slice(PREFIX.length));}return a;}
   function hasHab(k){return Array.isArray(getJ(k));}
-  function load(k){var v=getJ(k);if(Array.isArray(v)&&v.length===NS)return v.map(Boolean);return new Array(NS).fill(false);}
+  function load(k){var v=getJ(k),r=new Array(NS).fill(false);if(Array.isArray(v))for(var i=0;i<NS&&i<v.length;i++)r[i]=!!v[i];return r;}
   function save(k,v){setJ(k,v);}
   function count(v){return ACT.filter(function(i){return !!v[i];}).length;}
+  function fullDay(k){var st=load(k);return (k<MIND_FROM?BODY:ACT).every(function(i){return !!st[i];});}
   function loadWo(k){var v=getJ("wo:"+k);if(v&&typeof v==="object"){v.ex=v.ex||{};for(var o in ALIAS){if(v.ex[o]&&!v.ex[ALIAS[o]])v.ex[ALIAS[o]]=v.ex[o];}return v;}return {plan:null,ex:{},done:false};}
   function saveWo(k,v){setJ("wo:"+k,v);}
   function woDates(){return allKeys().filter(function(k){return k.indexOf("wo:")===0;}).map(function(k){return k.slice(3);}).sort();}
@@ -758,11 +765,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     return '<div class="ring '+(cls||"")+'" style="width:'+size+'px;height:'+size+'px"><svg viewBox="0 0 '+size+' '+size+'" width="'+size+'" height="'+size+'"><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="#323b42" stroke-width="'+sw+'"/>'+
       (p>0?'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="'+sw+'" stroke-linecap="round" stroke-dasharray="'+(c*p).toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 '+size/2+' '+size/2+')"/>':'')+'</svg><div class="rin">'+inner+'</div></div>';}
   function recCol(f){return f>=0.83?"#16EC06":f>=0.5?"#FFDE00":"#FF0026";}
-  var HIC=["🔥","🥚","🚫","💧","👟","🏋️","💊","😴"];
+  var HIC=["🔥","🥚","🚫","💧","👟","🏋️","💊","😴","📚","🙏"];
   function streak(){
     var d=parse(today), s=0;
-    if(count(load(today))<N) d=addDays(d,-1);
-    while(count(load(key(d)))===N && s<3650){s++;d=addDays(d,-1);}
+    if(!fullDay(today)) d=addDays(d,-1);
+    while(fullDay(key(d)) && s<3650){s++;d=addDays(d,-1);}
     return s;
   }
 
@@ -785,6 +792,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     $("hTarget").innerHTML='<div><div class="tt">'+tt+'</div><div class="tb">'+tb+'</div></div><div class="tn'+(c===N?" ok":"")+'"><span>✓</span>'+c+'</div>';
     var html="";
     ACT.forEach(function(i){
+      if(i===BODY[0])html+='<div class="cgrp">Body</div>';
+      if(i===MIND[0])html+='<div class="cgrp">Mind</div>';
       var it=ITEMS[i], t=it[0], sub=it[1];
       if(i===TRAIN&&rest){t="Rest day: walk";sub="Thu & Sun are rest days";}
       html+='<button class="card'+(st[i]?" done":"")+'" data-i="'+i+'" aria-pressed="'+st[i]+'"><span class="hic">'+HIC[i]+'</span><span class="cb"><div class="t">'+t+'</div><div class="s">'+sub+'</div></span><span class="chk">✓</span></button>';
@@ -794,7 +803,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     $("hWeekTitle").textContent=(mon===monday(today)?"This week":"Week of "+fmtShort(mon));
     for(var i=0;i<7;i++){
       var k=shift(mon,i), sc=count(load(k)), has=hasHab(k), f=sc/N, d=parse(k);
-      wh+='<button class="wd wdc'+(k===view?" sel":"")+(k===today?" tdy":"")+'" data-k="'+k+'"><span class="wdl">'+DOW[d.getDay()].charAt(0)+'</span>'+ring(has||sc?f:0,recCol(f),34,4,'')+'<span class="wds">'+(has||sc?sc:"-")+'</span></button>';
+      wh+='<button class="wd wdc'+(k===view?" sel":"")+(k===today?" tdy":"")+'" data-k="'+k+'"><span class="wdl">'+DOW[d.getDay()].charAt(0)+'</span>'+ring(has||sc?f:0,recCol(fullDay(k)?1:f),34,4,'')+'<span class="wds">'+(has||sc?sc:"-")+'</span></button>';
     }
     $("hWeek").innerHTML=wh;
     $("note").className="note"+(parse(today).getDay()===0?" mon":"");
@@ -1491,7 +1500,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var c=done.filter(function(d){return d>=m&&d<=shift(m,6);}).length; if(c)anyWo=true;
       wb.push({l:hb[hb.length-1].l,v:c,full:c>=5});
     }
-    $("streakLine").textContent="Current streak: "+streak()+" day"+(streak()===1?"":"s")+" at "+N+"/"+N+" 🔥";
+    $("streakLine").textContent="Current streak: "+streak()+" day"+(streak()===1?"":"s")+" with every habit done 🔥";
     $("habChart").innerHTML=anyHab?svgBars(hb,N,"#0093E7",true):'<div class="empty">No habit data yet. Tick your cards on the Habits tab.</div>';
     $("woChart").innerHTML=anyWo?svgBars(wb,6,"#0093E7",false)+'<div class="legend">Gym sessions marked done (goal 5). Green = 5+.</div>':'<div class="empty">No workouts marked done yet. Finish one on the Workout tab.</div>';
   }
@@ -1506,7 +1515,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var k=shift(start,i);
       if(!hasHab(k)){out.push(fmt(k)+": not logged");continue;}
       var st=load(k), c=count(st); tot+=c; n++;
-      var miss=ACT.filter(function(j){return !st[j];}).map(function(j){return SHORT[j];});
+      var miss=(k<MIND_FROM?BODY:ACT).filter(function(j){return !st[j];}).map(function(j){return SHORT[j];});
       out.push(fmt(k)+": "+c+"/"+N+(miss.length?" (missed: "+miss.join(", ")+")":""));
     }
     out.push("Avg "+(n?(tot/n).toFixed(1):"-")+"/"+N+" · streak "+streak()+" days");
