@@ -553,6 +553,120 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #p-habits.hexp .card .s{display:block;font-size:12px;line-height:1.25;margin-top:2px}
 #p-habits.hexp .tcard .tb{-webkit-line-clamp:unset;display:block}
 #p-habits.hexp .note{white-space:normal;line-height:1.4;padding:9px 12px}
+/* ---- compact look for all other tabs (layout only) ---- */
+.wrap:has(.page.on:not(#p-habits)){padding-top:calc(env(safe-area-inset-top) + 8px)}
+.wrap:has(#p-workout.on),.wrap:has(#p-sunday.on),.wrap:has(#p-trends.on),.wrap:has(#p-tview.on),.wrap:has(#p-meals.on #mLog[hidden]){padding-bottom:calc(env(safe-area-inset-bottom) + 76px)}
+.page:not(#p-habits) .phead{min-height:40px;margin-bottom:0}
+.page:not(#p-habits) .ptitle{font-size:17px;letter-spacing:2px}
+.page:not(#p-habits) .dsub{font-size:12px;margin:0 0 2px}
+.page:not(#p-habits) .tip{font-size:12px;line-height:1.3;margin:4px 2px}
+.page:not(#p-habits) .slbl{font-size:12px;margin:10px 2px 4px}
+.page:not(#p-habits) h2{font-size:12px;line-height:14px;margin:10px 0 4px!important}
+.page:not(#p-habits) .big{padding:10px 12px;min-height:44px;font-size:15px;margin-top:8px}
+.page:not(#p-habits) .empty{font-size:12px;padding:2px 0;line-height:1.35}
+.page:not(#p-habits) .box{padding:10px 12px;margin-top:8px;border-radius:14px}
+.page:not(#p-habits) .box h3{font-size:13px;margin-bottom:4px}
+.page:not(#p-habits) .top{margin:6px 0;padding:10px 12px;border-radius:14px}
+.page:not(#p-habits) .bar{margin-top:4px}
+/* meals */
+#mTot{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 14px}
+#mTot>.slbl{grid-column:1/-1;margin:0!important}
+#mTot .mt{margin:0}
+#mTot .mtl{font-size:12px}#mTot .mtl b{font-size:16px}#mTot .mtl small{font-size:12px}
+#mTot .mt .bar{height:6px;margin-top:3px}
+#p-meals .lm{padding:6px 4px 6px 12px;margin-bottom:6px;border-radius:12px;gap:6px}
+#p-meals .lmt b{font-size:14px}#p-meals .lmtime{font-size:12px}
+#p-meals .lmi{font-size:14px;margin-top:1px;line-height:1.3}
+#p-meals .lmm{font-size:12px;margin-top:2px}
+#p-meals .lmed{font-size:12px}
+#p-meals .lmx{width:40px;height:40px}
+#p-meals .mlogbtn{min-height:48px;font-size:16px;margin-top:8px}
+#p-meals .export{margin:8px 0 2px;min-height:40px;font-size:13px}
+#p-meals .lhead{margin:0 2px 2px}#p-meals .ldate{font-size:13px}
+#p-meals .lsrch{padding:4px;margin-bottom:2px}
+#p-meals .lsrch input{height:42px}#lQx{flex-basis:42px;height:42px}
+#p-meals .lsec{font-size:12px;margin:10px 2px 4px}
+#p-meals .lrow{min-height:48px;padding:3px 4px 3px 12px;margin-bottom:4px;border-radius:12px;gap:6px}
+#p-meals .lrow.hasz{padding:3px 4px 5px 12px}
+#p-meals .lname{font-size:15px;line-height:1.2}#p-meals .lname small{font-size:12px;margin-top:1px}
+#p-meals .lb{width:40px;height:40px;font-size:22px;border-radius:10px}
+#p-meals .ln{width:28px;font-size:17px}
+#p-meals .lsz{gap:4px;margin-top:3px}
+#p-meals .lchip{min-height:40px;min-width:46px;padding:0 10px;font-size:13px}
+#p-meals .ladd{min-height:44px;margin:4px 0 2px;font-size:15px}
+#p-meals .lform{padding:10px;margin:6px 0 2px}
+#p-meals .lfl{margin-bottom:6px}#p-meals .lfl span{font-size:12px;margin-bottom:2px}#p-meals .lfl input{min-height:42px}
+#p-meals .lunits{margin:0 0 6px}#p-meals .lferr{font-size:12px;min-height:14px;margin-bottom:4px}
+#p-meals .lmyx{height:40px}
+#p-meals .lnomatch{margin-top:6px;padding:12px;font-size:14px}
+/* workout */
+#p-workout .pchips{margin-top:4px}
+#p-workout .pchip{padding:0 10px;min-height:40px;font-size:13px}
+#p-workout .donebar{padding:6px 10px;margin:6px 0 4px;gap:10px;border-radius:12px}
+#p-workout .donebar .ring{width:46px!important;height:46px!important}
+#p-workout .donebar .ring .rin b{font-size:14px}#p-workout .donebar .rin b small{font-size:12px}
+#p-workout .dbt .slbl{margin:0}#p-workout .dbs{font-size:13px}
+#p-workout .sbtn{padding:0 14px;min-height:40px;font-size:13px}
+#p-workout .exc{padding:6px 8px 8px;margin-bottom:6px;border-radius:12px}
+#p-workout .exh{gap:8px;min-height:44px;padding:0}
+#p-workout .atile{flex:0 0 46px;height:46px;border-radius:9px}
+#p-workout .atile b{font-size:15px}#p-workout .atile small{font-size:12px;margin-top:1px;letter-spacing:.6px}
+#p-workout .exn .n{font-size:15px;line-height:1.2}
+#p-workout .exn .r,#p-workout .exn .last,#p-workout .wmsg{font-size:12.5px}
+#p-workout .exh .chk{flex-basis:26px;height:26px;font-size:14px}
+#p-workout .sets{gap:4px;margin-top:4px;padding-left:4px}
+#p-workout .set input{height:40px;width:70px;font-size:17px}
+#p-workout .set .u{width:46px}
+#p-workout .goal{margin-top:5px;padding:4px 8px;font-size:12px;line-height:1.3}
+#p-workout .rest{padding:10px 12px;margin-top:6px;font-size:14px}
+#p-workout .sub{margin:8px 0 4px}
+#p-workout .week{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
+#p-workout .wd{flex-direction:column;align-items:flex-start;justify-content:center;padding:4px 10px;min-height:44px;border-radius:10px;gap:0}
+#p-workout .wd .l{font-size:13px}#p-workout .wd .l small{font-size:12px;margin-left:4px}
+#p-workout .wd .p{font-size:12px}
+/* sunday */
+#p-sunday .bknudge{min-height:40px;margin:2px 0 4px;font-size:14px}
+#p-sunday .sring{gap:12px;padding:8px 12px}
+#sRing .ring{width:56px!important;height:56px!important}#sRing .rin b{font-size:17px}#sRing .rin b small{font-size:12px}
+#p-sunday .score{font-size:20px;line-height:1.1}#p-sunday .streak{font-size:12px}
+#p-sunday .sec{font-size:12px;margin:10px 2px 4px}
+#sList .cards{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+#sList .cards>*{width:auto;min-width:0}
+#sList .sunit{grid-column:1/-1;margin:0}
+#sList .card.sm{min-height:44px;border-radius:12px}
+#sList .card.sm:not(.sinp){padding:6px 8px;gap:8px}
+#sList .card.sinp{gap:4px;padding:0}
+#sList .sct{gap:6px;padding:6px 8px 0;min-height:40px;align-items:flex-start}
+#sList .card .t{font-size:13.5px;letter-spacing:.6px;line-height:1.2}
+#sList .card .s{font-size:12px;line-height:1.25}
+#sList .card .chk,#sList .sct .chk{flex:0 0 24px;height:24px;font-size:13px}
+#sList .sin{gap:4px;padding:0 8px 8px}
+#sList .sinl{flex:1 1 100%;min-width:0;gap:4px}
+#sList .sinl input{flex:1;width:auto;min-width:0;min-height:40px;padding:0 8px}
+#sList .sinl span{font-size:12px}
+#p-sunday #sCopy{margin-top:10px}
+/* trends */
+#p-trends #bodyArea,#p-trends #exArea{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+#p-trends .drow{width:auto;min-width:0}
+#p-trends #bodyArea>:not(.drow),#p-trends #exArea>:not(.drow){grid-column:1/-1}
+#p-trends .drg{font-size:12px;margin:6px 0 0}
+#p-trends .drow{display:grid;grid-template-columns:22px 1fr;align-items:center;gap:2px 6px;margin:0;padding:6px 8px;min-height:44px;border-radius:12px}
+#p-trends .drow .di{font-size:16px;width:22px;flex:none}
+#p-trends .drow .dn{font-size:12.5px;letter-spacing:.8px;line-height:1.15}
+#p-trends .drow .dr{grid-column:1/-1;text-align:left}
+#p-trends .drow .dv{font-size:18px}#p-trends .drow .dv small{font-size:12px}
+#p-trends .drow .dp{font-size:12px;white-space:normal;line-height:1.2;margin-top:0}
+#p-trends .dsets{font-size:12px}
+#p-trends .bkl{font-size:12.5px;margin:1px 0}
+#p-trends .bkrow{gap:6px;margin-top:6px}#p-trends .bkb{min-height:42px;font-size:13.5px}
+#p-tview .tvh{margin:-4px 0 6px}
+#p-tview .tvsel{padding:10px 14px;min-height:44px;font-size:15px}
+#p-tview .tvtop{margin-top:10px}
+#p-tview .tvins{font-size:14.5px;line-height:1.4;margin:10px 0 8px}
+#p-workout .eqp{font-size:12px;padding:0 7px}
+#p-sunday .sec small,#p-sunday small{font-size:12px}
+#p-trends .drow .dn em{font-size:12px}
+#p-tview .seg button{min-height:40px}#p-tview .tvnav button{height:40px}
 </style>
 </head>
 <body>
@@ -662,7 +776,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-7";
+var APP_VERSION="2026.10.31-8";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
