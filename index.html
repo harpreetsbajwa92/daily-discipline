@@ -23,7 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:#101518;color:#eee;overflow-x:hidden}
+html,body{background:#101518;color:#eee;overflow-x:hidden;overflow-x:clip}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.35;min-height:100dvh;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;cursor:pointer}
 .wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 96px)}
@@ -508,6 +508,12 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .appver{text-align:center;color:#5d686f;font-size:11px;margin:18px 0 4px}
 .syhow{margin-top:10px;line-height:1.55}.syhow a{color:#7cc4ff}.syhr{border:0;border-top:1px solid rgba(255,255,255,.08);margin:12px 0 10px}.syerr{color:#ef8a87}
 .dsets{display:block;font-size:12px;color:#8c979f;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lList [hidden],#lQx[hidden]{display:none!important}
+.lsrch{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:6px;margin:0 -4px 4px;padding:8px 4px;background:#151b1f}
+.lsrch input{flex:1;min-width:0;height:46px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#1b2226;color:#fff;font-size:16px;padding:0 14px;-webkit-appearance:none;appearance:none}
+.lsrch input:focus{outline:none;border-color:var(--blue)}
+#lQx{flex:0 0 46px;height:46px;border-radius:12px;border:0;background:#2b343b;color:#e6eaec;font-size:18px;touch-action:manipulation}
+.lnomatch{display:block;width:100%;margin-top:14px;padding:16px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#cfd6db;font-size:15px;text-align:left;touch-action:manipulation}.lnomatch u{color:#7cc4f5}
 </style>
 </head>
 <body>
@@ -541,6 +547,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
  </div>
  <div id="mLog" hidden>
   <div class="lhead"><span class="ptitle" id="lTitle">MEAL 1</span><span class="ldate" id="lDate"></span></div>
+  <div class="lsrch"><input id="lQ" type="text" inputmode="search" enterkeyhint="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search foods" aria-label="Search foods"><button type="button" id="lQx" aria-label="Clear search" hidden>✕</button></div>
   <div id="lList"></div>
   <div class="lbar" id="lBar"><button type="button" class="lcancel" id="lCancel">Cancel</button><button type="button" class="lgo" id="lGo" disabled>LOG</button></div>
  </div>
@@ -617,7 +624,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-4";
+var APP_VERSION="2026.10.31-5";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -981,8 +988,25 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var mf=myFoods();if(mf.length){h+='<div class="lsec">My foods</div>';mf.forEach(function(fd){h+=myRow(fd);});}
     LORDER.forEach(function(i){var sn=LSECS[i];h+='<div class="lsec">'+sn+'</div>';
       LFOODS.forEach(function(x){if(x.sec!==i)return;h+=lRow(x);});});
-    $("lList").innerHTML=h; lBar();
+    $("lList").innerHTML=h; lBar(); lFilter();
   }
+  // ---- live search (only hides rows; counts/sizes in L stay untouched) ----
+  var LALIAS=[["dal","daal","dhal","lentil"],["roti","chapati","chapatti","phulka"],["curd","yogurt","yoghurt","dahi"],["paneer","cottage cheese"],["egg","anda"],["chai","tea"],["ghee","clarified butter"],["sabzi","sabji","vegetable","veggie"],["rice","chawal"],["chicken","murgh"],["oat","oats","oatmeal"],["whey","protein powder","shake"]];
+  function lNorm(t){return String(t||"").toLowerCase().replace(/\s+/g," ").trim();}
+  function lTerms(q){var t=[q];if(q.length>=3)LALIAS.forEach(function(g){if(g.some(function(a){return a.indexOf(q)===0||q.indexOf(a)===0;}))t=t.concat(g);});return t;}
+  function lFilter(){var inp=$("lQ"),box=$("lList");if(!inp||!box)return;var q=lNorm(inp.value);$("lQx").hidden=!q;
+    var terms=q?lTerms(q):null,kids=box.children,sec=null,secHit=false,any=false;
+    function closeSec(){if(sec)sec.hidden=!!q&&!secHit;}
+    for(var i=0;i<kids.length;i++){var el=kids[i];
+      if(el.classList.contains("lsec")){closeSec();sec=el;secHit=false;continue;}
+      if(el.classList.contains("lrow")){var nm=el.querySelector(".lname b"),hay=lNorm((nm?nm.textContent:"")+" "+((el.querySelector(".lname span")||{}).textContent||""));
+        var hit=!q||terms.some(function(t){return hay.indexOf(t)>=0;});el.hidden=!hit;if(hit){secHit=true;if(q)any=true;}}}
+    closeSec();
+    var no=$("lNo");if(q&&!any&&!L.form){if(!no){no=document.createElement("button");no.type="button";no.id="lNo";no.className="lnomatch";box.appendChild(no);}
+      no.innerHTML='No match — <u>add “'+esc(inp.value.trim())+'” as your own food</u>';}else if(no)no.parentNode.removeChild(no);}
+  $("lQ").addEventListener("input",lFilter);
+  $("lQ").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
+  $("lQx").addEventListener("click",function(){$("lQ").value="";lFilter();});
   function lRow(x){var n=L.cnt[x.id]||0,m=lMac(x,1),si=L.sz[x.id]!==undefined?L.sz[x.id]:x.d;
     return '<div class="lrow'+(n?" on":"")+(x.sz.length?" hasz":"")+'" data-f="'+x.id+'"><div class="ltop"><div class="lname"><b>'+esc(x.sn)+'</b>'+(x.u?' <span>('+esc(x.u)+')</span>':'')+'<small>'+r0(m.k)+' kcal · P '+r1m(m.p)+'</small></div>'+
       '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less '+esc(x.sn)+'">−</button><span class="ln">'+n+'</span><button type="button" class="lb" data-d="1" aria-label="More '+esc(x.sn)+'">+</button></div></div>'+
@@ -1009,7 +1033,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       '<div class="lctr"><button type="button" class="lb" data-d="-1" aria-label="Less">−</button><span class="ln">'+f.n+'</span><button type="button" class="lb" data-d="1" aria-label="More">+</button></div></div></div>';}
   function lBar(){var t=lTot(),g=$("lGo"),w=L.edit?"SAVE":"LOG";g.disabled=!t.n&&!L.edit;
     g.textContent=t.n?w+" · "+r0(t.k)+" kcal · "+r0(t.p)+" g protein":L.edit?"SAVE · removes this meal":"LOG · pick foods";}
-  function openLog(){L={slot:nextMealName(mdate),cnt:{},sz:{},ord:[],fx:{},edit:null,fu:"piece"};renderMeals();window.scrollTo(0,0);}
+  function openLog(){$("lQ").value="";L={slot:nextMealName(mdate),cnt:{},sz:{},ord:[],fx:{},edit:null,fu:"piece"};renderMeals();window.scrollTo(0,0);}
   function near(a,b){return Math.abs(a-b)<1e-6*Math.max(1,Math.abs(a));}
   // map a saved item back to a row + size + count; null if it can't be matched exactly (macros must match today's food)
   function mapItem(it){
@@ -1024,7 +1048,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       return {x:x,j:pick.j,n:pick.n};}
     return null;}
   function openEdit(id){var d=loadMeals(mdate),m=d.meals.filter(function(q){return q.id===id;})[0];if(!m)return;
-    L={slot:m.slot,cnt:{},sz:{},ord:[],fx:{},edit:id,fu:"piece"};
+    $("lQ").value="";L={slot:m.slot,cnt:{},sz:{},ord:[],fx:{},edit:id,fu:"piece"};
     m.items.forEach(function(it,i){var r=mapItem(it),my=myById(it.fid),mn=my?it.a/my.b:0;
       if(!r&&my&&!L.cnt[my.id]&&near(mn,Math.round(mn))&&Math.round(mn)>0&&near(+it.k,my.k)&&near(+it.p,my.p)&&near(+it.c,my.c)&&near(+it.f,my.f)&&it.b===my.b){L.cnt[my.id]=Math.round(mn);L.ord.push(my.id);}
       else if(r){L.cnt[r.x.id]=r.n;if(r.j!==null)L.sz[r.x.id]=r.j;L.ord.push(r.x.id);}
@@ -1034,8 +1058,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("mLogBtn").addEventListener("click",openLog);
   $("lCancel").addEventListener("click",function(){if(L&&!L.edit&&lTot().n&&!confirm("Discard this meal?"))return;closeLog();});
   $("lList").addEventListener("click",function(e){if(!L)return;var tg=e.target.closest("button");
-    if(tg&&tg.id==="lAdd"){L.form=true;$("lAddWrap").innerHTML=addPanel();return;}
-    if(tg&&tg.id==="cfCancel"){L.form=false;$("lAddWrap").innerHTML=addPanel();return;}
+    if(tg&&tg.id==="lAdd"){L.form=true;$("lAddWrap").innerHTML=addPanel();lFilter();return;}
+    if(tg&&tg.id==="lNo"){var qn=$("lQ").value.trim();L.form=true;$("lAddWrap").innerHTML=addPanel();$("cfN").value=qn;lFilter();
+      var fw=$("lAddWrap");window.scrollTo(0,Math.max(0,fw.getBoundingClientRect().top+window.scrollY-70));$("cfA").focus();return;}
+    if(tg&&tg.id==="cfCancel"){L.form=false;$("lAddWrap").innerHTML=addPanel();lFilter();return;}
     if(tg&&tg.id==="cfAdd"){cfSave();return;}
     if(tg&&tg.dataset.u){L.fu=tg.dataset.u;document.querySelectorAll(".lunits .lchip").forEach(function(b){b.classList.toggle("on",b===tg);});return;}
     var r=e.target.closest(".lrow");if(!r)return;
