@@ -625,6 +625,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #p-workout .set input{height:40px;width:70px;font-size:17px}
 #p-workout .set .u{width:46px}
 #p-workout .goal{margin-top:5px;padding:4px 8px;font-size:12px;line-height:1.3}
+.eqp.oldx{color:#ffb86b;border-color:rgba(255,184,107,.45)}
 #p-workout .best{font-size:12px;line-height:1.3;color:#9aa6ae;margin-top:2px}
 .wlog{margin:6px 0 0 4px;font-size:12.5px;line-height:1.3;font-weight:600;color:#ffd27a}
 #p-workout .rest{padding:10px 12px;margin-top:6px;font-size:14px}
@@ -795,7 +796,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-25";
+var APP_VERSION="2026.10.31-26";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1483,11 +1484,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var list=exList(pid);
       h+='<div class="donebar'+(w.done?" ok":"")+'" id="doneBar">'+doneBar(w,list)+'</div>';
       h+='<div class="slbl">'+(wdate===today?"Today's activities":"Activities · "+fmt(wdate))+'</div>';
-      list.forEach(function(e,i){
-        if(PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
+      var card=function(e,i,old){
+        if(i>=0&&PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], best=hintFor(e,wdate), hs=best?best.s:[];
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
-        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span></div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+' · grey hints</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
+        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span>'+(old?' <span class="eqp oldx">'+old+'</span>':'')+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+' · grey hints</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
         if(e.wl)h+='<div class="wlog">⚖ '+e.wl+'</div>';
         if(e.n){
           var nrows=Math.max(e.n,(cur.s||[]).length);
@@ -1505,8 +1506,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
           }
           h+='</div>';
         }
-        h+='<div class="goal">'+e.goal+'</div></div>';
-      });
+        h+=(e.goal?'<div class="goal">'+e.goal+'</div>':'')+'</div>';
+      };
+      list.forEach(function(e,i){card(e,i);});
+      // Exercises with saved sets that day but not in that day's plan (old/swapped exercises, or a different workout logged under another plan): show them too.
+      var inPlan={};list.forEach(function(e){inPlan[e.id]=1;});
+      var extra=Object.keys(w.ex||{}).filter(function(id){return !inPlan[id]&&exHasData(w.ex[id]);});
+      if(extra.length){h+='<div class="sub">Also logged this day</div>';
+        extra.forEach(function(id){var e=EXINFO[id]||{id:id,name:id,kind:"w",n:0,eq:{tag:"Logged",unit:"lbs",rule:"",rep:"logged"},note:"",wl:"",target:"",goal:""};
+          card(e,-1,PLANS.retired.x.some(function(x){return x[0]===id;})||!EXINFO[id]?"old exercise":"not in this plan");});}
     }
     $("woBody").innerHTML=h;
     // week list
@@ -1915,6 +1923,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         if(loc===rv){if(rv===null)delete sh[k];else sh[k]=syHash(rv);return;}
         var remoteSame=rv!==null&&sh[k]===syHash(rv);   // nobody else changed this key since our last sync
         var nv=dirty?(remoteSame?loc:syMerge(k,loc,rv,mt[k]||(sh[k]!==undefined?now:0),+r.t||0)):rv;
+        if(loc===null&&rv!==null&&syDayK(k))nv=rv;   // never let a missing local copy delete synced day data
         if(!dirty&&loc!==null&&rv!==null&&/^nn-v1:meals:/.test(k))nv=syMealsMerge(rv,loc,true);   // an old app version may have dropped our tombstones
         if(nv!==loc){try{if(nv===null)localStorage.removeItem(k);else localStorage.setItem(k,nv);changed=true;}catch(e){return;}}
         if(rv===null)delete sh[k];else sh[k]=syHash(rv);
@@ -1924,7 +1933,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var N={},diff=false,sent={};
       Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)===0&&!(D[k]&&D[k].d&&now-(+D[k].t||0)>180*864e5))N[k]=D[k];});
       syLocalKeys().forEach(function(k){var v=localStorage.getItem(k);sent[k]=v;if(!D[k]||D[k].d||D[k].v!==v){N[k]={v:v,t:mt[k]||now};diff=true;}});
-      Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)===0&&D[k]&&!D[k].d&&localStorage.getItem(k)===null){N[k]={t:now,d:1};diff=true;}});
+      Object.keys(D).forEach(function(k){if(k.indexOf(PREFIX)===0&&D[k]&&!D[k].d&&localStorage.getItem(k)===null&&!syDayK(k)){N[k]={t:now,d:1};diff=true;}});
       function done(){var sh2={};Object.keys(sent).forEach(function(k){sh2[k]=syHash(sent[k]);});var mt2=syGet("mt",{});
         Object.keys(mt2).forEach(function(k){if(localStorage.getItem(k)===sent[k])delete mt2[k];});sySet("sh",sh2);sySet("mt",mt2);}
       if(!diff){done();return;}
@@ -1939,8 +1948,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   }
   function syParse(x){try{return JSON.parse(x);}catch(e){return null;}}
   // merge two versions of one key when BOTH sides changed (or first sync): union where it is safe, else newer wins
+  function syDayK(fk){return /^(\d{4}-\d{2}-\d{2}|wo:|meals:|sun:)/.test(fk.slice(PREFIX.length));}
   function syMerge(fk,a,b,ta,tb){
-    var newS=ta>=tb?a:b, oldS=ta>=tb?b:a; if(a===null||b===null)return newS;
+    var newS=ta>=tb?a:b, oldS=ta>=tb?b:a, dayK=/^(\d{4}-\d{2}-\d{2}|wo:|meals:|sun:)/.test(fk.slice(PREFIX.length));
+    if(a===null||b===null)return dayK?(a===null?b:a):newS;   // day data is never deleted by sync: a missing copy never wipes the other
+    if(dayK&&syParse(newS)===null&&syParse(oldS)!==null)return oldS;
     var N=syParse(newS),O=syParse(oldS),k=fk.slice(PREFIX.length); if(N===null||O===null)return newS;
     function byId(o,n){var m={},out=[];(o||[]).forEach(function(x){if(x&&x.id!==undefined)m[x.id]=x;});(n||[]).forEach(function(x){if(x&&x.id!==undefined)m[x.id]=x;});
       (n||[]).concat(o||[]).forEach(function(x){if(x&&x.id!==undefined&&m[x.id]){out.push(m[x.id]);delete m[x.id];}});return out;}
@@ -1950,7 +1962,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(k==="myfoods"&&Array.isArray(N)&&Array.isArray(O))return JSON.stringify(byId(O,N));
     if(/^sun:/.test(k)){var sn=Array.isArray(N)?{t:N,v:{}}:N,so=Array.isArray(O)?{t:O,v:{}}:O,v={},z;for(z in (so.v||{}))v[z]=so.v[z];for(z in (sn.v||{}))v[z]=sn.v[z];
       return JSON.stringify({t:or(sn.t||[],so.t||[]),u:sn.u||so.u||"cm",v:v});}
-    if(/^wo:/.test(k)&&typeof N==="object"&&typeof O==="object"&&!Array.isArray(N)){var w={},e={},y;for(y in O)w[y]=O[y];for(y in N)w[y]=N[y];for(y in (O.ex||{}))e[y]=O.ex[y];for(y in (N.ex||{}))e[y]=N.ex[y];
+    if(/^wo:/.test(k)&&typeof N==="object"&&typeof O==="object"&&!Array.isArray(N)){var w={},e={},y;for(y in O)w[y]=O[y];for(y in N)w[y]=N[y];for(y in (O.ex||{}))e[y]=O.ex[y];for(y in (N.ex||{}))if(exHasData(N.ex[y])||!exHasData(e[y]))e[y]=N.ex[y];
       w.ex=e;w.done=!!(N.done||O.done);w.plan=N.plan||O.plan||null;return JSON.stringify(w);}
     return newS;}
   // meals:DATE merge: tombstones (del) are unioned (latest time wins); each meal id keeps the copy with the newer meal-level edit time u;
