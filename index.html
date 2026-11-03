@@ -625,6 +625,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #p-workout .set input{height:40px;width:70px;font-size:17px}
 #p-workout .set .u{width:46px}
 #p-workout .goal{margin-top:5px;padding:4px 8px;font-size:12px;line-height:1.3}
+.wlog{margin:6px 0 0 4px;font-size:12.5px;line-height:1.3;font-weight:600;color:#ffd27a}
 #p-workout .rest{padding:10px 12px;margin-top:6px;font-size:14px}
 #p-workout .sub{margin:8px 0 4px}
 #p-workout .week{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
@@ -793,7 +794,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-22";
+var APP_VERSION="2026.10.31-23";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -840,6 +841,17 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     tread:{tag:"Treadmill",kind:"min",unit:"min",rule:"log minutes",rep:"treadmill"},
     steps:{tag:"Steps",kind:"chk",unit:"",rule:"tick when done",rep:"steps"}
   };
+  // Weight-logging label shown on every exercise card, right above the set boxes (one short line, lbs).
+  var WLOG={db:"Log weight of ONE dumbbell (lbs)",db1:"Log weight of the ONE dumbbell you hold (lbs)",
+    smith:"Total plates on bar (both sides added), don't count the bar · e.g. 25 lb each side = log 50",
+    bb:"Total on bar: 45 lb bar + all plates (both sides) · e.g. 25 lb each side = log 95",
+    bbm:"Barbell: 45 lb bar + all plates · machine: stack weight (lbs)",squat:"Barbell: 45 lb bar + all plates · hack squat: plates both sides added",
+    hip:"Barbell: 45 lb bar + all plates (both sides) · machine: stack weight (lbs)",
+    cable:"Stack number shown on the machine (lbs)",cableside:"Stack number shown on the machine (lbs) · reps per side",
+    cable1:"Stack number shown on the machine (lbs), per leg",machine:"Stack weight shown on the machine (lbs)",
+    plates:"Total plates loaded, both sides added (lbs)",rdf:"Dumbbells: ONE dumbbell · pec-deck: stack weight (lbs)",
+    bw:"Bodyweight: log reps only (no weight)",plank:"Bodyweight: log seconds (ab wheel: reps)",plank2:"Bodyweight: log seconds held",
+    tread:"Treadmill: log minutes (no weight)",steps:"Tick when you hit 10k steps (no weight)"};
   // [id (kept stable so history carries over), name, sets, reps, equipment, note]
   var ABS=[["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["cable-crunch","Cable crunch",3,"12-15","cable"],["plank","Plank",3,"45s","plank2"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
   var WALK=["incline-walk","Incline walk",1,"15-20 min","tread","10-12% incline, ~5 km/h"];
@@ -863,7 +875,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var q=EQ[e[4]], kind=q.kind||"w", timed=kind==="min"||kind==="chk";
       var short=timed?e[3]:e[2]+" x "+e[3]+(e[6]?" "+e[6]:"");
       var full=timed?e[3]:e[2]+" sets x "+e[3]+(kind==="sec"?"":" reps")+(e[6]?" "+e[6]:"");
-      return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],eq:q,note:e[5]||"",
+      return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],eq:q,note:e[5]||"",wl:WLOG[e[4]]||"",
         target:short+" · "+q.tag+(e[5]?" · "+e[5]:""),
         goal:"Target: "+full+" · "+q.tag+" · "+q.rule+(e[5]?" · "+e[5]:"")};
     });
@@ -1463,6 +1475,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[];
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
         h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span></div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
+        if(e.wl)h+='<div class="wlog">⚖ '+e.wl+'</div>';
         if(e.n){
           var nrows=Math.max(e.n,(cur.s||[]).length);
           h+='<div class="sets">';
