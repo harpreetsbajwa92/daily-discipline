@@ -794,7 +794,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-23";
+var APP_VERSION="2026.10.31-24";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1431,6 +1431,13 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function mealDaily(field){var out=[];mealDays().forEach(function(k){var d=loadMeals(k);if(!d.items.length)return;var t=dayTot(d.items);if(t.k<=0&&t.p<=0)return;out.push({w:k,v:t[field]});});return out;}
 
   // ================= PAGE 2: WORKOUT =================
+  // Grey hints in the set boxes (placeholders only, never saved): the most recent earlier session with real numbers for this exercise.
+  // Weighted rows need a weight above 1 lb (skips placeholder entries like a 1 lb log). Row n hints last session's set n; extra rows reuse its last set.
+  function hintFor(e,before){var ds=woDates();
+    for(var i=ds.length-1;i>=0;i--){if(ds[i]>=before)continue;var x=loadWo(ds[i]).ex[e.id];if(!exHasData(x))continue;
+      if(e.kind==="w"&&!x.s.some(function(t){return t&&parseFloat(t[0])>1;}))continue;return x.s;}
+    return [];}
+  function hSet(hs,s){for(var j=Math.min(s,hs.length-1);j>=0;j--){if(hs[j]&&hs[j].some(filled))return hs[j];}return [];}
   function lastFor(id,before){
     var ds=woDates();
     for(var i=ds.length-1;i>=0;i--){
@@ -1472,7 +1479,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       h+='<div class="slbl">'+(wdate===today?"Today's activities":"Activities · "+fmt(wdate))+'</div>';
       list.forEach(function(e,i){
         if(PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
-        var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[];
+        var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], hs=hintFor(e,wdate);
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
         h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span></div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
         if(e.wl)h+='<div class="wlog">⚖ '+e.wl+'</div>';
@@ -1480,7 +1487,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
           var nrows=Math.max(e.n,(cur.s||[]).length);
           h+='<div class="sets">';
           for(var s=0;s<nrows;s++){
-            var cs=(cur.s&&cur.s[s])||[], ps=ls[s]||[];
+            var cs=(cur.s&&cur.s[s])||[], ps=hSet(hs,s);
             if(e.kind==="bw"){
               h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else if(e.kind==="w"){
