@@ -582,6 +582,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 #p-meals .lmx{width:40px;height:40px}
 #p-meals .mlogbtn{min-height:48px;font-size:16px;margin-top:8px}
 #p-meals .export{margin:8px 0 2px;min-height:40px;font-size:13px}
+.ddrow{display:flex;gap:8px;margin-top:8px}.ddb{flex:1;min-height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#2b343b;color:#e6ecef;font-size:14px;font-weight:600;touch-action:manipulation}.ddb:disabled{opacity:.45}
 #p-meals .lhead{margin:0 2px 2px}#p-meals .ldate{font-size:13px}
 #p-meals .lsrch{padding:4px;margin-bottom:2px}
 #p-meals .lsrch input{height:42px}#lQx{flex-basis:42px;height:42px}
@@ -708,6 +709,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
   <div class="slbl" id="mLoggedLbl">Logged today</div>
   <div id="mList"></div>
   <button type="button" class="big mlogbtn" id="mLogBtn">+ Log meal</button>
+  <div class="ddrow"><button type="button" class="ddb" id="ddAdd">Add default diet</button><button type="button" class="ddb" id="ddDel">Remove default diet</button></div>
   <button type="button" class="export" id="mCopy">Copy for Fitness</button>
   <div id="mHint"></div>
   <textarea id="mBox" readonly hidden></textarea>
@@ -791,7 +793,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-21";
+var APP_VERSION="2026.10.31-22";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1198,7 +1200,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(!stale&&it.sn&&it.cnt)return it.cnt+" × "+it.sn+(it.sz?" ("+it.sz+")":"");var sn=it.sn;if(!stale&&!sn)LFOODS.forEach(function(x){if(x.fd.id===it.fid)sn=x.sn;});if(!stale&&sn)return fq(it.a/it.b)+" × "+sn;
     var nm=it.n.split("(")[0].split(",").slice(0,2).join(",").trim();return it.b===1?fq(it.a)+" × "+nm:qtyTxt(it)+" "+nm.toLowerCase();}
   function renderMeals(){
+    if(mdate===today&&!L)ddAuto();
     var d=loadMeals(mdate), t=dayTot(d.items), isT=mdate===today;
+    $("ddDel").disabled=!ddHas(d);
     $("mMain").hidden=!!L; $("mLog").hidden=!L; if(L){renderLog();return;}
     $("mPick").value=mdate; $("mLab").textContent=pillLab(mdate);
     $("mSub").innerHTML=isT?"":'<button type="button" class="today-btn" id="mToday">Back to today</button>';
@@ -1217,6 +1221,27 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function gbar(lbl,v,g,u,cls){var pct=Math.min(100,v/g*100);return '<div class="mt"><div class="mtl"><span>'+lbl+'</span><b>'+r0(v)+'<small> / '+g.toLocaleString()+(u?" "+u:"")+'</small></b></div><div class="bar"><div class="fill '+cls+'" style="width:'+pct+'%"></div></div></div>';}
   function shortName(n){return n.split(/[,(]/)[0].trim().toLowerCase();}
   function setM(d){if(d){mdate=d;renderMeals();}}
+  // ---- default diet: 6 meals (Harpreet's Nov 2 log). Default meals have ids starting "dd" (auto-fill: "dd-DATE-n", same on every device, so
+  // two devices filling the same day merge into one copy; Add button: fresh "dd<time>-n" ids). Remove = tombstones, which sync, so the day stays empty.
+  // Auto-fill only today, only when the day has no meals and no default tombstones, and (with sync on) only right after a successful sync.
+  var DD_PLAN=[[["whey",1],["banana",1],["milk2s",200],["almonds",10],["oats",50],["creatine",1]],
+    [["eggw",4],["omelette",1],["oil",5],["bread",1],["fishoil",1],["coq10",1],["multivit",1]],
+    [["paneer",75],["roti",1],["salad",50]],[["soya",100],["salad",50]],[["yogurt",150],["whey",1]],[["dal",100]]];
+  function ddItems(row){return row.map(function(r){var x=lrowById(r[0]),it;if(x.met){it=mkItem(x.fd,r[1]);it.sn=x.sn;it.am=1;it.sz=amTxt(r[1])+" "+x.fd.s;}
+    else{it=mkItem(x.fd,r[1]*x.fd.b);it.sn=x.sn;it.cnt=r[1];}return it;});}
+  function isDD(id){return /^dd/.test(String(id||""));}
+  function ddMeals(k,pre,u,start){return DD_PLAN.map(function(row,i){return {id:pre+(i+1),slot:"Meal "+(start+i+1),name:"",t:"",items:ddItems(row),u:u};});}
+  function ddHas(d){return d.meals.some(function(m){return isDD(m.id);});}
+  function ddAuto(){var k=today,d=loadMeals(k);if(d.meals.length||Object.keys(d.del).some(isDD))return false;
+    if(syOn()){if(typeof SY==="undefined"||!SY)return false;var at=syGet("at",null);if(SY.err||!at||Date.now()-Date.parse(at)>120000){if(!SY.busy)syncNow();return false;}}
+    d.meals=ddMeals(k,"dd-"+k+"-",parse(k).getTime(),0);saveMeals(k,d);return true;}
+  $("ddAdd").addEventListener("click",function(){var d=loadMeals(mdate);
+    if(ddHas(d)&&!confirm("The default diet is already on this day. Add it again?"))return;
+    var mx=0;d.meals.forEach(function(m){mx=Math.max(mx,mealNo(m));});mx=Math.max(mx,d.meals.length);
+    d.meals=d.meals.concat(ddMeals(mdate,"dd"+Date.now().toString(36)+"-",Date.now(),mx));saveMeals(mdate,d);renderMeals();});
+  $("ddDel").addEventListener("click",function(){var d=loadMeals(mdate),ids=d.meals.filter(function(m){return isDD(m.id);}).map(function(m){return m.id;});
+    if(!ids.length)return;if(!confirm("Remove the default diet meals from this day? Meals you added yourself stay."))return;
+    ids.forEach(function(id){delMeal(d,id);});saveMeals(mdate,d);renderMeals();});
   $("mPrev").addEventListener("click",function(){setM(shift(mdate,-1));});
   $("mNext").addEventListener("click",function(){setM(shift(mdate,1));});
   $("mPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setM(this.value);});
@@ -1882,7 +1907,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         if(JSON.stringify(D2)===body||n>=4){done();return;}     // nobody else wrote in between
         return round(n+1,D2);});                              // another device wrote meanwhile: merge its copy and write again
     }
-    return syRead().then(function(D){return round(1,D);}).then(function(){SY.err="";sySet("at",new Date().toISOString());},function(e){
+    return syRead().then(function(D){return round(1,D);}).then(function(){SY.err="";sySet("at",new Date().toISOString());if(ddAuto())changed=true;},function(e){
         if(e&&e.stale){setTimeout(syncNow,4000);return;}SY.err="Offline or sync server unreachable: will retry automatically";})
       .then(function(){SY.busy=false;syUI();if(changed)syRerender();if(SY.again){SY.again=false;return syncNow();}});
   }
