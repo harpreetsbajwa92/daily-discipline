@@ -798,7 +798,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-28";
+var APP_VERSION="2026.10.31-29";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -932,7 +932,25 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   // Performed session (what he actually did), used for the Workout tab, week list, Trends and the review. Never changes stored sets.
   // 1) wo:DATE.perf = session he picked with the chips (stored, synced). 2) else inferred: if most exercises with logged numbers
   // (more than half) belong to another session than the saved plan, that session. 3) else the saved plan (wo.plan), else the weekday plan.
-  function perfOf(k,w){w=w||{};if(w.perf&&(PLANS[w.perf]||w.perf==="none"))return w.perf;var base=planOf(k,w);return perfAuto(w,base)||base;}
+  function perfOf(k,w){w=w||{};if(w.perf&&w.perfAt&&(PLANS[w.perf]||w.perf==="none"))return w.perf;var base=planOf(k,w);return perfAuto(w,base)||base;}
+  // ---- rotation (v-29): the next session = the one after the last session he actually performed.
+  // Push -> Pull + Abs -> Legs -> active rest -> Upper + Abs -> Lower + Abs -> rest -> Push ...
+  // Strength day (logged sets): next = the session after it. Day with nothing logged / active rest / rest: a pending strength session
+  // carries over to the next day (nothing is skipped); a pending active-rest or rest slot is used up by that day.
+  // Same rule in /workspace/dd-backups/next_session.py for the nightly review.
+  var ROT=["push","pull","legs","active","upper","lower","none"];
+  function rotNext(p){return ROT[(ROT.indexOf(p)+1)%ROT.length];}
+  function hasSets(w){var ex=(w&&w.ex)||{};return Object.keys(ex).some(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});}
+  function didActive(w){var ex=(w&&w.ex)||{};return !!((ex.steps&&ex.steps.d)||exHasData(ex["incline-walk"]));}
+  function performedOn(k,w){if(!w)return null;if(hasSets(w)){var p=perfOf(k,w);if(p==="active"||p==="none")p=perfAuto(w,"none")||"active";return p;}return didActive(w)?"active":null;}
+  function rotInfo(target){var ds=woDates().filter(function(d){return d<target;}),ptr=null,last=null,ld=null;
+    if(!ds.length)return {next:SUGGEST[parse(target).getDay()],last:null,lastDate:null};
+    for(var d=ds[0];d<target;d=shift(d,1)){var p=d<=today?performedOn(d,getJ("wo:"+d)):ptr;
+      if(p&&p!=="active"&&p!=="none"){ptr=rotNext(p);if(d<=today){last=p;ld=d;}}
+      else if(ptr==="active"||ptr==="none")ptr=rotNext(ptr);}
+    return {next:ptr||"push",last:last,lastDate:ld};}
+  // session shown for a day: logged -> what he did; tapped chip -> that; today/upcoming -> rotation; past unlogged -> saved plan
+  function dispPlan(k,w){w=w||{};if(hasSets(w))return perfOf(k,w);if(w.perf&&w.perfAt)return w.perf;return k>=today?rotInfo(k).next:planOf(k,w);}
   function perfAuto(w,base){var ex=w.ex||{},ids=Object.keys(ex).filter(function(id){return exHasData(ex[id]);});if(!ids.length)return null;
     function sc(p){var m=0;exList(p).forEach(function(e){if(ids.indexOf(e.id)>=0)m++;});return m;}
     var best=base,bs=PLANS[base]?sc(base):0;PLAN_ORDER.forEach(function(p){var v=sc(p);if(v>bs){bs=v;best=p;}});
@@ -1481,9 +1499,11 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+"x"+r:w?w+"x?":r+" reps";}).join(", ");
   }
   function renderWorkout(){
-    var w=loadWo(wdate), pid=perfOf(wdate,w), sug=SUGGEST[parse(wdate).getDay()], auto=!w.perf&&pid!==planOf(wdate,w);
+    var w=loadWo(wdate), pid=dispPlan(wdate,w), sug=wdate>=today?rotInfo(wdate).next:SUGGEST[parse(wdate).getDay()], auto=hasSets(w)&&!(w.perf&&w.perfAt)&&pid!==planOf(wdate,w);
+    var nx="";if(wdate===today){var tl=hasSets(w)||didActive(w),ri=rotInfo(tl?shift(today,1):today);
+      nx='<div class="perfl nextup">Next up'+(tl?' tomorrow':'')+': <b>'+planName(ri.next)+'</b>'+(ri.last?' (after your last session '+planName(ri.last)+' on '+(ri.lastDate===today?'today':fmt(ri.lastDate))+')':'')+'</div>';}
     $("dPick").value=wdate; $("dLab").textContent=pillLab(wdate);
-    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(sug!=="none"?' · suggested: '+planName(sug):' · suggested: rest')+'<div class="perfl">Session you did: <b>'+planName(pid)+'</b>'+(auto?' (auto from your logs)':'')+' · tap below to change</div>';
+    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(sug!=="none"?' · '+(wdate>=today?'rotation':'suggested')+': '+planName(sug):' · suggested: rest')+nx+'<div class="perfl">Session'+(hasSets(w)?' you did':'')+': <b>'+planName(pid)+'</b>'+(auto?' (auto from your logs)':'')+' · tap below to change</div>';
     var ch="";
     PLAN_ORDER.concat(["none"]).forEach(function(p){ch+='<button class="pchip'+(p===pid?" on":"")+(p===sug?" sug":"")+'" data-p="'+p+'">'+planName(p)+'</button>';});
     $("pChips").innerHTML=ch;
@@ -1538,6 +1558,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     $("week").innerHTML=wh;
   }
   function setW(d){if(d){wdate=d;renderWorkout();}}
+  // the session stored as plan when he starts logging: keep it once the day has sets or a tapped chip, else the one shown (rotation)
+  function woPlanFix(w){return (hasSets(w)||w.perfAt)&&w.plan?w.plan:dispPlan(wdate,w);}
   $("dPrev").addEventListener("click",function(){setW(shift(wdate,-1));});
   $("dNext").addEventListener("click",function(){setW(shift(wdate,1));});
   $("dPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setW(this.value);});
@@ -1545,15 +1567,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("week").addEventListener("click",function(e){var b=e.target.closest(".wd");if(b){setW(b.dataset.k);window.scrollTo(0,0);}});
   $("pChips").addEventListener("click",function(e){
     var b=e.target.closest(".pchip"); if(!b)return;
-    var w=loadWo(wdate); w.plan=b.dataset.p; w.perf=b.dataset.p; saveWo(wdate,w); renderWorkout();
+    var w=loadWo(wdate); w.plan=b.dataset.p; w.perf=b.dataset.p; w.perfAt=Date.now(); saveWo(wdate,w); renderWorkout();
   });
   $("woBody").addEventListener("click",function(e){
     if(e.target.id==="markDone"){
-      var w=loadWo(wdate); w.plan=planOf(wdate,w); w.done=!w.done; saveWo(wdate,w); if(w.done)trainHabit(wdate); renderWorkout(); return;
+      var w=loadWo(wdate); w.plan=woPlanFix(w); w.done=!w.done; saveWo(wdate,w); if(w.done)trainHabit(wdate); renderWorkout(); return;
     }
     var b=e.target.closest(".exh"); if(!b)return;
-    var w2=loadWo(wdate), pid=perfOf(wdate,w2), id=b.dataset.id;
-    w2.plan=pid; w2.ex[id]=w2.ex[id]||{s:[]}; w2.ex[id].d=!w2.ex[id].d;
+    var w2=loadWo(wdate), id=b.dataset.id;
+    w2.plan=woPlanFix(w2); var pid=dispPlan(wdate,w2); w2.ex[id]=w2.ex[id]||{s:[]}; w2.ex[id].d=!w2.ex[id].d;
     if(allCounted(pid,w2)&&!w2.done){w2.done=true;trainHabit(wdate);}
     saveWo(wdate,w2); renderWorkout();
   });
@@ -1561,9 +1583,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var t=e.target; if(t.tagName!=="INPUT")return;
     var v=t.value.replace(",",".").replace(/[^0-9.]/g,""); if(v!==t.value)t.value=v;
     var w=loadWo(wdate), id=t.dataset.id, s=+t.dataset.s, f=+t.dataset.f;
-    w.plan=planOf(wdate,w); w.ex[id]=w.ex[id]||{s:[]}; var arr=w.ex[id].s=w.ex[id].s||[];
+    w.plan=woPlanFix(w); w.ex[id]=w.ex[id]||{s:[]}; var arr=w.ex[id].s=w.ex[id].s||[];
     while(arr.length<=s)arr.push([]); arr[s][f]=v;
-    var pid=perfOf(wdate,w), exd=EXINFO[id]||exList(pid).filter(function(x){return x.id===id;})[0];
+    var pid=dispPlan(wdate,w), exd=EXINFO[id]||exList(pid).filter(function(x){return x.id===id;})[0];
     if(allCounted(pid,w)&&!w.done){w.done=true;trainHabit(wdate);}
     saveWo(wdate,w);
     var card=t.closest(".exc"); if(card&&exd){var c=counted(exd,w.ex[id]);card.classList.toggle("done",c);card.classList.toggle("warn",!!w.ex[id].d&&!c);var at=card.querySelector(".atile");if(at)at.innerHTML=tileTxt(exd,w.ex[id]);}
