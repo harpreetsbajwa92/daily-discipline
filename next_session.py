@@ -8,11 +8,13 @@ A strength day advances to the session after it. A day with nothing logged, acti
 or rest uses up a pending active-rest or rest slot, and carries a pending strength
 session forward (a missed lift is not skipped).
 
-v2026.10.31-30 change versus the v29 helper:
+v2026.10.31-31:
   Trust wo.perf only when wo.perfFix is set (the separate "I did this session" action).
-  Otherwise infer the session from exercises that have logged numbers.
-  A perf/plan written by tapping a routine chip is not the performed session.
+  Otherwise infer the session when one plan owns more than half of the logged exercises.
+  Unconfirmed perf+perfAt is not a fallback, including when the logs are tied or mixed.
+  A plan equal to that same chip tap is not a fallback either.
   Explicit correction never deletes exercises or sets.
+  Moving sets from one date to another is manual (preview_move / --move-preview). This script never POSTs.
 
 This file never writes to the sync bin. --repair-preview only prints a summary.
 --repair-write writes a local JSON file the parent can review. It does not POST.
@@ -120,6 +122,18 @@ def plan_of(day, w):
     return w.get("plan") or weekday_plan(day)
 
 
+def chip_browse(w):
+    """Unconfirmed chip tap: perf + perfAt and no perfFix."""
+    if w and not w.get("perfFix") and w.get("perf") and w.get("perfAt") and valid_pid(w.get("perf")):
+        return w["perf"]
+    return None
+
+
+def plan_is_chip(w):
+    b = chip_browse(w)
+    return bool(b and (w or {}).get("plan") == b)
+
+
 def recorded_pid(day, w):
     w = w or {}
     ex = explicit_pid(w)
@@ -129,15 +143,13 @@ def recorded_pid(day, w):
     if inf:
         return inf
     if has_sets(w):
-        if w.get("perf") and w.get("perfAt") and valid_pid(w.get("perf")) and w["perf"] not in ("none", "active"):
-            return w["perf"]
-        base = plan_of(day, w)
-        if valid_pid(base) and base not in ("none", "active"):
-            return base
-        return "active"
+        # No unique majority. Do not fall back to unconfirmed perf+perfAt.
+        if w.get("plan") and valid_pid(w.get("plan")) and not plan_is_chip(w) and w["plan"] not in ("none", "active"):
+            return w["plan"]
+        return None
     if did_active(w):
         return "active"
-    if w.get("done") and valid_pid(w.get("plan")):
+    if w.get("done") and valid_pid(w.get("plan")) and not plan_is_chip(w):
         return w["plan"]
     return None
 
@@ -155,9 +167,9 @@ def performed_on(day, w):
         p = infer_session(w)
         if p and p != "active":
             return p
-        if w.get("perf") and w.get("perfAt") and valid_pid(w.get("perf")) and w["perf"] not in ("none", "active"):
-            return w["perf"]
-        return "active"
+        if w.get("plan") and valid_pid(w.get("plan")) and not plan_is_chip(w) and w["plan"] not in ("none", "active"):
+            return w["plan"]
+        return None
     return "active" if did_active(w) else None
 
 
@@ -218,6 +230,48 @@ def _wo_env(blob, day):
         wo = json.loads(env["v"])
         return key, env, wo
     return None, None, None
+
+
+def classify_move(wo, move_plan, keep_plan):
+    """Split exercise ids that have data. Does not copy set values and does not mutate wo.
+
+    move: in move_plan and not in keep_plan.
+    keep: in keep_plan and not in move_plan.
+    other: in both, or in neither (left where they are; not proposed for a move).
+    """
+    if move_plan not in PLANS or keep_plan not in PLANS:
+        raise SystemExit("unknown plan")
+    move_set, keep_set = set(PLANS[move_plan]), set(PLANS[keep_plan])
+    move, keep, other = [], [], []
+    for eid, ev in ((wo or {}).get("ex") or {}).items():
+        if not ex_has_data(ev) and not (isinstance(ev, dict) and ev.get("d")):
+            continue
+        in_m, in_k = eid in move_set, eid in keep_set
+        if in_m and not in_k:
+            move.append(eid)
+        elif in_k and not in_m:
+            keep.append(eid)
+        else:
+            other.append(eid)
+    return keep, move, other
+
+
+def apply_move_local(wo, move_ids):
+    """Return (kept_wo, moved_wo) copies. Sets on both sides are the original objects' copies.
+    Nothing is deleted from the input. Exercises not in move_ids stay on kept.
+    """
+    wo = wo or {}
+    ex = wo.get("ex") or {}
+    kept_ex, moved_ex = {}, {}
+    for eid, ev in ex.items():
+        if eid in move_ids:
+            moved_ex[eid] = json.loads(json.dumps(ev))
+        else:
+            kept_ex[eid] = json.loads(json.dumps(ev))
+    kept = json.loads(json.dumps(wo))
+    kept["ex"] = kept_ex
+    moved = {"plan": None, "ex": moved_ex, "done": False}
+    return kept, moved
 
 
 def propose_repair(blob):
@@ -354,6 +408,46 @@ def self_test():
     assert wo6["perf"] == "legs" and wo6["perfFix"] is True and "smith-squat" in wo6["ex"]
     wo7 = json.loads(repaired["nn-v1:wo:2026-11-07"]["v"])
     assert "perf" not in wo7 and "plan" not in wo7 and wo7["ex"] == {}
+    # Tied logs + unconfirmed perf must not name the session or advance the rotation.
+    amb = {"plan": "upper", "perf": "upper", "perfAt": 1, "done": False, "ex": {
+        "smith-squat": {"s": [["11", "8"]], "d": True},
+        "romanian-deadlift": {"s": [["11", "8"]], "d": True},
+        "smith-incline-press": {"s": [["22", "8"]], "d": True},
+        "cable-reverse-fly": {"s": [["22", "8"]], "d": True},
+    }}
+    amb_ex = json.dumps(amb["ex"], sort_keys=True)
+    assert infer_session(amb) is None
+    assert recorded_pid("2026-11-09", amb) is None
+    assert performed_on("2026-11-09", amb) is None
+    chain = {"2026-11-03": w["2026-11-03"], "2026-11-04": amb}
+    assert rot_info(chain, "2026-11-05", "2026-11-05")["next"] == "pull"
+    amb_fix = json.loads(json.dumps(amb))
+    amb_fix["perfFix"] = True
+    assert performed_on("2026-11-09", amb_fix) == "upper"
+    assert json.dumps(amb_fix["ex"], sort_keys=True) == amb_ex
+    # Date split: 5 Legs + 7 Upper on one day infers Upper (the sets are really there).
+    # Moving the Upper-only ids off that day, then perfFix on each day, resolves it.
+    # v30 already trusts perfFix, so the same split works there too. Sets are copied, not dropped.
+    upper_ids = ["smith-incline-press", "lat-pulldown", "lateral-raises", "cable-reverse-fly", "superset-db-curl", "superset-rope-pushdown", "cable-woodchoppers"]
+    legs_ids = ["smith-squat", "romanian-deadlift", "heels-elevated-goblet-squat", "cable-leg-curl", "smith-calf-raise"]
+    mixed = {"plan": "upper", "perf": "upper", "perfAt": 3, "done": False, "ex": {}}
+    for eid in upper_ids + legs_ids:
+        mixed["ex"][eid] = {"s": [["10", "8"]], "d": True}
+    assert infer_session(mixed) == "upper"
+    keep_ids, move_ids, other_ids = classify_move(mixed, "upper", "legs")
+    assert set(keep_ids) == set(legs_ids) and set(move_ids) == set(upper_ids) and other_ids == []
+    kept, moved = apply_move_local(mixed, move_ids)
+    assert set(mixed["ex"]) == set(upper_ids + legs_ids)  # input not mutated
+    assert infer_session(kept) == "legs" and infer_session(moved) == "upper"
+    kept["perf"], kept["plan"], kept["perfFix"] = "legs", "legs", True
+    moved["perf"], moved["plan"], moved["perfFix"] = "upper", "upper", True
+    assert performed_on("2026-11-06", kept) == "legs"
+    assert performed_on("2026-11-07", moved) == "upper"
+    # perfFix alone, without the move, labels Friday Legs but leaves the Upper sets on Friday.
+    locked = json.loads(json.dumps(mixed))
+    locked["perf"], locked["plan"], locked["perfFix"] = "legs", "legs", True
+    assert performed_on("2026-11-06", locked) == "legs"
+    assert set(locked["ex"]) == set(upper_ids + legs_ids)
     print("self-test ok")
     return 0
 
@@ -365,6 +459,11 @@ def main(argv):
     p.add_argument("--today", help="YYYY-MM-DD (default: today in local time)")
     p.add_argument("--repair-preview", action="store_true", help="print field repairs; do not write")
     p.add_argument("--repair-write", help="write a repaired copy to this local path; does not upload")
+    p.add_argument("--move-preview", action="store_true", help="print which exercise ids would move between two dates; does not write")
+    p.add_argument("--move-from")
+    p.add_argument("--move-to")
+    p.add_argument("--move-plan", help="plan whose exercises leave --move-from")
+    p.add_argument("--keep-plan", help="plan whose exercises stay on --move-from")
     p.add_argument("--self-test", action="store_true")
     args = p.parse_args(argv)
     if args.self_test:
@@ -397,6 +496,21 @@ def main(argv):
             with open(args.repair_write, "w", encoding="utf-8") as f:
                 json.dump(repaired, f, ensure_ascii=False, separators=(",", ":"))
             print("wrote %s (local only, not uploaded)" % args.repair_write)
+    if args.move_preview:
+        if not (args.move_from and args.move_to and args.move_plan and args.keep_plan):
+            raise SystemExit("--move-preview needs --move-from, --move-to, --move-plan, and --keep-plan")
+        src = workouts.get(args.move_from)
+        if not src:
+            raise SystemExit("no workout on " + args.move_from)
+        keep_ids, move_ids, other_ids = classify_move(src, args.move_plan, args.keep_plan)
+        kept, moved = apply_move_local(src, move_ids)
+        print("move-preview (no write, no set values)")
+        print("  stay on %s (%d): %s" % (args.move_from, len(keep_ids), ", ".join(sorted(keep_ids)) or "-"))
+        print("  move to %s (%d): %s" % (args.move_to, len(move_ids), ", ".join(sorted(move_ids)) or "-"))
+        print("  not classified (%d): %s" % (len(other_ids), ", ".join(sorted(other_ids)) or "-"))
+        print("  after the move, %s infers %s and %s infers %s" % (args.move_from, infer_session(kept), args.move_to, infer_session(moved)))
+        print("  perfFix %s on %s and perfFix %s on %s matches that, in v30 and in this helper" % (args.keep_plan, args.move_from, args.move_plan, args.move_to))
+        print("  perfFix on the source alone does not move sets; %s would still hold the moved ids" % args.move_from)
     return 0
 
 
