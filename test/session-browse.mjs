@@ -152,7 +152,7 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-30")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-31")) throw new Error("version text: " + version);
 
   await page.evaluate(() => window.__nn.setW("2026-11-06"));
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "legs");
@@ -161,15 +161,20 @@ async function main() {
     text: document.getElementById("woSession").innerText,
     done: (document.getElementById("doneBar") || {}).innerText || "",
     squat: document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value,
+    squatOff: document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').disabled,
     also: document.getElementById("woBody").innerText,
+    rec: (document.getElementById("woRecDate") || {}).innerText || "",
+    logged: (document.getElementById("loggedBar") || {}).innerText || "",
     fri: [...document.querySelectorAll("#week .wd")].map((b) => b.innerText).find((t) => t.includes("Fri"))
   }));
   if (opened.session !== "legs") throw new Error("Nov 6 session " + opened.session);
   if (!/Session you did:\s*Legs/.test(opened.text)) throw new Error("label: " + opened.text);
-  if (opened.squat !== "100") throw new Error("squat hidden or changed: " + opened.squat);
+  if (opened.squat !== "100" || opened.squatOff) throw new Error("squat hidden, locked, or changed: " + opened.squat);
+  if (!/Fri Nov 6/.test(opened.rec) || !/not today/i.test(opened.rec)) throw new Error("recording date: " + opened.rec);
+  if (!/7/.test(opened.logged) || !/Fri Nov 6/.test(opened.logged)) throw new Error("logged counter: " + opened.logged);
   if (opened.done.includes("/11")) throw new Error("done bar switched to Upper+Abs: " + opened.done);
   if (!opened.done.includes("/6")) throw new Error("expected legs counter /6: " + opened.done);
-  if (!/also logged this day/i.test(opened.also) || !opened.also.includes("Smith machine incline press")) throw new Error("off-plan upper sets not visible");
+  if (!opened.also.includes("Smith machine incline press")) throw new Error("off-plan upper sets not visible");
   if (!opened.fri || !opened.fri.includes("Legs")) throw new Error("week list: " + opened.fri);
   const sched = await page.evaluate(() => ({
     today: window.__nn.rotInfo("2026-11-07").next,
@@ -289,7 +294,7 @@ async function main() {
   });
   if (!corrected.label.includes("Upper + Abs")) throw new Error("correction label " + corrected.label);
   if (corrected.squat !== "100" || corrected.incline !== "40") throw new Error("correction dropped sets " + JSON.stringify(corrected));
-  if (!/also logged this day/i.test(corrected.body) || !corrected.body.includes("Smith machine squat")) throw new Error("legs sets not kept on screen");
+  if (!/exercises with sets on Fri Nov 6/i.test(corrected.body) || !corrected.body.includes("Smith machine squat")) throw new Error("legs sets not kept on screen");
   if (corrected.ex !== exBefore) throw new Error("correction mutated ex");
   if (corrected.perf !== "upper" || corrected.fix !== true) throw new Error("perfFix not stored");
   const afterFix = await dumpStore(page);
@@ -327,9 +332,68 @@ async function main() {
   if (!merge.ex["smith-squat"].s[0] || merge.ex["smith-squat"].s[0][0] !== "100") throw new Error("merge dropped sets");
   if (!merge.ex["lat-pulldown"]) throw new Error("merge dropped the other device's new exercise");
 
+  const nov6ex = await page.evaluate(() => JSON.stringify(window.__nn.loadWo("2026-11-06").ex));
+  await page.click("#woGoToday");
+  await page.waitForFunction(() => document.getElementById("dLab").innerText === "TODAY");
+  const switched = await page.evaluate(() => ({
+    rec: document.getElementById("woRecDate").innerText,
+    session: document.getElementById("dSub").dataset.session,
+    nov6: JSON.stringify(window.__nn.loadWo("2026-11-06").ex)
+  }));
+  if (!/Recording\s+today/i.test(switched.rec)) throw new Error("today recording label: " + switched.rec);
+  if (switched.nov6 !== nov6ex) throw new Error("switching to today moved or dropped Friday sets");
+
+  await page.evaluate(() => {
+    const row = (w, r) => ({ s: [[String(w), String(r)]], d: true });
+    localStorage.setItem("nn-v1:wo:2026-11-09", JSON.stringify({
+      plan: "upper", perf: "upper", perfAt: 9, done: false,
+      ex: {
+        "smith-squat": row(111, 8),
+        "romanian-deadlift": row(111, 8),
+        "smith-incline-press": row(222, 8),
+        "cable-reverse-fly": row(222, 8)
+      }
+    }));
+    window.__nn.setW("2026-11-09");
+  });
+  await page.waitForFunction(() => document.getElementById("loggedBar"));
+  const amb = await page.evaluate(() => {
+    const w = window.__nn.loadWo("2026-11-09");
+    const vals = ["smith-squat", "romanian-deadlift", "smith-incline-press", "cable-reverse-fly"].map((id) => {
+      const el = document.querySelector('input[data-id="' + id + '"][data-s="0"][data-f="0"]');
+      return el ? el.value : null;
+    });
+    return {
+      session: document.getElementById("dSub").dataset.session,
+      text: document.getElementById("woSession").innerText,
+      logged: document.getElementById("loggedBar").innerText,
+      body: document.getElementById("woBody").innerText,
+      vals,
+      performed: window.__nn.recordedPid("2026-11-09", w),
+      rec: document.getElementById("woRecDate").innerText
+    };
+  });
+  if (amb.session === "upper" || /Upper \+ Abs/.test(amb.text)) throw new Error("ambiguous day used contaminated perf: " + amb.text);
+  if (amb.performed !== null) throw new Error("ambiguous recorded " + amb.performed);
+  if (amb.vals.join(",") !== "111,111,222,222") throw new Error("ambiguous sets hidden " + amb.vals);
+  if (/0\/11/.test(amb.body)) throw new Error("ambiguous day showed an empty Upper counter");
+  if (!/not today/i.test(amb.rec)) throw new Error("future/past date banner missing: " + amb.rec);
+  const ambStore = await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-09"));
+  for (const pid of ["push", "pull", "legs"]) {
+    await page.locator('.pchip[data-p="' + pid + '"]').click();
+    await page.waitForFunction((p) => document.getElementById("dSub").dataset.preview === p, pid);
+    const still = await page.evaluate(() => ["smith-squat", "romanian-deadlift", "smith-incline-press", "cable-reverse-fly"].map((id) => document.querySelector('input[data-id="' + id + '"][data-s="0"][data-f="0"]').value).join(","));
+    if (still !== "111,111,222,222") throw new Error("preview " + pid + " hid sets " + still);
+  }
+  if ((await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-09"))) !== ambStore) throw new Error("previewing an ambiguous day wrote the store");
+  await page.evaluate(() => { window.__nn.loadWo("2026-11-09").perfFix = true; const w = JSON.parse(localStorage.getItem("nn-v1:wo:2026-11-09")); w.perfFix = true; localStorage.setItem("nn-v1:wo:2026-11-09", JSON.stringify(w)); window.__nn.setW("2026-11-09"); });
+  await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "upper");
+  const kept = await page.evaluate(() => document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value);
+  if (kept !== "111") throw new Error("perfFix hid the other plan's sets");
+
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-30", gets: hits.get, posts: hits.post, screenshots: ["nov6-legs-iphone13.png", "nov6-preview-upper-iphone13.png", "today-preview-does-not-reschedule-iphone13.png"] }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-31", gets: hits.get, posts: hits.post, screenshots: ["nov6-legs-iphone13.png", "nov6-preview-upper-iphone13.png", "today-preview-does-not-reschedule-iphone13.png"] }));
   await browser.close();
   server.close();
 }
