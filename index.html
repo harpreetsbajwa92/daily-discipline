@@ -628,6 +628,13 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .eqp.oldx{color:#ffb86b;border-color:rgba(255,184,107,.45)}
 #p-workout .dsub{flex-wrap:wrap;row-gap:2px}
 .perfl{flex-basis:100%;width:100%;text-align:center;margin-top:4px;font-size:13px;color:#c8d2d8}.perfl b{color:#6cc3f5}
+#p-workout .pchip.prev{box-shadow:inset 0 0 0 2px #6cc3f5;color:#fff}
+.browsebar{margin:8px 2px 4px;padding:10px 12px;border-radius:12px;background:#1c2830;color:#d5dee4;font-size:13.5px;line-height:1.35}
+.browsebar b{color:#6cc3f5}
+.browsebar .brow{display:flex;gap:8px;margin-top:8px}
+.browsebar button{flex:1;min-height:44px;border:0;border-radius:12px;font-weight:800;font-size:14px;touch-action:manipulation}
+.browsebar .back{background:#3a444c;color:#fff}
+.browsebar .did{background:#0093E7;color:#fff}
 #p-workout .best{font-size:12px;line-height:1.3;color:#9aa6ae;margin-top:2px}
 .wlog{margin:6px 0 0 4px;font-size:12.5px;line-height:1.3;font-weight:600;color:#ffd27a}
 #p-workout .rest{padding:10px 12px;margin-top:6px;font-size:14px}
@@ -798,7 +805,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-29";
+var APP_VERSION="2026.10.31-30";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -927,34 +934,71 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function woDates(){return allKeys().filter(function(k){return k.indexOf("wo:")===0;}).map(function(k){return k.slice(3);}).sort();}
   function filled(x){return x!==undefined&&x!==null&&String(x).trim()!=="";}
   function exHasData(e){return e&&Array.isArray(e.s)&&e.s.some(function(s){return s&&s.some(filled);});}
-  function woLogged(w){if(!w)return false;if(w.done||w.plan)return true;for(var id in w.ex){if(w.ex[id].d||exHasData(w.ex[id]))return true;}return false;}
+  function woLogged(w){if(!w)return false;if(explicitPid(w))return true;if(w.done)return true;var ex=w.ex||{};for(var id in ex){if(ex[id]&&(ex[id].d||exHasData(ex[id])))return true;}return false;}
   function planOf(k,w){return w.plan||SUGGEST[parse(k).getDay()];}
-  // Performed session (what he actually did), used for the Workout tab, week list, Trends and the review. Never changes stored sets.
-  // 1) wo:DATE.perf = session he picked with the chips (stored, synced). 2) else inferred: if most exercises with logged numbers
-  // (more than half) belong to another session than the saved plan, that session. 3) else the saved plan (wo.plan), else the weekday plan.
-  function perfOf(k,w){w=w||{};if(w.perf&&w.perfAt&&(PLANS[w.perf]||w.perf==="none"))return w.perf;var base=planOf(k,w);return perfAuto(w,base)||base;}
-  // ---- rotation (v-29): the next session = the one after the last session he actually performed.
+  // Performed session (what he actually did). Used by the Workout tab, week list, Trends and the review.
+  // Looking at another routine is in-memory only (woView) and is never written. A chip tap must not change history or the next session.
+  // 1) wo.perf when wo.perfFix is set — the separate "I did this session" action. Every exercise and set stays stored.
+  // 2) else the session inferred from exercises that have logged numbers, when one plan owns more than half of them.
+  //    A stored perf/plan from an old chip tap is ignored when it disagrees with those logs (browsing used to write perf).
+  // 3) else, if the logs are mixed with no majority, a stored perf is only a hint.
+  // 4) else the saved plan, else the weekday plan. Empty days are not a performed session.
+  function validPid(p){return !!(p&&(PLANS[p]||p==="none"));}
+  function explicitPid(w){return w&&w.perfFix&&validPid(w.perf)?w.perf:null;}
+  // Strength exercises only (steps and the walk are active rest, not a lifting session).
+  function inferSession(w){
+    w=w||{};var ex=w.ex||{};
+    var ids=Object.keys(ex).filter(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});
+    if(!ids.length)return didActive(w)?"active":null;
+    function sc(p){var m=0;exList(p).forEach(function(e){if(e.id==="steps"||e.id==="incline-walk")return;if(ids.indexOf(e.id)>=0)m++;});return m;}
+    var best=null,bs=0,tie=false;
+    PLAN_ORDER.forEach(function(p){if(p==="active")return;var v=sc(p);if(v>bs){bs=v;best=p;tie=false;}else if(v===bs&&v>0)tie=true;});
+    return best&&!tie&&bs*2>ids.length?best:null;
+  }
+  // logged day -> that session; nothing logged -> null (callers use the rotation for today)
+  function recordedPid(k,w){
+    w=w||{};
+    var ex=explicitPid(w);if(ex)return ex;
+    var inf=inferSession(w);if(inf)return inf;
+    if(hasSets(w)){
+      if(w.perf&&w.perfAt&&validPid(w.perf)&&w.perf!=="none"&&w.perf!=="active")return w.perf;
+      var base=planOf(k,w);if(validPid(base)&&base!=="none"&&base!=="active")return base;
+      return "active";
+    }
+    if(didActive(w))return "active";
+    if(w.done&&validPid(w.plan))return w.plan;
+    return null;
+  }
+  function perfOf(k,w){w=w||{};return recordedPid(k,w)||planOf(k,w);}
+  // ---- rotation: the next session = the one after the last session he actually performed (logged sets or an explicit correction).
   // Push -> Pull + Abs -> Legs -> active rest -> Upper + Abs -> Lower + Abs -> rest -> Push ...
-  // Strength day (logged sets): next = the session after it. Day with nothing logged / active rest / rest: a pending strength session
-  // carries over to the next day (nothing is skipped); a pending active-rest or rest slot is used up by that day.
-  // Same rule in /workspace/dd-backups/next_session.py for the nightly review.
+  // Strength day: next = the session after it. Nothing logged / active rest / rest: a pending strength session carries
+  // to the next day (a missed lift is not skipped). A pending active-rest or rest slot is used up by that day.
+  // Weekday names and routine previews are not inputs. Same rule in next_session.py for the nightly review.
   var ROT=["push","pull","legs","active","upper","lower","none"];
   function rotNext(p){return ROT[(ROT.indexOf(p)+1)%ROT.length];}
   function hasSets(w){var ex=(w&&w.ex)||{};return Object.keys(ex).some(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});}
   function didActive(w){var ex=(w&&w.ex)||{};return !!((ex.steps&&ex.steps.d)||exHasData(ex["incline-walk"]));}
-  function performedOn(k,w){if(!w)return null;if(hasSets(w)){var p=perfOf(k,w);if(p==="active"||p==="none")p=perfAuto(w,"none")||"active";return p;}return didActive(w)?"active":null;}
+  function performedOn(k,w){
+    if(!w)return null;
+    var ex=explicitPid(w);
+    if(ex){
+      if((ex==="active"||ex==="none")&&hasSets(w)){var over=inferSession(w);return over&&over!=="active"?over:"active";}
+      return ex==="none"?null:ex;
+    }
+    if(hasSets(w)){var p=inferSession(w);if(p&&p!=="active")return p;
+      if(w.perf&&w.perfAt&&validPid(w.perf)&&w.perf!=="none"&&w.perf!=="active")return w.perf;return "active";}
+    return didActive(w)?"active":null;
+  }
   function rotInfo(target){var ds=woDates().filter(function(d){return d<target;}),ptr=null,last=null,ld=null;
     if(!ds.length)return {next:SUGGEST[parse(target).getDay()],last:null,lastDate:null};
     for(var d=ds[0];d<target;d=shift(d,1)){var p=d<=today?performedOn(d,getJ("wo:"+d)):ptr;
       if(p&&p!=="active"&&p!=="none"){ptr=rotNext(p);if(d<=today){last=p;ld=d;}}
       else if(ptr==="active"||ptr==="none")ptr=rotNext(ptr);}
     return {next:ptr||"push",last:last,lastDate:ld};}
-  // session shown for a day: logged -> what he did; tapped chip -> that; today/upcoming -> rotation; past unlogged -> saved plan
-  function dispPlan(k,w){w=w||{};if(hasSets(w))return perfOf(k,w);if(w.perf&&w.perfAt)return w.perf;return k>=today?rotInfo(k).next:planOf(k,w);}
-  function perfAuto(w,base){var ex=w.ex||{},ids=Object.keys(ex).filter(function(id){return exHasData(ex[id]);});if(!ids.length)return null;
-    function sc(p){var m=0;exList(p).forEach(function(e){if(ids.indexOf(e.id)>=0)m++;});return m;}
-    var best=base,bs=PLANS[base]?sc(base):0;PLAN_ORDER.forEach(function(p){var v=sc(p);if(v>bs){bs=v;best=p;}});
-    return best!==base&&bs*2>ids.length?best:null;}
+  // session for a day, ignoring any routine preview: logged -> what he did; today with nothing logged -> rotation
+  function sessionPid(k,w){w=w||{};var rec=recordedPid(k,w);if(rec)return rec;return k>=today?rotInfo(k).next:planOf(k,w);}
+  function dispPlan(k,w){return sessionPid(k,w||{});}
   function trainHabit(k){var st=load(k);if(!st[TRAIN]){st[TRAIN]=true;save(k,st);}}
 
   // one-time, non-destructive migration of the earlier tick-only workout data (nn-v1:w:DATE)
@@ -1498,25 +1542,34 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(kind==="min"||kind==="sec")return fmtSets(kind,sets);
     return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+"x"+r:w?w+"x?":r+" reps";}).join(", ");
   }
+  var woView=null; // {date, pid} routine preview. Memory only: date changes clear it, and it is never written to storage or sync.
   function renderWorkout(){
-    var w=loadWo(wdate), pid=dispPlan(wdate,w), sug=wdate>=today?rotInfo(wdate).next:SUGGEST[parse(wdate).getDay()], auto=hasSets(w)&&!(w.perf&&w.perfAt)&&pid!==planOf(wdate,w);
+    var w=loadWo(wdate), pid=sessionPid(wdate,w);
+    var prev=woView&&woView.date===wdate&&woView.pid!==pid?woView.pid:null;
+    var didIt=!!(explicitPid(w)||hasSets(w)||didActive(w));
+    var inferred=inferSession(w);
+    var fromLogs=!explicitPid(w)&&inferred&&inferred===pid&&((w.plan&&w.plan!==pid)||(w.perf&&w.perf!==pid));
+    var sug=wdate>=today?rotInfo(wdate).next:null;
     var nx="";if(wdate===today){var tl=hasSets(w)||didActive(w),ri=rotInfo(tl?shift(today,1):today);
       nx='<div class="perfl nextup">Next up'+(tl?' tomorrow':'')+': <b>'+planName(ri.next)+'</b>'+(ri.last?' (after your last session '+planName(ri.last)+' on '+(ri.lastDate===today?'today':fmt(ri.lastDate))+')':'')+'</div>';}
     $("dPick").value=wdate; $("dLab").textContent=pillLab(wdate);
-    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(sug!=="none"?' · '+(wdate>=today?'rotation':'suggested')+': '+planName(sug):' · suggested: rest')+nx+'<div class="perfl">Session'+(hasSets(w)?' you did':'')+': <b>'+planName(pid)+'</b>'+(auto?' (auto from your logs)':'')+' · tap below to change</div>';
+    $("dSub").dataset.session=pid; $("dSub").dataset.preview=prev||"";
+    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(wdate>=today?(sug&&sug!=="none"?' · rotation: '+planName(sug):' · rotation: rest'):"")+nx+'<div class="perfl" id="woSession">Session'+(didIt?' you did':'')+': <b>'+planName(pid)+'</b>'+(fromLogs?' (from your logs)':'')+'</div>'+(prev?'':'<div class="perfl">Tap a routine to preview it. Previewing is not saved.</div>');
     var ch="";
-    PLAN_ORDER.concat(["none"]).forEach(function(p){ch+='<button class="pchip'+(p===pid?" on":"")+(p===sug?" sug":"")+'" data-p="'+p+'">'+planName(p)+'</button>';});
+    PLAN_ORDER.concat(["none"]).forEach(function(p){ch+='<button type="button" class="pchip'+(p===pid?" on":"")+(p===prev?" prev":"")+(sug&&p===sug?" sug":"")+'" data-p="'+p+'" aria-pressed="'+(p===pid)+'">'+planName(p)+'</button>';});
     $("pChips").innerHTML=ch;
     var h="";
+    if(prev)h+='<div class="browsebar" id="woBrowseBar">Previewing <b>'+planName(prev)+'</b>. Not saved — this day stays <b>'+planName(pid)+'</b>.<div class="brow"><button type="button" class="back" id="woBrowseBack">Back</button><button type="button" class="did" id="woDidThis">I did this session</button></div></div>';
     if(pid==="none"){
-      h='<div class="rest">Rest day. Go for a walk'+(parse(wdate).getDay()===0?' and take progress photos (front, side, back)':'')+'.<br><br>Gym open today after all? Pick a workout above.</div>';
+      h='<div class="rest">Rest day. Go for a walk'+(parse(wdate).getDay()===0?' and take progress photos (front, side, back)':'')+'.<br><br>Lifting instead? Preview a routine above, then tap “I did this session”.</div>';
     }
     {
       var list=pid==="none"?[]:exList(pid);
       if(list.length){h+='<div class="donebar'+(w.done?" ok":"")+'" id="doneBar">'+doneBar(w,list)+'</div>';
-      h+='<div class="slbl">'+planName(pid)+(auto?" (performed)":"")+' · '+(wdate===today?"today":fmt(wdate))+'</div>';}
-      var card=function(e,i,old){
-        if(i>=0&&PLANS[pid].abs&&i===PLANS[pid].x.length)h+='<div class="sub">Abs circuit</div>';
+      h+='<div class="slbl">'+planName(pid)+(fromLogs?" (from your logs)":"")+' · '+(wdate===today?"today":fmt(wdate))+'</div>';}
+      var shown={}, card=function(e,i,old,listPid){
+        listPid=listPid||pid;
+        if(i>=0&&PLANS[listPid]&&PLANS[listPid].abs&&i===PLANS[listPid].x.length)h+='<div class="sub">Abs circuit</div>';
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], best=hintFor(e,wdate), hs=best?best.s:[];
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
         h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span>'+(old?' <span class="eqp oldx">'+old+'</span>':'')+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+' · grey hints</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
@@ -1539,13 +1592,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         }
         h+=(e.goal?'<div class="goal">'+e.goal+'</div>':'')+'</div>';
       };
-      list.forEach(function(e,i){card(e,i);});
+      list.forEach(function(e,i){card(e,i,null,pid);shown[e.id]=1;});
       // Exercises with saved sets that day but not in that day's plan (old/swapped exercises, or a different workout logged under another plan): show them too.
       var inPlan={};list.forEach(function(e){inPlan[e.id]=1;});
       var extra=Object.keys(w.ex||{}).filter(function(id){return !inPlan[id]&&exHasData(w.ex[id]);});
       if(extra.length){h+='<div class="sub">'+(list.length?'Also logged this day':'Logged this day')+'</div>';
         extra.forEach(function(id){var e=EXINFO[id]||{id:id,name:id,kind:"w",n:0,eq:{tag:"Logged",unit:"lbs",rule:"",rep:"logged"},note:"",wl:"",target:"",goal:""};
-          card(e,-1,PLANS.retired.x.some(function(x){return x[0]===id;})||!EXINFO[id]?"old exercise":"not in this plan");});}
+          card(e,-1,PLANS.retired.x.some(function(x){return x[0]===id;})||!EXINFO[id]?"old exercise":"not in this plan");shown[id]=1;});}
+      if(prev&&prev!=="none"){h+='<div class="slbl">Preview · '+planName(prev)+'</div>';
+        exList(prev).forEach(function(e,i){if(shown[e.id])return;card(e,i,"preview",prev);shown[e.id]=1;});}
     }
     $("woBody").innerHTML=h;
     // week list
@@ -1557,9 +1612,15 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     }
     $("week").innerHTML=wh;
   }
-  function setW(d){if(d){wdate=d;renderWorkout();}}
-  // the session stored as plan when he starts logging: keep it once the day has sets or a tapped chip, else the one shown (rotation)
-  function woPlanFix(w){return (hasSets(w)||w.perfAt)&&w.plan?w.plan:dispPlan(wdate,w);}
+  function setW(d){if(d){if(d!==wdate)woView=null;wdate=d;renderWorkout();}}
+  // Plan stored when he logs a set. An explicit correction wins. Otherwise the logged exercises win.
+  // A chip-written plan/perf is not kept just because it was tapped.
+  function woPlanFix(w){
+    var ex=explicitPid(w);if(ex)return ex;
+    var inf=inferSession(w);if(inf)return inf;
+    if((hasSets(w)||didActive(w))&&validPid(w.plan))return w.plan;
+    return sessionPid(wdate,w);
+  }
   $("dPrev").addEventListener("click",function(){setW(shift(wdate,-1));});
   $("dNext").addEventListener("click",function(){setW(shift(wdate,1));});
   $("dPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setW(this.value);});
@@ -1567,9 +1628,18 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("week").addEventListener("click",function(e){var b=e.target.closest(".wd");if(b){setW(b.dataset.k);window.scrollTo(0,0);}});
   $("pChips").addEventListener("click",function(e){
     var b=e.target.closest(".pchip"); if(!b)return;
-    var w=loadWo(wdate); w.plan=b.dataset.p; w.perf=b.dataset.p; w.perfAt=Date.now(); saveWo(wdate,w); renderWorkout();
+    var pick=b.dataset.p, real=sessionPid(wdate,loadWo(wdate));
+    if(pick===real||(woView&&woView.date===wdate&&woView.pid===pick))woView=null;
+    else woView={date:wdate,pid:pick};
+    renderWorkout();
   });
   $("woBody").addEventListener("click",function(e){
+    if(e.target.id==="woBrowseBack"){woView=null;renderWorkout();return;}
+    if(e.target.id==="woDidThis"){
+      var pv=woView&&woView.date===wdate?woView.pid:null; if(!pv||!validPid(pv))return;
+      var wc=loadWo(wdate); wc.perf=pv; wc.perfFix=true; wc.perfAt=Date.now(); wc.plan=pv;
+      saveWo(wdate,wc); woView=null; renderWorkout(); return;
+    }
     if(e.target.id==="markDone"){
       var w=loadWo(wdate); w.plan=woPlanFix(w); w.done=!w.done; saveWo(wdate,w); if(w.done)trainHabit(wdate); renderWorkout(); return;
     }
@@ -1900,10 +1970,17 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var k2=shift(start,d), w=getJ("wo:"+k2); if(!woLogged(w))continue; w.ex=w.ex||{};
       var pid=perfOf(k2,w); any=true;
       var lines=[], skipped=0;
+      var inR={};
       exList(pid).forEach(function(e){
+        inR[e.id]=1;
         var x=w.ex[e.id];
         if(!performed(e,x)){skipped++;lines.push("- "+e.name+" ["+e.eq.rep+"]: SKIPPED");return;}
         lines.push("- "+e.name+" ["+e.eq.rep+"]: "+(e.kind==="chk"?"done":repSets(e.kind,x.s)));
+      });
+      Object.keys(w.ex).forEach(function(id){
+        if(inR[id]||!exHasData(w.ex[id]))return;
+        var e=EXINFO[id];
+        lines.push("- "+(e?e.name:id)+(e?" ["+e.eq.rep+"]":"")+" (also logged): "+(e?repSets(e.kind,w.ex[id].s):"logged"));
       });
       var nl=exList(pid).length;
       out.push(fmt(k2)+" - "+planName(pid)+(w.done?" (done)":" (partial)")+(nl?" · "+(nl-skipped)+"/"+nl+" done, "+skipped+" skipped":""));
@@ -1996,7 +2073,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(/^sun:/.test(k)){var sn=Array.isArray(N)?{t:N,v:{}}:N,so=Array.isArray(O)?{t:O,v:{}}:O,v={},z;for(z in (so.v||{}))v[z]=so.v[z];for(z in (sn.v||{}))v[z]=sn.v[z];
       return JSON.stringify({t:or(sn.t||[],so.t||[]),u:sn.u||so.u||"cm",v:v});}
     if(/^wo:/.test(k)&&typeof N==="object"&&typeof O==="object"&&!Array.isArray(N)){var w={},e={},y;for(y in O)w[y]=O[y];for(y in N)w[y]=N[y];for(y in (O.ex||{}))e[y]=O.ex[y];for(y in (N.ex||{}))if(exHasData(N.ex[y])||!exHasData(e[y]))e[y]=N.ex[y];
-      w.ex=e;w.done=!!(N.done||O.done);w.plan=N.plan||O.plan||null;return JSON.stringify(w);}
+      w.ex=e;w.done=!!(N.done||O.done);w.plan=N.plan||O.plan||null;
+      var fN=!!(N.perfFix&&(PLANS[N.perf]||N.perf==="none")),fO=!!(O.perfFix&&(PLANS[O.perf]||O.perf==="none"));
+      if(fN||fO){var f=(fN&&fO)?(ta>=tb?N:O):(fN?N:O);w.perf=f.perf;w.perfFix=true;w.perfAt=f.perfAt||w.perfAt;if(f.plan)w.plan=f.plan;}
+      return JSON.stringify(w);}
     return newS;}
   // meals:DATE merge: tombstones (del) are unioned (latest time wins); each meal id keeps the copy with the newer meal-level edit time u;
   // a meal whose tombstone is newer than (or equal to) its last edit is dropped. delOnly: keep a's meals as-is and just apply b's tombstones.
@@ -2265,7 +2345,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   bkDaily();
   if(syOn()){syUI();updThenSync();window.addEventListener("online",function(){updThenSync();});setInterval(function(){if(!document.hidden)updThenSync();},60000);}
   else checkUpdate();
-  window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText};
+  window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText,perfOf:perfOf,rotInfo:rotInfo,sessionPid:sessionPid,recordedPid:recordedPid,inferSession:inferSession,loadWo:loadWo,planName:planName,syMerge:syMerge,explicitPid:explicitPid};
 })();
 </script>
 </body>
