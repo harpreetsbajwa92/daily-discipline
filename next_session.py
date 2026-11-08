@@ -28,7 +28,8 @@ import json
 import sys
 from datetime import datetime, timedelta
 
-ABS = ["hanging-leg-raises", "cable-crunch", "plank", "cable-woodchoppers"]
+ABS = ["hanging-leg-raises", "bodyweight-crunch", "plank", "cable-woodchoppers"]
+# cable-crunch is no longer prescribed. It still counts toward abs sessions so old logs do not change the rotation.
 # Strength ids only. Steps and the incline walk are active rest, not a lift.
 PLANS = {
     "push": ["incline-db-press", "smith-flat-press", "seated-db-shoulder-press", "lateral-raises", "rope-pushdown", "overhead-triceps-extension"],
@@ -102,7 +103,10 @@ def infer_session(w):
         return "active" if did_active(w) else None
     def sc(p):
         have = set(ids)
-        return sum(1 for e in PLANS[p] if e in have)
+        m = sum(1 for e in PLANS[p] if e in have)
+        if p in ("pull", "upper", "lower") and "cable-crunch" in have:
+            m += 1
+        return m
     best, bs, tie = None, 0, False
     for p in PLAN_ORDER:
         if p == "active":
@@ -448,6 +452,12 @@ def self_test():
     locked["perf"], locked["plan"], locked["perfFix"] = "legs", "legs", True
     assert performed_on("2026-11-06", locked) == "legs"
     assert set(locked["ex"]) == set(upper_ids + legs_ids)
+    assert "bodyweight-crunch" in PLANS["pull"] and "bodyweight-crunch" in PLANS["upper"] and "bodyweight-crunch" in PLANS["lower"]
+    assert "bodyweight-crunch" not in PLANS["push"] and "bodyweight-crunch" not in PLANS["legs"] and "bodyweight-crunch" not in PLANS["active"]
+    assert "cable-crunch" not in PLANS["pull"] and "cable-crunch" not in PLANS["upper"] and "cable-crunch" not in PLANS["lower"]
+    tight = {"ex": {"chest-supported-row": {"s": [["40", "8"]], "d": True}, "cable-crunch": {"s": [["50", "12"]], "d": True}}}
+    assert infer_session(tight) == "pull"
+    assert infer_session({"ex": {"cable-crunch": {"s": [["50", "12"]], "d": True}}}) is None
     print("self-test ok")
     return 0
 

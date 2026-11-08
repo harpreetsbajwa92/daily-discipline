@@ -15,7 +15,7 @@ const { chromium, devices } = require("playwright");
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ART = "/opt/cursor/artifacts";
 const PORT = 8765;
-const TODAY = "2026-11-07";
+const TODAY = "2026-11-08";
 
 function sets(...pairs) {
   return { s: pairs.map(([a, b]) => [String(a), String(b)]), d: true };
@@ -152,9 +152,9 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-32")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-33")) throw new Error("version text: " + version);
   const openedOn = await page.evaluate(() => ({ lab: document.getElementById("dLab").innerText, date: document.getElementById("dSub").dataset.date, rec: document.getElementById("woRecDate").innerText }));
-  if (openedOn.lab !== "TODAY" || openedOn.date !== "2026-11-07" || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
+  if (openedOn.lab !== "TODAY" || openedOn.date !== TODAY || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
 
   await page.evaluate(() => window.__nn.setW("2026-11-06"));
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "legs");
@@ -251,25 +251,25 @@ async function main() {
   delta = changedKeys(base, await dumpStore(page));
   if (delta.length) throw new Error("history view wrote " + delta.join(","));
 
-  await page.evaluate(() => window.__nn.setW("2026-11-07"));
-  await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "active");
-  const beforeFuture = await page.evaluate(() => ({
-    today: window.__nn.rotInfo("2026-11-07").next,
-    tomorrow: window.__nn.rotInfo("2026-11-08").next
-  }));
-  await page.locator('.pchip[data-p="push"]').click();
-  await page.waitForFunction(() => document.getElementById("dSub").dataset.preview === "push" && document.getElementById("dSub").dataset.session === "active");
-  const afterFuture = await page.evaluate(() => ({
-    today: window.__nn.rotInfo("2026-11-07").next,
-    tomorrow: window.__nn.rotInfo("2026-11-08").next,
+  await page.evaluate((d) => window.__nn.setW(d), TODAY);
+  await page.waitForFunction((d) => document.getElementById("dSub").dataset.date === d && document.getElementById("dSub").dataset.preview === "", TODAY);
+  const beforeFuture = await page.evaluate((d) => ({
+    next: window.__nn.rotInfo(d).next,
+    session: document.getElementById("dSub").dataset.session,
+    label: document.getElementById("woSession").innerText
+  }), TODAY);
+  const previewPick = beforeFuture.session === "push" ? "legs" : "push";
+  await page.locator('.pchip[data-p="' + previewPick + '"]').click();
+  await page.waitForFunction((p) => document.getElementById("dSub").dataset.preview === p, previewPick);
+  const afterFuture = await page.evaluate((d) => ({
+    next: window.__nn.rotInfo(d).next,
+    session: document.getElementById("dSub").dataset.session,
     label: document.getElementById("woSession").innerText,
     viewing: document.getElementById("woViewing").innerText
-  }));
-  if (!/Recorded session:\s*Active rest/.test(afterFuture.label) || !/Push/.test(afterFuture.viewing)) throw new Error("today preview relabeled " + JSON.stringify(afterFuture));
-  if (beforeFuture.today !== "active" || afterFuture.today !== "active" || afterFuture.tomorrow !== beforeFuture.tomorrow) {
-    throw new Error("preview changed schedule " + JSON.stringify({ beforeFuture, afterFuture }));
-  }
-  if (!afterFuture.label.includes("Active rest")) throw new Error("today label " + afterFuture.label);
+  }), TODAY);
+  if (afterFuture.session !== beforeFuture.session || afterFuture.label !== beforeFuture.label) throw new Error("today preview relabeled " + JSON.stringify({ beforeFuture, afterFuture }));
+  if (!/preview/i.test(afterFuture.viewing)) throw new Error("viewing did not say preview: " + afterFuture.viewing);
+  if (beforeFuture.next !== afterFuture.next) throw new Error("preview changed schedule " + JSON.stringify({ beforeFuture, afterFuture }));
   await new Promise((r) => setTimeout(r, 2500));
   delta = changedKeys(base, await dumpStore(page));
   if (delta.length) throw new Error("today preview wrote " + delta.join(","));
@@ -359,8 +359,11 @@ async function main() {
   if (!/Recording\s+today/i.test(switched.rec)) throw new Error("today recording label: " + switched.rec);
   if (switched.nov6 !== nov6ex) throw new Error("switching to today moved or dropped Friday sets");
   const nov7before = await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-07"));
-  await page.locator('.pchip[data-p="legs"]').click();
-  await page.waitForFunction(() => document.getElementById("dSub").dataset.preview === "legs");
+  const beforeHint = await page.evaluate(() => document.getElementById("woSession").innerText);
+  if (!/Recorded session:\s*Legs/.test(beforeHint)) {
+    await page.locator('.pchip[data-p="legs"]').click();
+    await page.waitForFunction(() => document.getElementById("dSub").dataset.viewing === "legs");
+  }
   const hint = await page.evaluate(() => {
     const el = document.querySelector('#woRoster input[data-id="smith-squat"][data-s="0"][data-f="0"]');
     return {
@@ -376,7 +379,7 @@ async function main() {
   if (hint.ph !== "100") throw new Error("grey hint was not a placeholder: " + hint.ph);
   if (hint.filled.length) throw new Error("today roster has saved numbers: " + hint.filled.join(","));
   if (hint.roster !== hint.want) throw new Error("today Legs preview roster " + hint.roster);
-  if (/Recorded session:\s*Legs/.test(hint.recorded)) throw new Error("preview relabeled today as Legs: " + hint.recorded);
+  if (hint.recorded !== beforeHint) throw new Error("preview relabeled today: " + hint.recorded + " from " + beforeHint);
   if ((await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-07"))) !== nov7before) throw new Error("preview wrote today's workout");
   if ((await page.evaluate(() => JSON.stringify(window.__nn.loadWo("2026-11-06").ex))) !== nov6ex) throw new Error("preview changed Friday's sets");
 
@@ -436,7 +439,7 @@ async function main() {
 
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-32", gets: hits.get, posts: hits.post }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-33", gets: hits.get, posts: hits.post }));
   await browser.close();
   server.close();
 }
