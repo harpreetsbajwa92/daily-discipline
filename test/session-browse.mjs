@@ -9,13 +9,13 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 
-const require = createRequire("/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright/package.json");
+const require = createRequire("/tmp/pw/node_modules/playwright/package.json");
 const { chromium, devices } = require("playwright");
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ART = "/opt/cursor/artifacts";
 const PORT = 8765;
-const TODAY = "2026-11-08";
+const TODAY = "2026-11-10";
 
 function sets(...pairs) {
   return { s: pairs.map(([a, b]) => [String(a), String(b)]), d: true };
@@ -152,7 +152,7 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-33")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-34")) throw new Error("version text: " + version);
   const openedOn = await page.evaluate(() => ({ lab: document.getElementById("dLab").innerText, date: document.getElementById("dSub").dataset.date, rec: document.getElementById("woRecDate").innerText }));
   if (openedOn.lab !== "TODAY" || openedOn.date !== TODAY || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
 
@@ -178,10 +178,12 @@ async function main() {
   const legsIds = await page.evaluate(() => window.__nn.exIds("legs"));
   if (friRoster.join(",") !== legsIds.join(",")) throw new Error("Legs roster is not the fixed list: " + friRoster.join(","));
   if (friRoster.includes("smith-incline-press") || friRoster.includes("lat-pulldown")) throw new Error("off-plan exercise injected into Legs roster");
-  if (!friHist.includes("smith-incline-press")) throw new Error("off-plan sets missing from history area");
+  if (friHist.length || /also logged/i.test(opened.also) || /not in this list/i.test(opened.also)) throw new Error("off-list section still shown");
+  if (opened.also.includes("Smith machine incline press")) throw new Error("off-list exercise still drawn on the routine");
+  const friStored = await page.evaluate(() => window.__nn.loadWo("2026-11-06").ex);
+  if (!friStored["smith-incline-press"] || !friStored["smith-squat"]) throw new Error("hiding the off-list section deleted stored sets");
   if (opened.done.includes("/11")) throw new Error("done bar switched to Upper+Abs: " + opened.done);
   if (!opened.done.includes("/6")) throw new Error("expected legs counter /6: " + opened.done);
-  if (!opened.also.includes("Smith machine incline press")) throw new Error("off-plan upper sets not visible");
   if (!opened.fri || !opened.fri.includes("Legs")) throw new Error("week list: " + opened.fri);
   const sched = await page.evaluate(() => ({
     today: window.__nn.rotInfo("2026-11-07").next,
@@ -202,7 +204,8 @@ async function main() {
     session: document.getElementById("dSub").dataset.session,
     text: document.getElementById("woSession").innerText,
     banner: (document.getElementById("woBrowseBar") || {}).innerText || "",
-    squat: document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value,
+    squatStored: (window.__nn.loadWo("2026-11-06").ex["smith-squat"].s[0] || [])[0],
+    squatOnScreen: !!document.querySelector("#woRoster [data-id='smith-squat']"),
     done: document.getElementById("doneBar").innerText,
     chip: document.querySelector(".pchip.on").innerText,
     recChip: (document.querySelector(".pchip.rec") || {}).innerText || "",
@@ -212,11 +215,11 @@ async function main() {
   }));
   if (browsed.session !== "legs" || !/Recorded session:\s*Legs/.test(browsed.text)) throw new Error("browse relabeled: " + JSON.stringify(browsed));
   if (!/Upper \+ Abs/.test(browsed.viewing) || !/preview/i.test(browsed.viewing)) throw new Error("viewing label: " + browsed.viewing);
-  if (browsed.squat !== "100") throw new Error("browse hid squat");
+  if (browsed.squatStored !== "100" || browsed.squatOnScreen) throw new Error("Upper view showed or dropped Legs sets");
   const upperIds = await page.evaluate(() => window.__nn.exIds("upper"));
   if (browsed.roster.join(",") !== upperIds.join(",")) throw new Error("Upper preview roster changed: " + browsed.roster.join(","));
   if (browsed.roster.includes("smith-squat")) throw new Error("Legs exercise injected into Upper roster");
-  if (!browsed.hist.includes("smith-squat")) throw new Error("Legs sets missing from history while previewing Upper");
+  if (browsed.hist.length || /also logged/i.test(browsed.banner + browsed.viewing)) throw new Error("off-list section while previewing");
   if (!browsed.banner.includes("Recorded session stays") || !browsed.banner.includes("Legs")) throw new Error("banner " + browsed.banner);
   if (!/upper/i.test(browsed.chip) || !/legs/i.test(browsed.recChip)) throw new Error("chips " + JSON.stringify(browsed));
   await page.screenshot({ path: path.join(ART, "nov6-preview-upper-iphone13.png") });
@@ -247,7 +250,15 @@ async function main() {
   await page.evaluate(() => window.__nn.setW("2026-10-31"));
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "upper");
   const oldDay = await page.locator("#woBody").innerText();
-  if (!oldDay.includes("Incline barbell press") || !oldDay.includes("old exercise")) throw new Error("retired exercise hidden");
+  const oldKept = await page.evaluate(() => {
+    const x = window.__nn.loadWo("2026-10-31").ex["incline-press"];
+    return !!(x && x.s && x.s.length);
+  });
+  if (!oldKept) throw new Error("retired incline-press log was deleted");
+  if (/Incline barbell press|also logged|not in this list/i.test(oldDay)) throw new Error("retired exercise still drawn on the routine");
+  await page.evaluate(() => window.__nn.show("trends"));
+  await page.waitForFunction(() => /incline barbell press/i.test(document.getElementById("exArea").innerText));
+  await page.evaluate(() => window.__nn.show("workout"));
   delta = changedKeys(base, await dumpStore(page));
   if (delta.length) throw new Error("history view wrote " + delta.join(","));
 
@@ -302,15 +313,16 @@ async function main() {
     const w = window.__nn.loadWo("2026-11-06");
     return {
       label: document.getElementById("woSession").innerText,
-      squat: document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value,
-      incline: document.querySelector('input[data-id="smith-incline-press"][data-s="0"][data-f="0"]').value,
+      squat: (w.ex["smith-squat"].s[0] || [])[0],
+      incline: document.querySelector('#woRoster input[data-id="smith-incline-press"][data-s="0"][data-f="0"]').value,
+      squatOnScreen: !!document.querySelector('#woRoster [data-id="smith-squat"]'),
       body: document.getElementById("woBody").innerText,
       perf: w.perf, fix: w.perfFix, ex: JSON.stringify(w.ex)
     };
   });
   if (!/Recorded session:\s*Upper \+ Abs/.test(corrected.label)) throw new Error("correction label " + corrected.label);
-  if (corrected.squat !== "100" || corrected.incline !== "40") throw new Error("correction dropped sets " + JSON.stringify(corrected));
-  if (!/Also logged on this date/i.test(corrected.body) || !corrected.body.includes("Smith machine squat")) throw new Error("legs sets not kept in history");
+  if (corrected.squat !== "100" || corrected.incline !== "40" || corrected.squatOnScreen) throw new Error("correction changed what is stored or drawn " + JSON.stringify(corrected));
+  if (/also logged/i.test(corrected.body) || /not in this list/i.test(corrected.body)) throw new Error("off-list section returned");
   if (corrected.ex !== exBefore) throw new Error("correction mutated ex");
   if (corrected.perf !== "upper" || corrected.fix !== true) throw new Error("perfFix not stored");
   const afterFix = await dumpStore(page);
@@ -333,10 +345,11 @@ async function main() {
   await pageB.evaluate(() => window.__nn.setW("2026-11-06"));
   const bAfter = await pageB.evaluate(() => ({
     session: document.getElementById("dSub").dataset.session,
-    squat: document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value,
+    squat: (window.__nn.loadWo("2026-11-06").ex["smith-squat"].s[0] || [])[0],
+    onScreen: !!document.querySelector("#woRoster [data-id='smith-squat']"),
     ex: JSON.stringify(window.__nn.loadWo("2026-11-06").ex)
   }));
-  if (bAfter.session !== "upper" || bAfter.squat !== "100" || bAfter.ex !== exBefore) throw new Error("device B after sync " + JSON.stringify(bAfter));
+  if (bAfter.session !== "upper" || bAfter.squat !== "100" || bAfter.onScreen || bAfter.ex !== exBefore) throw new Error("device B after sync " + JSON.stringify(bAfter));
 
   const merge = await page.evaluate(() => {
     const keep = JSON.stringify({ plan: "legs", perf: "legs", perfFix: true, perfAt: 1, done: false, ex: { "smith-squat": { s: [["100", "8"]], d: true } } });
@@ -399,15 +412,13 @@ async function main() {
   await page.waitForFunction(() => /no prescribed list/i.test(document.getElementById("woViewing").innerText));
   const amb = await page.evaluate(() => {
     const w = window.__nn.loadWo("2026-11-09");
-    const vals = ["smith-squat", "romanian-deadlift", "smith-incline-press", "cable-reverse-fly"].map((id) => {
-      const el = document.querySelector('#woHist input[data-id="' + id + '"][data-s="0"][data-f="0"]');
-      return el ? el.value : null;
-    });
+    const stored = ["smith-squat", "romanian-deadlift", "smith-incline-press", "cable-reverse-fly"].map((id) => (w.ex[id].s[0] || [])[0]);
     return {
       session: document.getElementById("dSub").dataset.session,
       text: document.getElementById("woSession").innerText,
+      body: document.getElementById("woBody").innerText,
       roster: [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id),
-      vals,
+      stored,
       performed: window.__nn.recordedPid("2026-11-09", w),
       rec: document.getElementById("woRecDate").innerText
     };
@@ -415,7 +426,8 @@ async function main() {
   if (amb.session === "upper" || /Recorded session:\s*Upper/.test(amb.text)) throw new Error("ambiguous day used contaminated perf: " + amb.text);
   if (amb.performed !== null) throw new Error("ambiguous recorded " + amb.performed);
   if (amb.roster.length) throw new Error("ambiguous day invented a prescribed roster: " + amb.roster.join(","));
-  if (amb.vals.join(",") !== "111,111,222,222") throw new Error("ambiguous sets hidden " + amb.vals);
+  if (/also logged|not in this list|Smith machine squat/i.test(amb.body)) throw new Error("off-list sets drawn with no roster");
+  if (amb.stored.join(",") !== "111,111,222,222") throw new Error("ambiguous sets deleted " + amb.stored);
   if (!/not today/i.test(amb.rec)) throw new Error("date banner missing: " + amb.rec);
   const ambStore = await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-09"));
   for (const pid of ["push", "pull", "legs", "upper", "lower", "active", "none"]) {
@@ -424,22 +436,32 @@ async function main() {
     const check = await page.evaluate((p) => {
       const want = p === "none" ? [] : window.__nn.exIds(p);
       const got = [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id);
-      const squat = document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]');
-      return { got: got.join(","), want: want.join(","), squat: squat ? squat.value : null, recorded: document.getElementById("woSession").innerText };
+      const squat = document.querySelector('#woRoster input[data-id="smith-squat"][data-s="0"][data-f="0"]');
+      const stored = (window.__nn.loadWo("2026-11-09").ex["smith-squat"].s[0] || [])[0];
+      const off = document.getElementById("woBody").innerText;
+      return { got: got.join(","), want: want.join(","), squat: squat ? squat.value : null, stored, recorded: document.getElementById("woSession").innerText, off: /also logged|not in this list/i.test(off) };
     }, pid);
     if (check.got !== check.want) throw new Error(pid + " roster " + check.got + " expected " + check.want);
     if (/Recorded session:\s*Upper/.test(check.recorded)) throw new Error("preview relabeled recorded session");
-    if (check.squat !== "111") throw new Error(pid + " preview lost squat value " + check.squat);
+    if (check.stored !== "111") throw new Error(pid + " preview deleted squat " + check.stored);
+    if (check.off) throw new Error(pid + " still shows an off-list section");
+    const squatInPlan = check.want.split(",").indexOf("smith-squat") >= 0;
+    if (squatInPlan && check.squat !== "111") throw new Error(pid + " did not show the set logged that day");
+    if (!squatInPlan && check.squat !== null) throw new Error(pid + " showed a squat that is not in that list");
   }
   if ((await page.evaluate(() => localStorage.getItem("nn-v1:wo:2026-11-09"))) !== ambStore) throw new Error("previewing an ambiguous day wrote the store");
   await page.evaluate(() => { window.__nn.loadWo("2026-11-09").perfFix = true; const w = JSON.parse(localStorage.getItem("nn-v1:wo:2026-11-09")); w.perfFix = true; localStorage.setItem("nn-v1:wo:2026-11-09", JSON.stringify(w)); window.__nn.setW("2026-11-09"); });
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "upper");
-  const kept = await page.evaluate(() => document.querySelector('input[data-id="smith-squat"][data-s="0"][data-f="0"]').value);
-  if (kept !== "111") throw new Error("perfFix hid the other plan's sets");
+  const kept = await page.evaluate(() => ({
+    stored: (window.__nn.loadWo("2026-11-09").ex["smith-squat"].s[0] || [])[0],
+    onScreen: !!document.querySelector("#woRoster [data-id='smith-squat']"),
+    section: /also logged|not in this list/i.test(document.getElementById("woBody").innerText)
+  }));
+  if (kept.stored !== "111" || kept.onScreen || kept.section) throw new Error("perfFix drew or dropped off-list sets " + JSON.stringify(kept));
 
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-33", gets: hits.get, posts: hits.post }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-34", gets: hits.get, posts: hits.post }));
   await browser.close();
   server.close();
 }
