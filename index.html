@@ -811,7 +811,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-33";
+var APP_VERSION="2026.10.31-34";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1516,9 +1516,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   function mealDaily(field){var out=[];mealDays().forEach(function(k){var d=loadMeals(k);if(!d.items.length)return;var t=dayTot(d.items);if(t.k<=0&&t.p<=0)return;out.push({w:k,v:t[field]});});return out;}
 
   // ================= PAGE 2: WORKOUT =================
-  // Grey hints in the set boxes (placeholders only, never saved): his BEST earlier session for this exercise.
-  // Weighted: highest top-set weight, then more reps on that set, then more total volume. Reps-only / seconds / minutes: highest single set, then total.
-  // Weighted sessions need a weight above 1 lb (skips placeholder entries like a 1 lb log). Row n hints that session's set n; extra rows reuse its last set.
+  // Grey numbers in empty set boxes are placeholders only, never saved: the last earlier day he logged this exercise.
+  // The Best line is separate. It is not copied into the boxes. Weighted best-scores skip a 1 lb placeholder log.
+  // Row n hints that session's set n; extra rows reuse its last filled set.
   function bestScore(e,ss){var a=0,b=0,c=0;ss.forEach(function(t){if(!t)return;var w=parseFloat(t[0])||0,r=parseFloat(t[1])||0;
       if(e.kind==="w"){if(w>a||(w===a&&r>b)){a=w;b=r;}c+=w*r;}else{var v=e.kind==="bw"?(r||w):w;if(v>a)a=v;c+=v;}});
     if(e.kind==="w"&&a<=1)return null;return a>0?[a,b,c]:null;}
@@ -1587,9 +1587,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var card=function(e,i,old,listPid,zone){
         listPid=listPid||pid;
         if(i>=0&&PLANS[listPid]&&PLANS[listPid].abs&&i===PLANS[listPid].x.length)h+='<div class="sub">Abs circuit</div>';
-        var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], best=hintFor(e,wdate), hs=best?best.s:[];
+        var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], best=hintFor(e,wdate), hs=ls;
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
-        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'" data-zone="'+(zone||"roster")+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span>'+(old?' <span class="eqp oldx">'+old+'</span>':'')+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+'</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+' · grey hints</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
+        h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'" data-zone="'+(zone||"roster")+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span>'+(old?' <span class="eqp oldx">'+old+'</span>':'')+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+' · grey hints</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
         if(e.wl)h+='<div class="wlog">⚖ '+e.wl+'</div>';
         var nrows=Math.max(e.n||0,(cur.s||[]).length);
         if(nrows){
@@ -1612,13 +1612,6 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       h+='<div id="woRoster">';
       list.forEach(function(e,i){card(e,i,null,viewed,"roster");});
       h+='</div>';
-      var inRoster={};list.forEach(function(e){inRoster[e.id]=1;});
-      var hist=Object.keys(w.ex||{}).filter(function(id){return !inRoster[id]&&exHasData(w.ex[id]);});
-      if(hist.length){h+='<div id="woHist"><div class="sub">Also logged on this date — not in this list</div>';
-        hist.forEach(function(id){var e=EXINFO[id]||{id:id,name:id,kind:"w",n:0,eq:{tag:"Logged",unit:"lbs",rule:"",rep:"logged"},note:"",wl:"",target:"",goal:""};
-          var old=!EXINFO[id]||PLANS.retired.x.some(function(x){return x[0]===id;})?"old exercise":"not in this list";
-          card(e,-1,old,viewed||"push","hist");});
-        h+='</div>';}
     }
     $("woBody").innerHTML=h;
     // week list

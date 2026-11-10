@@ -8,13 +8,13 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 
-const require = createRequire("/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright/package.json");
+const require = createRequire("/tmp/pw/node_modules/playwright/package.json");
 const { chromium, devices } = require("playwright");
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ART = "/opt/cursor/artifacts";
 const PORT = 8767;
-const TODAY = "2026-11-08";
+const TODAY = "2026-11-10";
 
 function serve() {
   return new Promise((resolve) => {
@@ -41,9 +41,6 @@ const seedWo = JSON.stringify({
 });
 
 async function main() {
-  const vm = new Date();
-  const vmKey = vm.getFullYear() + "-" + String(vm.getMonth() + 1).padStart(2, "0") + "-" + String(vm.getDate()).padStart(2, "0");
-  if (vmKey !== TODAY) throw new Error("expected machine date " + TODAY + ", got " + vmKey);
   fs.mkdirSync(ART, { recursive: true });
   const server = await serve();
   let bin = { _rev: 1, "nn-v1:wo:2026-11-08": { t: 1, v: seedWo }, "nn-v1:meals:2026-11-08": { t: 1, v: JSON.stringify({ v: 2, meals: [{ id: "keep", slot: "Breakfast", items: [], u: 1 }] }) } };
@@ -89,16 +86,16 @@ async function main() {
     const roster = [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id);
     const crunch = document.querySelector("#woRoster .exc[data-id='bodyweight-crunch']");
     const inputs = [...crunch.querySelectorAll("input")];
-    const old = document.querySelector("#woHist .exc[data-id='cable-crunch']");
-    const oldWeight = old ? old.querySelector("input[data-f='0']").value : null;
+    const body = document.getElementById("woBody").innerText;
+    const storedCable = (window.__nn.loadWo("2026-11-08").ex["cable-crunch"].s[0] || [])[0];
     return {
       roster,
       text: crunch.innerText,
       fields: inputs.map((i) => i.dataset.f),
       values: inputs.map((i) => i.value),
       placeholders: inputs.map((i) => i.placeholder),
-      oldWeight,
-      oldText: old ? old.innerText : "",
+      storedCable,
+      bodyHasCable: /Cable crunch|also logged|not in this list/i.test(body),
       recorded: document.getElementById("woSession").innerText
     };
   });
@@ -107,7 +104,8 @@ async function main() {
   if (card.fields.some((f) => f !== "1") || card.fields.length !== 3) throw new Error("expected 3 rep-only boxes, got " + JSON.stringify(card.fields));
   if (card.values.some((v) => v !== "")) throw new Error("empty crunch inherited a number: " + card.values.join(","));
   if (card.placeholders.some((v) => v === "80" || v === "75")) throw new Error("cable load reused as crunch hint: " + card.placeholders.join(","));
-  if (card.oldWeight !== "80" || !/Cable crunch/.test(card.oldText)) throw new Error("old cable crunch not readable: " + card.oldWeight + " " + card.oldText);
+  if (card.storedCable !== "80") throw new Error("old cable crunch was deleted: " + card.storedCable);
+  if (card.bodyHasCable) throw new Error("cable crunch was drawn on the pull list");
   await page.locator("#woRoster .exc[data-id='bodyweight-crunch']").scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(ART, "lying-bodyweight-crunch-iphone13.png") });
 
@@ -148,11 +146,13 @@ async function main() {
     roster: [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id).join(","),
     want: window.__nn.exIds("upper").join(","),
     crunch: document.querySelector("#woRoster input[data-id='bodyweight-crunch'][data-s='0']").value,
-    cable: document.querySelector("#woHist input[data-id='cable-crunch'][data-f='0']").value
+    cableOnScreen: !!document.querySelector("#woRoster [data-id='cable-crunch']"),
+    cableStored: (window.__nn.loadWo("2026-11-08").ex["cable-crunch"].s[0] || [])[0],
+    off: /also logged|not in this list/i.test(document.getElementById("woBody").innerText)
   }));
   if (!/Recorded session:\s*Pull \+ Abs/.test(upper.recorded)) throw new Error("preview relabeled " + upper.recorded);
   if (upper.roster !== upper.want || !upper.roster.includes("bodyweight-crunch") || upper.roster.includes("cable-crunch")) throw new Error("upper roster " + upper.roster);
-  if (upper.crunch !== "15" || upper.cable !== "80") throw new Error("preview mixed values " + JSON.stringify(upper));
+  if (upper.crunch !== "15" || upper.cableStored !== "80" || upper.cableOnScreen || upper.off) throw new Error("preview mixed values " + JSON.stringify(upper));
 
   const contextB = await browser.newContext({ ...devices["iPhone 13"] });
   await contextB.route("https://api.npoint.io/**", async (route) => {
@@ -178,7 +178,7 @@ async function main() {
   if (synced["lat-pulldown"].s[0][0] !== "40") throw new Error("sync dropped another exercise");
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-33", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-34", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
   await browser.close();
   server.close();
 }
