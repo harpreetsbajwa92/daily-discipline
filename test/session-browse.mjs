@@ -15,7 +15,7 @@ const { chromium, devices } = require("playwright");
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ART = "/opt/cursor/artifacts";
 const PORT = 8765;
-const TODAY = "2026-11-10";
+const TODAY = "2026-11-11";
 
 function sets(...pairs) {
   return { s: pairs.map(([a, b]) => [String(a), String(b)]), d: true };
@@ -152,7 +152,7 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-34")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-35")) throw new Error("version text: " + version);
   const openedOn = await page.evaluate(() => ({ lab: document.getElementById("dLab").innerText, date: document.getElementById("dSub").dataset.date, rec: document.getElementById("woRecDate").innerText }));
   if (openedOn.lab !== "TODAY" || openedOn.date !== TODAY || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
 
@@ -461,7 +461,7 @@ async function main() {
 
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-34", gets: hits.get, posts: hits.post }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-35", gets: hits.get, posts: hits.post }));
   await browser.close();
   server.close();
 }
