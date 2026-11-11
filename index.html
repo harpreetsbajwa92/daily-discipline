@@ -643,6 +643,8 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .logbar b{color:#16EC06}
 #p-workout .best{font-size:12px;line-height:1.3;color:#9aa6ae;margin-top:2px}
 .wlog{margin:6px 0 0 4px;font-size:12.5px;line-height:1.3;font-weight:600;color:#ffd27a}
+.how{margin:4px 2px 0 4px;font-size:13px;line-height:1.35;color:#d5dee4}
+.tgt{margin:1px 2px 0 4px;font-size:12.5px;line-height:1.3;color:#9ec8e6}
 #p-workout .rest{padding:10px 12px;margin-top:6px;font-size:14px}
 #p-workout .sub{margin:8px 0 4px}
 #p-workout .week{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
@@ -811,7 +813,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-34";
+var APP_VERSION="2026.10.31-35";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -870,8 +872,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     bw:"Bodyweight: log reps only (no weight)",plank:"Bodyweight: log seconds (ab wheel: reps)",plank2:"Bodyweight: log seconds held",
     tread:"Treadmill: log minutes (no weight)",steps:"Tick when you hit 10k steps (no weight)"};
   // [id (kept stable so history carries over), name, sets, reps, equipment, note]
-  // cable-crunch stays a separate retired id so old weighted logs are not relabeled as bodyweight.
-  var ABS=[["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["bodyweight-crunch","Lying bodyweight crunch",3,"12-20","bw","lying on your back, no added weight, controlled reps"],["plank","Plank",3,"45s","plank2"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
+  // cable-crunch and hanging-leg-raises stay separate retired ids so old logs are not relabeled.
+  var ABS=[["lying-leg-raise","Lying leg raises",3,"12-20","bw","bodyweight, no added weight"],["bodyweight-crunch","Lying bodyweight crunch",3,"12-20","bw","lying on your back, no added weight, controlled reps"],["plank","Plank",3,"45s","plank2"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
   var WALK=["incline-walk","Incline walk",1,"15-20 min","tread","10-12% incline, ~5 km/h"];
   var PLANS={
     push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["smith-flat-press","Smith machine flat press",3,"8-10","smith","start ~50 lbs plates"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
@@ -881,7 +883,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["cable-leg-extension","Cable leg extension",3,"12","cable1","ankle strap, seated on bench facing away from the stack, extend knee to straight · start 25–30 lbs stack","each leg"],["cable-leg-curl","Cable leg curl",3,"12","cable1","ankle strap, curl heel to glute · start 20–30 lbs stack","each leg"]]},
     active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]},
     // retired exercises: not in any day's plan, kept so their logged history still shows in Trends
-    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"],["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["leg-press","Leg press",3,"10-12","plates"],["calf-raises","Calf raises",4,"15","machine"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["incline-press","Incline barbell press",3,"8-10","bb"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-crunch","Cable crunch",3,"12-15","cable"]]}
+    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"],["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["leg-press","Leg press",3,"10-12","plates"],["calf-raises","Calf raises",4,"15","machine"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["incline-press","Incline barbell press",3,"8-10","bb"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-crunch","Cable crunch",3,"12-15","cable"],["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"]]}
   };
   // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
   var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
@@ -893,11 +895,76 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       var q=EQ[e[4]], kind=q.kind||"w", timed=kind==="min"||kind==="chk";
       var short=timed?e[3]:e[2]+" x "+e[3]+(e[6]?" "+e[6]:"");
       var full=timed?e[3]:e[2]+" sets x "+e[3]+(kind==="sec"?"":" reps")+(e[6]?" "+e[6]:"");
-      return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],eq:q,note:e[5]||"",wl:WLOG[e[4]]||"",
+        return {id:e[0],name:e[1],kind:kind,n:kind==="chk"?0:e[2],reps:String(e[3]||""),eq:q,note:e[5]||"",wl:WLOG[e[4]]||"",
         target:short+" · "+q.tag+(e[5]?" · "+e[5]:""),
         goal:"Target: "+full+" · "+q.tag+" · "+q.rule+(e[5]?" · "+e[5]:"")};
     });
   }
+  // Shown on the card only. Never written into a workout log.
+  var CUE={
+    "incline-db-press":"Lie on an incline bench, press the dumbbells up over your chest, and lower them with control.",
+    "smith-flat-press":"Lie flat, press the Smith bar up over your chest, and lower it to your chest.",
+    "seated-db-shoulder-press":"Sit tall, press the dumbbells overhead, and lower them to shoulder height.",
+    "lateral-raises":"Raise the dumbbells out to the side until your arms are about shoulder height, then lower slowly.",
+    "rope-pushdown":"Keep your elbows at your sides and push the rope down until your arms are straight.",
+    "overhead-triceps-extension":"Keep your elbows up by your head, straighten your arms, and bend them slowly.",
+    "incline-walk":"Walk on the treadmill at an incline, and hold the rail only if you need it for balance.",
+    "lat-pulldown":"Pull the bar down to your upper chest, squeeze your shoulder blades, and let it rise slowly.",
+    "chest-supported-row":"Lie chest-down and row the dumbbells toward your hips without swinging.",
+    "seated-cable-row":"Sit tall, pull the handle to your stomach, and squeeze your shoulder blades together.",
+    "face-pulls":"Pull the rope toward your face, leading with your hands, and squeeze the back of your shoulders.",
+    "db-curl":"Keep your elbows still, curl the dumbbells up, and lower them slowly.",
+    "hammer-curl":"Keep your palms facing each other and curl the dumbbells up without swinging.",
+    "smith-squat":"Stand about shoulder-width, sit down until your thighs are about parallel, then stand up.",
+    "romanian-deadlift":"Hinge at your hips with a soft knee bend, lower the bar along your legs, and stand tall.",
+    "heels-elevated-goblet-squat":"Put your heels on a small plate, hold one dumbbell at your chest, and sit straight down.",
+    "cable-leg-curl":"Strap one ankle and curl your heel toward your glute, then lower it slowly.",
+    "smith-calf-raise":"Put your toes on a plate, rise onto your toes, pause, and lower your heels slowly.",
+    "smith-incline-press":"Set the bench near 30 degrees, press the Smith bar up, and lower it to your chest.",
+    "cable-reverse-fly":"With your arms about shoulder height, pull the handles apart and squeeze the back of your shoulders.",
+    "superset-db-curl":"Curl the dumbbells with still elbows, then go straight into the pushdown.",
+    "superset-rope-pushdown":"Keep your elbows at your sides, push the rope down, and go straight back to the curl.",
+    "bulgarian-split-squat":"Put your rear foot on a bench, lower your back knee, and drive up through the front foot.",
+    "hip-thrust":"Rest your upper back on a bench, drive your hips up, and squeeze your glutes at the top.",
+    "cable-leg-extension":"Sit facing away from the stack, straighten your knee, and lower it slowly.",
+    "lying-leg-raise":"Press your lower back into the floor and lower your legs slowly without touching the ground.",
+    "bodyweight-crunch":"Lie on your back, curl your shoulders off the floor, and lower slowly without yanking your neck.",
+    "plank":"Keep your body in a straight line and hold, without letting your hips sag.",
+    "cable-woodchoppers":"Pull the handle from high to low across your body, and keep your hips still.",
+    "steps":"Walk until you reach 10,000 steps."
+  };
+  var TGT={
+    "incline-db-press":"Chest (upper emphasis), front delts, triceps",
+    "smith-flat-press":"Chest, front delts, triceps",
+    "seated-db-shoulder-press":"Front delts, side delts, triceps",
+    "lateral-raises":"Side delts",
+    "rope-pushdown":"Triceps",
+    "overhead-triceps-extension":"Triceps",
+    "incline-walk":"Quads, glutes, calves",
+    "lat-pulldown":"Lats, upper back, biceps",
+    "chest-supported-row":"Lats, upper back, biceps",
+    "seated-cable-row":"Lats, upper back, biceps",
+    "face-pulls":"Rear delts, upper back",
+    "db-curl":"Biceps",
+    "hammer-curl":"Biceps, brachialis",
+    "smith-squat":"Quads, glutes",
+    "romanian-deadlift":"Hamstrings, glutes",
+    "heels-elevated-goblet-squat":"Quads, glutes",
+    "cable-leg-curl":"Hamstrings",
+    "smith-calf-raise":"Calves",
+    "smith-incline-press":"Chest (upper emphasis), front delts, triceps",
+    "cable-reverse-fly":"Rear delts, upper back",
+    "superset-db-curl":"Biceps",
+    "superset-rope-pushdown":"Triceps",
+    "bulgarian-split-squat":"Quads, glutes",
+    "hip-thrust":"Glutes, hamstrings",
+    "cable-leg-extension":"Quads",
+    "lying-leg-raise":"Abs (lower emphasis), hip flexors",
+    "bodyweight-crunch":"Abs",
+    "plank":"Abs, core",
+    "cable-woodchoppers":"Obliques, abs",
+    "steps":"Legs"
+  };
   var EXINFO={};
   PLAN_ORDER.concat(["retired"]).forEach(function(pid){exList(pid).forEach(function(e){if(!EXINFO[e.id])EXINFO[e.id]=e;});});
   // An exercise counts as performed only if real numbers were entered:
@@ -960,7 +1027,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     w=w||{};var ex=w.ex||{};
     var ids=Object.keys(ex).filter(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});
     if(!ids.length)return didActive(w)?"active":null;
-    function sc(p){var m=0;exList(p).forEach(function(e){if(e.id==="steps"||e.id==="incline-walk")return;if(ids.indexOf(e.id)>=0)m++;});if(PLANS[p]&&PLANS[p].abs&&ids.indexOf("cable-crunch")>=0)m++;return m;}
+    function sc(p){var m=0;exList(p).forEach(function(e){if(e.id==="steps"||e.id==="incline-walk")return;if(ids.indexOf(e.id)>=0)m++;});if(PLANS[p]&&PLANS[p].abs){if(ids.indexOf("cable-crunch")>=0)m++;if(ids.indexOf("hanging-leg-raises")>=0)m++;}return m;}
     var best=null,bs=0,tie=false;
     PLAN_ORDER.forEach(function(p){if(p==="active")return;var v=sc(p);if(v>bs){bs=v;best=p;tie=false;}else if(v===bs&&v>0)tie=true;});
     return best&&!tie&&bs*2>ids.length?best:null;
@@ -1590,6 +1657,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
         var cur=w.ex[e.id]||{s:[]}, last=lastFor(e.id,wdate), ls=last?last.s:[], best=hintFor(e,wdate), hs=ls;
         var cnt=counted(e,cur), warn=cur.d&&!cnt;
         h+='<div class="exc'+(cnt?" done":"")+(warn?" warn":"")+'" data-id="'+e.id+'" data-zone="'+(zone||"roster")+'"><button class="exh" data-id="'+e.id+'"><span class="atile">'+tileTxt(e,cur)+'</span><span class="exn"><div class="n">'+e.name+' <span class="eqp">'+e.eq.tag+'</span>'+(old?' <span class="eqp oldx">'+old+'</span>':'')+'</div><div class="r">'+e.target+'</div>'+(last&&fmtSets(e.kind,ls)?'<div class="last">Last ('+fmtShort(last.date)+'): '+fmtSets(e.kind,ls)+' · grey hints</div>':'')+(best&&fmtSets(e.kind,best.s)?'<div class="best">Best ('+fmtShort(best.date)+'): '+fmtSets(e.kind,best.s)+'</div>':'')+'<div class="wmsg">'+(e.kind==="sec"||e.kind==="min"?"Enter the time":e.kind==="bw"?"Enter your reps":"Enter the "+e.eq.unit)+' or it counts as skipped</div></span><span class="chk">✓</span></button>';
+        if(CUE[e.id])h+='<div class="how" data-cue="'+e.id+'">'+CUE[e.id]+'</div>';
+        if(TGT[e.id])h+='<div class="tgt" data-tgt="'+e.id+'">Targets: '+TGT[e.id]+'</div>';
         if(e.wl)h+='<div class="wlog">⚖ '+e.wl+'</div>';
         var nrows=Math.max(e.n||0,(cur.s||[]).length);
         if(nrows){
@@ -1597,7 +1666,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
           for(var s=0;s<nrows;s++){
             var cs=(cur.s&&cur.s[s])||[], ps=hSet(hs,s);
             if(e.kind==="bw"){
-              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+              var repPh=num(ps[1]); if(!repPh&&e.id==="lying-leg-raise")repPh=e.reps||"";
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+repPh+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else if(e.kind==="w"){
               h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' '+e.eq.unit+'"><span class="u">'+e.eq.unit+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else {

@@ -78,7 +78,8 @@ async function main() {
   for (const p of ["push", "legs", "active"]) {
     if (lists[p].includes("bodyweight-crunch") || lists[p].includes("cable-crunch")) throw new Error(p + " roster changed: " + lists[p].join(","));
   }
-  if (lists.pull.filter((id) => id === "hanging-leg-raises").length !== 1) throw new Error("leg raises were changed");
+  if (lists.pull.filter((id) => id === "lying-leg-raise").length !== 1) throw new Error("lying leg raise missing from pull");
+  if (lists.pull.indexOf("hanging-leg-raises") >= 0) throw new Error("hanging leg raises still prescribed");
 
   await page.evaluate(() => window.__nn.setW("2026-11-08"));
   await page.waitForSelector("#woRoster .exc[data-id='bodyweight-crunch']");
@@ -178,7 +179,7 @@ async function main() {
   if (synced["lat-pulldown"].s[0][0] !== "40") throw new Error("sync dropped another exercise");
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-34", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-35", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
   await browser.close();
   server.close();
 }
