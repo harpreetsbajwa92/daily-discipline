@@ -813,7 +813,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-35";
+var APP_VERSION="2026.10.31-36";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -888,7 +888,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
   var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
   var PLAN_ORDER=["push","pull","legs","upper","lower","active"];
-  var SUGGEST=["none","push","pull","legs","active","upper","lower"];
+  // Sun..Sat, only when a day has no workout history. Steady week: Lower, Rest, Push, Pull + Abs, Legs, Upper + Abs, Active rest.
+  var SUGGEST=["lower","none","push","pull","legs","upper","active"];
   function exList(pid){
     var p=PLANS[pid]; if(!p)return [];
     return (p.abs?p.x.concat(ABS):p.x).map(function(e){
@@ -1047,13 +1048,16 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     return null;
   }
   function perfOf(k,w){w=w||{};var rec=recordedPid(k,w);if(rec)return rec;if(hasSets(w)||chipBrowse(w))return null;if(didActive(w))return "active";return planOf(k,w);}
-  // ---- rotation: the next session = the one after the last session he actually performed (logged sets or an explicit correction).
+  // ---- rotation: the next session follows the last session he actually performed (logged sets or an explicit correction).
   // Push -> Pull + Abs -> Legs -> active rest -> Upper + Abs -> Lower + Abs -> rest -> Push ...
-  // Strength day: next = the session after it. Nothing logged / active rest / rest: a pending strength session carries
-  // to the next day (a missed lift is not skipped). A pending active-rest or rest slot is used up by that day.
-  // Weekday names and routine previews are not inputs. Same rule in next_session.py for the nightly review.
+  // A pending strength session carries across missed days (a missed lift is not skipped). A pending active-rest or rest
+  // slot is used up when a Monday or Saturday passes with no lift. On Tue–Fri and Sunday, recommend the next lift and
+  // park that rest slot onto the coming Monday or Saturday. Mon/Sat recommend rest or active rest. Routine previews are
+  // not inputs. Same rule in next_session.py for the nightly review.
   var ROT=["push","pull","legs","active","upper","lower","none"];
   function rotNext(p){return ROT[(ROT.indexOf(p)+1)%ROT.length];}
+  function restDow(k){var g=parse(k).getDay();return g===1||g===6;}
+  function restPid(p){return p==="active"||p==="none";}
   function hasSets(w){var ex=(w&&w.ex)||{};return Object.keys(ex).some(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});}
   function didActive(w){var ex=(w&&w.ex)||{};return !!((ex.steps&&ex.steps.d)||exHasData(ex["incline-walk"]));}
   function performedOn(k,w){
@@ -1068,14 +1072,22 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       return null;}
     return didActive(w)?"active":null;
   }
-  function rotInfo(target){var ds=woDates().filter(function(d){return d<target;}),ptr=null,last=null,ld=null;
+  // Rests that follow a performed lift, then the next lift. Already-parked rests stay queued until a Mon/Sat.
+  function afterLift(p){var rests=[],n=rotNext(p);while(restPid(n)){rests.push(n);n=rotNext(n);}return {rests:rests,lift:n};}
+  function parkRec(restQ,lift,k){if(!lift)return null;if(restDow(k))return restQ.length?restQ[0]:"none";return lift;}
+  function rotInfo(target){var ds=woDates().filter(function(d){return d<target;}),restQ=[],lift=null,last=null,ld=null;
     if(!ds.length)return {next:SUGGEST[parse(target).getDay()],last:null,lastDate:null};
-    for(var d=ds[0];d<target;d=shift(d,1)){var p=d<=today?performedOn(d,getJ("wo:"+d)):ptr;
-      if(p&&p!=="active"&&p!=="none"){ptr=rotNext(p);if(d<=today){last=p;ld=d;}}
-      else if(ptr==="active"||ptr==="none")ptr=rotNext(ptr);}
-    return {next:ptr||"push",last:last,lastDate:ld};}
-  // session for a day, ignoring any routine preview: logged -> what he did; today with nothing logged -> rotation
-  function sessionPid(k,w){w=w||{};var rec=recordedPid(k,w);if(rec)return rec;if(hasSets(w))return null;if(k>=today)return rotInfo(k).next;if(chipBrowse(w))return null;return planOf(k,w);}
+    for(var d=ds[0];d<target;d=shift(d,1)){
+      var performed=null;
+      if(d<=today){var got=performedOn(d,getJ("wo:"+d));if(got&&!restPid(got))performed=got;}
+      else if(lift){var rec=parkRec(restQ,lift,d);if(rec&&!restPid(rec))performed=rec;}
+      if(performed){var nxt=afterLift(performed);restQ=restQ.concat(nxt.rests);lift=nxt.lift;if(d<=today){last=performed;ld=d;}}
+      else if(restDow(d)&&restQ.length)restQ.shift();
+    }
+    return {next:parkRec(restQ,lift,target)||"push",last:last,lastDate:ld};}
+  // Session for a day, ignoring any routine preview. Logged -> what he did. Sets with no single session -> null.
+  // A past chip preview is not a session. Anything else is the parked rotation (weekday map only when there is no history).
+  function sessionPid(k,w){w=w||{};var rec=recordedPid(k,w);if(rec)return rec;if(hasSets(w))return null;if(k<today&&chipBrowse(w))return null;return rotInfo(k).next;}
   function dispPlan(k,w){return sessionPid(k,w||{});}
   function trainHabit(k){var st=load(k);if(!st[TRAIN]){st[TRAIN]=true;save(k,st);}}
 
@@ -1085,7 +1097,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       if(k.indexOf("w:")!==0)return;
       var d=k.slice(2), old=getJ(k);
       if(getJ("wo:"+d)||!Array.isArray(old)||!old.some(Boolean))return;
-      var pid=SUGGEST[parse(d).getDay()], l=exList(pid);
+      var pid=["none","push","pull","legs","active","upper","lower"][parse(d).getDay()], l=exList(pid);
       if(!l.length||old.length!==l.length)return;
       var w={plan:pid,ex:{},done:old.every(Boolean)};
       l.forEach(function(e,i){if(old[i])w.ex[e.id]={s:[],d:true};});
@@ -1113,7 +1125,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
 
   // ================= PAGE 1: HABITS =================
   function renderHabits(){
-    var vd=parse(view), st=load(view), c=count(st), rest=(vd.getDay()===4||vd.getDay()===0);
+    var st=load(view), c=count(st), rest=restDow(view);
     $("hPick").value=view; $("hLab").textContent=pillLab(view);
     $("hSub").innerHTML=view===today?"":'<button class="today-btn" id="hToday">Back to today</button>';
     $("streak").textContent="🔥 "+streak();
@@ -1134,7 +1146,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       if(i===MIND[0])html+='<div class="cgrp">Mind</div>';
       var it=ITEMS[i], t=it[0], sub=it[1];
       var ct=CT[i];
-      if(i===TRAIN&&rest){t="Rest day: walk";ct="Rest: walk";sub="Thu & Sun are rest days";}
+      if(i===TRAIN&&rest){t="Rest day: walk";ct="Rest: walk";sub="Mon & Sat are rest / active rest";}
       html+='<button type="button" class="card'+(st[i]?" done":"")+'" data-i="'+i+'" aria-pressed="'+st[i]+'" aria-label="'+esc(t)+'"><span class="hic">'+HIC[i]+'</span><span class="cb"><div class="t">'+(hExp?t:ct)+'</div><div class="s">'+sub+'</div></span><span class="chk">✓</span></button>';
     });
     $("cards").innerHTML=html;
@@ -1638,7 +1650,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var rec=wdate===today
       ?'<div class="recdate today" id="woRecDate">Recording <b>today</b>, '+fmt(wdate)+'.</div>'
       :'<div class="recdate" id="woRecDate">Recording <b>'+fmt(wdate)+'</b> — not today. Numbers you enter stay on this date.<br><button type="button" class="today-btn" id="woGoToday">Switch to today</button></div>';
-    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(wdate>=today?(sug&&sug!=="none"?' · next up: '+planName(sug):' · next up: rest'):"")+rec+nx+'<div class="perfl" id="woSession">Recorded session: <b>'+sessName+'</b>'+(fromLogs?' (from your logs)':'')+'</div><div class="perfl" id="woViewing">Viewing: <b>'+(viewed?planName(viewed):"no prescribed list")+'</b>'+(prev?" (preview, not saved)":"")+'</div>';
+    $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(wdate>today?(sug&&sug!=="none"?' · next up: '+planName(sug):' · next up: rest'):"")+rec+nx+'<div class="perfl" id="woSession">Recorded session: <b>'+sessName+'</b>'+(fromLogs?' (from your logs)':'')+'</div><div class="perfl" id="woViewing">Viewing: <b>'+(viewed?planName(viewed):"no prescribed list")+'</b>'+(prev?" (preview, not saved)":"")+'</div>';
     var ch="";
     PLAN_ORDER.concat(["none"]).forEach(function(p){ch+='<button type="button" class="pchip'+(p===viewed?" on":"")+(pid&&p===pid?" rec":"")+(p===prev?" prev":"")+(sug&&p===sug?" sug":"")+'" data-p="'+p+'" aria-pressed="'+(p===viewed)+'">'+planName(p)+'</button>';});
     $("pChips").innerHTML=ch;
@@ -1688,8 +1700,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var mon=monday(wdate), wh="";
     $("weekTitle").textContent=(mon===monday(today)?"This week":"Week of "+fmtShort(mon));
     for(var i=0;i<7;i++){
-      var k=shift(mon,i), ww=getJ("wo:"+k), logged=woLogged(ww), nm=logged?perfOf(k,ww):null, lp=!logged?"-":(nm?planName(nm):"Logged");
-      wh+='<button class="wd'+(k===wdate?" sel":"")+'" data-k="'+k+'"><span class="l">'+fmt(k)+(k===today?'<small>today</small>':'')+'</span><span class="p'+(logged&&ww.done?" ok":"")+'">'+lp+(logged&&ww.done?" ✓":"")+'</span></button>';
+      var k=shift(mon,i), ww=getJ("wo:"+k)||{}, loggedPid=recordedPid(k,ww), pid=loggedPid||(hasSets(ww)?"":rotInfo(k).next);
+      var lp=pid?planName(pid):"Logged", mark=!!(ww.done&&woLogged(ww));
+      wh+='<button class="wd'+(k===wdate?" sel":"")+'" data-k="'+k+'" data-s="'+(pid||"")+'"><span class="l">'+fmt(k)+(k===today?'<small>today</small>':'')+'</span><span class="p'+(mark?" ok":"")+'">'+lp+(mark?" ✓":"")+'</span></button>';
     }
     $("week").innerHTML=wh;
   }

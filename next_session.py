@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 """Nightly next-session helper. Same rule as the workout tab in index.html.
 
-Rotation (actual logged sessions only, never the weekday name and never a routine preview):
+Rotation (actual logged sessions only, never a routine preview):
   Push -> Pull + Abs -> Legs -> active rest -> Upper + Abs -> Lower + Abs -> rest -> Push
 
-A strength day advances to the session after it. A day with nothing logged, active rest,
-or rest uses up a pending active-rest or rest slot, and carries a pending strength
-session forward (a missed lift is not skipped).
+A strength day advances to the session after it. A missed lift carries to the next
+lifting day (Tue–Fri and Sunday). A pending active-rest or rest slot is used up when
+a Monday or Saturday passes with no lift, and is parked onto the coming Mon/Sat when
+the next rotation slot is rest but the day is a lifting day. In a steady week that
+is Mon Rest, Tue Push, Wed Pull + Abs, Thu Legs, Fri Upper + Abs, Sat Active rest,
+Sun Lower + Abs.
+
+v2026.10.31-36:
+  Park rest and active rest on Monday and Saturday. Recommend the next lift on
+  Tue–Fri and Sunday. The weekday fallback (no history) matches that week.
 
 v2026.10.31-31:
   Trust wo.perf only when wo.perfFix is set (the separate "I did this session" action).
@@ -41,7 +48,7 @@ PLANS = {
 }
 PLAN_ORDER = ["push", "pull", "legs", "upper", "lower", "active"]
 ROT = ["push", "pull", "legs", "active", "upper", "lower", "none"]
-SUGGEST = ["none", "push", "pull", "legs", "active", "upper", "lower"]  # Sun..Sat, only when there is no history
+SUGGEST = ["lower", "none", "push", "pull", "legs", "upper", "active"]  # Sun..Sat, only when there is no history
 NAMES = {"push": "Push", "pull": "Pull + Abs", "legs": "Legs", "upper": "Upper + Abs", "lower": "Lower + Abs", "active": "Active rest", "none": "Rest"}
 
 
@@ -61,6 +68,33 @@ def weekday_plan(day):
 
 def rot_next(pid):
     return ROT[(ROT.index(pid) + 1) % len(ROT)]
+
+
+def rest_dow(day):
+    # Monday 1, Saturday 6. JS Date.getDay uses the same Saturday index; Sunday is 0 there.
+    return datetime.strptime(day, "%Y-%m-%d").isoweekday() in (1, 6)
+
+
+def rest_pid(pid):
+    return pid in ("active", "none")
+
+
+def after_lift(pid):
+    """Rest slots that follow a performed lift, then the next lift."""
+    rests = []
+    nxt = rot_next(pid)
+    while rest_pid(nxt):
+        rests.append(nxt)
+        nxt = rot_next(nxt)
+    return rests, nxt
+
+
+def park_rec(rest_q, lift, day):
+    if not lift:
+        return None
+    if rest_dow(day):
+        return rest_q[0] if rest_q else "none"
+    return lift
 
 
 def filled(x):
@@ -184,18 +218,28 @@ def rot_info(workouts, target, today):
     days = sorted(d for d in workouts if d < target)
     if not days:
         return {"next": weekday_plan(target), "last": None, "lastDate": None}
-    ptr = last = ld = None
+    rest_q = []
+    lift = last = ld = None
     d = days[0]
     while d < target:
-        p = performed_on(d, workouts.get(d)) if d <= today else ptr
-        if p and p not in ("active", "none"):
-            ptr = rot_next(p)
+        performed = None
+        if d <= today:
+            got = performed_on(d, workouts.get(d))
+            if got and not rest_pid(got):
+                performed = got
+        elif lift:
+            rec = park_rec(rest_q, lift, d)
+            if rec and not rest_pid(rec):
+                performed = rec
+        if performed:
+            rests, lift = after_lift(performed)
+            rest_q.extend(rests)
             if d <= today:
-                last, ld = p, d
-        elif ptr in ("active", "none"):
-            ptr = rot_next(ptr)
+                last, ld = performed, d
+        elif rest_dow(d) and rest_q:
+            rest_q.pop(0)
         d = shift(d, 1)
-    return {"next": ptr or "push", "last": last, "lastDate": ld}
+    return {"next": park_rec(rest_q, lift, target) or "push", "last": last, "lastDate": ld}
 
 
 def next_up(workouts, today):
@@ -465,6 +509,42 @@ def self_test():
     tight = {"ex": {"chest-supported-row": {"s": [["40", "8"]], "d": True}, "cable-crunch": {"s": [["50", "12"]], "d": True}}}
     assert infer_session(tight) == "pull"
     assert infer_session({"ex": {"cable-crunch": {"s": [["50", "12"]], "d": True}}}) is None
+    # No history: weekday fallback is the steady week (Sun Lower … Sat Active rest).
+    assert [weekday_plan(shift("2026-11-15", i)) for i in range(7)] == ["lower", "none", "push", "pull", "legs", "upper", "active"]
+    assert rot_info({}, "2026-11-14", "2026-11-12")["next"] == "active"
+    def strength(plan):
+        ids = [i for i in PLANS[plan] if i not in ("steps", "incline-walk")]
+        return {"plan": plan, "perf": plan, "perfFix": True, "done": True, "ex": {i: {"s": [["40", "8"]], "d": True} for i in ids}}
+    week = {
+        "2026-11-10": strength("push"),
+        "2026-11-11": strength("pull"),
+        "2026-11-12": strength("legs"),
+    }
+    # Today is Thursday Legs. Tomorrow is a lifting day, so active rest parks on Saturday.
+    assert next_up(week, "2026-11-12")["next"] == "upper"
+    assert rot_info(week, "2026-11-13", "2026-11-12")["next"] == "upper"
+    assert rot_info(week, "2026-11-14", "2026-11-12")["next"] == "active"
+    assert rot_info(week, "2026-11-15", "2026-11-12")["next"] == "lower"
+    assert rot_info(week, "2026-11-16", "2026-11-12")["next"] == "none"
+    assert rot_info(week, "2026-11-17", "2026-11-12")["next"] == "push"
+    assert rot_info(week, "2026-11-18", "2026-11-12")["next"] == "pull"
+    assert rot_info(week, "2026-11-19", "2026-11-12")["next"] == "legs"
+    assert rot_info(week, "2026-11-20", "2026-11-12")["next"] == "upper"
+    assert rot_info(week, "2026-11-21", "2026-11-12")["next"] == "active"
+    assert rot_info(week, "2026-11-22", "2026-11-12")["next"] == "lower"
+    # Missed Friday: Upper carries to Sunday, Saturday still spends the parked active rest.
+    assert rot_info(week, "2026-11-14", "2026-11-14")["next"] == "active"
+    assert rot_info(week, "2026-11-15", "2026-11-14")["next"] == "upper"
+    # Missed Legs carries through the lifting days. Saturday is still rest, not a skipped lift.
+    pull_only = {"2026-11-11": strength("pull")}
+    assert rot_info(pull_only, "2026-11-13", "2026-11-13")["next"] == "legs"
+    assert rot_info(pull_only, "2026-11-14", "2026-11-15")["next"] == "none"
+    assert rot_info(pull_only, "2026-11-15", "2026-11-15")["next"] == "legs"
+    # A lift on Saturday is what he did. The parked active rest waits for the next Mon/Sat.
+    lifted_sat = dict(week)
+    lifted_sat["2026-11-14"] = strength("upper")
+    assert rot_info(lifted_sat, "2026-11-15", "2026-11-14")["next"] == "lower"
+    assert rot_info(lifted_sat, "2026-11-16", "2026-11-14")["next"] == "active"
     print("self-test ok")
     return 0
 

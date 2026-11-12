@@ -217,7 +217,7 @@ async function main() {
   if (changed.length) throw new Error("browse wrote " + changed.join(","));
   if (posts.length) throw new Error("sync POSTed during browse: " + posts.length);
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-35", posts: posts.length, offDate: offDate.d, offCount: offDate.extra.length, hint: hint.id }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-36", posts: posts.length, offDate: offDate.d, offCount: offDate.extra.length, hint: hint.id }));
   await browser.close();
   server.close();
 }
