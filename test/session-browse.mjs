@@ -15,7 +15,7 @@ const { chromium, devices } = require("playwright");
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const ART = "/opt/cursor/artifacts";
 const PORT = 8765;
-const TODAY = "2026-11-11";
+const TODAY = new Date().getFullYear() + "-" + String(new Date().getMonth() + 1).padStart(2, "0") + "-" + String(new Date().getDate()).padStart(2, "0");
 
 function sets(...pairs) {
   return { s: pairs.map(([a, b]) => [String(a), String(b)]), d: true };
@@ -98,7 +98,7 @@ function exOf(raw) {
 async function main() {
   const vmToday = new Date();
   const vmKey = vmToday.getFullYear() + "-" + String(vmToday.getMonth() + 1).padStart(2, "0") + "-" + String(vmToday.getDate()).padStart(2, "0");
-  if (vmKey !== TODAY) throw new Error("This test expects the machine date " + TODAY + " but it is " + vmKey);
+  if (vmKey !== TODAY) throw new Error("machine date " + vmKey + " did not match " + TODAY);
 
   const py = spawn("python3", [path.join(ROOT, "next_session.py"), "--self-test"], { stdio: "inherit" });
   const pyCode = await new Promise((r) => py.on("close", r));
@@ -152,7 +152,7 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-35")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-36")) throw new Error("version text: " + version);
   const openedOn = await page.evaluate(() => ({ lab: document.getElementById("dLab").innerText, date: document.getElementById("dSub").dataset.date, rec: document.getElementById("woRecDate").innerText }));
   if (openedOn.lab !== "TODAY" || openedOn.date !== TODAY || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
 
@@ -461,7 +461,7 @@ async function main() {
 
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-35", gets: hits.get, posts: hits.post }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-36", gets: hits.get, posts: hits.post }));
   await browser.close();
   server.close();
 }
