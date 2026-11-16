@@ -152,7 +152,7 @@ async function main() {
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
 
   const version = await page.evaluate(() => document.getElementById("appVer").textContent);
-  if (!version.includes("2026.10.31-36")) throw new Error("version text: " + version);
+  if (!version.includes("2026.10.31-37")) throw new Error("version text: " + version);
   const openedOn = await page.evaluate(() => ({ lab: document.getElementById("dLab").innerText, date: document.getElementById("dSub").dataset.date, rec: document.getElementById("woRecDate").innerText }));
   if (openedOn.lab !== "TODAY" || openedOn.date !== TODAY || !/Recording\s+today/i.test(openedOn.rec)) throw new Error("open did not start on today: " + JSON.stringify(openedOn));
 
@@ -306,6 +306,10 @@ async function main() {
   await page.evaluate(() => window.__nn.setW("2026-11-06"));
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "legs");
   const exBefore = await page.evaluate(() => JSON.stringify(window.__nn.loadWo("2026-11-06").ex));
+  // a past day is locked until "Edit" is tapped
+  if (!(await page.evaluate(() => window.__nn.woLocked()))) throw new Error("past day not locked");
+  await page.click("#woUnlock");
+  if (await page.evaluate(() => window.__nn.woLocked())) throw new Error("Edit did not unlock the past day");
   await page.locator('.pchip[data-p="upper"]').click();
   await page.click("#woDidThis");
   await page.waitForFunction(() => document.getElementById("dSub").dataset.session === "upper" && document.getElementById("dSub").dataset.preview === "");
@@ -461,7 +465,7 @@ async function main() {
 
   if (errors.length) throw new Error("page errors: " + errors.join("\n"));
   if (hits.get < 1) throw new Error("mock sync was never read");
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-36", gets: hits.get, posts: hits.post }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-37", gets: hits.get, posts: hits.post }));
   await browser.close();
   server.close();
 }

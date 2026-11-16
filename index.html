@@ -639,6 +639,9 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 .recdate.today{background:#1c2830;color:#c8d2d8}
 .recdate b{color:#ffd27a}
 .recdate .today-btn{display:inline-block;margin-top:6px}
+.traintoday{margin:10px 0;padding:12px;border-radius:14px;background:#13241a;color:#cfeed6;font-size:15px;text-align:center}
+.traintoday .did{display:block;width:100%;margin-top:8px;padding:12px;border:0;border-radius:12px;background:#16EC06;color:#06210a;font-weight:800;font-size:16px}
+.wolock #woBody input{opacity:.55}
 .logbar{margin:8px 2px 4px;padding:8px 10px;border-radius:12px;background:#143028;color:#d8ffe8;font-size:14px;line-height:1.35;text-align:center}
 .logbar b{color:#16EC06}
 #p-workout .best{font-size:12px;line-height:1.3;color:#9aa6ae;margin-top:2px}
@@ -813,7 +816,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-36";
+var APP_VERSION="2026.10.31-37";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -1084,7 +1087,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
       if(performed){var nxt=afterLift(performed);restQ=restQ.concat(nxt.rests);lift=nxt.lift;if(d<=today){last=performed;ld=d;}}
       else if(restDow(d)&&restQ.length)restQ.shift();
     }
-    return {next:parkRec(restQ,lift,target)||"push",last:last,lastDate:ld};}
+    return {next:parkRec(restQ,lift,target)||"push",last:last,lastDate:ld,lift:lift||null};}
   // Session for a day, ignoring any routine preview. Logged -> what he did. Sets with no single session -> null.
   // A past chip preview is not a session. Anything else is the parked rotation (weekday map only when there is no history).
   function sessionPid(k,w){w=w||{};var rec=recordedPid(k,w);if(rec)return rec;if(hasSets(w))return null;if(k<today&&chipBrowse(w))return null;return rotInfo(k).next;}
@@ -1632,6 +1635,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(kind==="min"||kind==="sec")return fmtSets(kind,sets);
     return sets.map(function(s){var w=num(s[0]),r=num(s[1]);return w&&r?w+"x"+r:w?w+"x?":r+" reps";}).join(", ");
   }
+  var woUnlock=null; // date he chose to edit that is not today. Memory only; any date change or coming back to the app locks it again.
+  function woLocked(){return wdate!==today&&woUnlock!==wdate;}
   var woView=null; // {date, pid} routine preview. Memory only: date changes clear it, and it is never written to storage or sync.
   function renderWorkout(){
     var w=loadWo(wdate), pid=sessionPid(wdate,w);
@@ -1645,11 +1650,13 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     var nx="";if(wdate===today){var tl=hasSets(w)||didActive(w),ri=rotInfo(tl?shift(today,1):today);
       nx='<div class="perfl nextup">Next up'+(tl?' tomorrow':'')+': <b>'+planName(ri.next)+'</b>'+(ri.last?' (after your last session '+planName(ri.last)+' on '+(ri.lastDate===today?'today':fmt(ri.lastDate))+')':'')+'</div>';}
     $("dPick").value=wdate; $("dLab").textContent=pillLab(wdate);
-    $("p-workout").classList.toggle("recpast",wdate!==today);
+    $("p-workout").classList.toggle("recpast",wdate!==today); $("p-workout").classList.toggle("wolock",woLocked());
     $("dSub").dataset.session=pid||""; $("dSub").dataset.preview=prev||""; $("dSub").dataset.viewing=viewed||""; $("dSub").dataset.date=wdate;
     var rec=wdate===today
       ?'<div class="recdate today" id="woRecDate">Recording <b>today</b>, '+fmt(wdate)+'.</div>'
-      :'<div class="recdate" id="woRecDate">Recording <b>'+fmt(wdate)+'</b> — not today. Numbers you enter stay on this date.<br><button type="button" class="today-btn" id="woGoToday">Switch to today</button></div>';
+      :(woLocked()
+        ?'<div class="recdate" id="woRecDate">Viewing <b>'+fmt(wdate)+'</b> — not today. This day is locked, so nothing you type lands here by mistake.<br><button type="button" class="today-btn" id="woGoToday">Switch to today</button> <button type="button" class="today-btn" id="woUnlock">Edit '+fmt(wdate)+'</button></div>'
+        :'<div class="recdate" id="woRecDate">Recording <b>'+fmt(wdate)+'</b> — not today. Numbers you enter stay on this date.<br><button type="button" class="today-btn" id="woGoToday">Switch to today</button></div>');
     $("dSub").innerHTML=(wdate===today?"Today":fmt(wdate))+(wdate!==today?' <button class="today-btn" id="woToday">Today</button>':"")+(wdate>today?(sug&&sug!=="none"?' · next up: '+planName(sug):' · next up: rest'):"")+rec+nx+'<div class="perfl" id="woSession">Recorded session: <b>'+sessName+'</b>'+(fromLogs?' (from your logs)':'')+'</div><div class="perfl" id="woViewing">Viewing: <b>'+(viewed?planName(viewed):"no prescribed list")+'</b>'+(prev?" (preview, not saved)":"")+'</div>';
     var ch="";
     PLAN_ORDER.concat(["none"]).forEach(function(p){ch+='<button type="button" class="pchip'+(p===viewed?" on":"")+(pid&&p===pid?" rec":"")+(p===prev?" prev":"")+(sug&&p===sug?" sug":"")+'" data-p="'+p+'" aria-pressed="'+(p===viewed)+'">'+planName(p)+'</button>';});
@@ -1659,8 +1666,10 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     if(viewed==="none"){
       h+='<div class="rest">Rest day. Go for a walk'+(parse(wdate).getDay()===0?' and take progress photos (front, side, back)':'')+'.</div>';
     }
+    if(wdate===today&&!prev&&!didIt&&restPid(viewed||"none")){var pend=rotInfo(today).lift;
+      if(pend&&PLANS[pend]&&!restPid(pend))h+='<div class="traintoday" id="woTrainBox">Training today anyway? It counts on today, '+fmt(today)+'.<button type="button" class="did" id="woTrainToday" data-p="'+pend+'">Log '+planName(pend)+' today</button></div>';}
     {
-      var list=viewed&&viewed!=="none"?exList(viewed):[];
+      var list=viewed&&viewed!=="none"?exList(viewed):[], ro=woLocked()?' readonly':'';
       if(list.length){h+='<div class="donebar'+(w.done?" ok":"")+'" id="doneBar">'+doneBar(w,list)+'</div>';
       h+='<div class="slbl" id="woRosterLbl">'+planName(viewed)+(prev?" preview":"")+' · '+(wdate===today?"today":fmt(wdate))+'</div>';}
       var card=function(e,i,old,listPid,zone){
@@ -1679,12 +1688,12 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
             var cs=(cur.s&&cur.s[s])||[], ps=hSet(hs,s);
             if(e.kind==="bw"){
               var repPh=num(ps[1]); if(!repPh&&e.id==="lying-leg-raise")repPh=e.reps||"";
-              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+repPh+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input'+ro+' inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+repPh+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else if(e.kind==="w"){
-              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' '+e.eq.unit+'"><span class="u">'+e.eq.unit+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
+              h+='<div class="set"><span class="sn">'+(s+1)+'</span><input'+ro+' inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' '+e.eq.unit+'"><span class="u">'+e.eq.unit+'</span><input'+ro+' inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else {
               var u=e.kind==="min"?"min":"sec";
-              h+='<div class="set"><span class="sn">'+(e.n>1?(s+1):"")+'</span><input inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' '+u+'"><span class="u">'+u+'</span></div>';
+              h+='<div class="set"><span class="sn">'+(e.n>1?(s+1):"")+'</span><input'+ro+' inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' '+u+'"><span class="u">'+u+'</span></div>';
             }
           }
           h+='</div>';
@@ -1706,7 +1715,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     }
     $("week").innerHTML=wh;
   }
-  function setW(d){if(d){if(d!==wdate)woView=null;wdate=d;renderWorkout();}}
+  function setW(d){if(d){if(d!==wdate){woView=null;woUnlock=null;}wdate=d;renderWorkout();}}
   // Plan stored when he logs a set. An explicit correction wins. Otherwise the logged exercises win.
   // A chip-written plan/perf is not kept just because it was tapped.
   function woPlanFix(w){
@@ -1718,7 +1727,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   $("dPrev").addEventListener("click",function(){setW(shift(wdate,-1));});
   $("dNext").addEventListener("click",function(){setW(shift(wdate,1));});
   $("dPick").addEventListener("change",function(){if(/^\d{4}-\d{2}-\d{2}$/.test(this.value))setW(this.value);});
-  $("dSub").addEventListener("click",function(e){if(e.target.id==="woToday"||e.target.id==="woGoToday")setW(today);});
+  $("dSub").addEventListener("click",function(e){if(e.target.id==="woToday"||e.target.id==="woGoToday")setW(today);else if(e.target.id==="woUnlock"){woUnlock=wdate;renderWorkout();}});
   $("week").addEventListener("click",function(e){var b=e.target.closest(".wd");if(b){setW(b.dataset.k);window.scrollTo(0,0);}});
   $("pChips").addEventListener("click",function(e){
     var b=e.target.closest(".pchip"); if(!b)return;
@@ -1729,6 +1738,12 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   });
   $("woBody").addEventListener("click",function(e){
     if(e.target.id==="woBrowseBack"){woView=null;renderWorkout();return;}
+    if(e.target.id==="woTrainToday"){
+      var tp=e.target.dataset.p; if(wdate!==today||!validPid(tp)||restPid(tp))return;
+      var wt=loadWo(today); if(hasSets(wt)||didActive(wt)||explicitPid(wt))return;
+      wt.perf=tp; wt.perfFix=true; wt.perfAt=Date.now(); wt.plan=tp; saveWo(today,wt); woView=null; renderWorkout(); return;
+    }
+    if(woLocked())return; // a day that is not today needs "Edit" first
     if(e.target.id==="woDidThis"){
       var pv=woView&&woView.date===wdate?woView.pid:null; if(!pv||!validPid(pv))return;
       var wc=loadWo(wdate); wc.perf=pv; wc.perfFix=true; wc.perfAt=Date.now(); wc.plan=pv;
@@ -1745,6 +1760,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   });
   $("woBody").addEventListener("input",function(e){
     var t=e.target; if(t.tagName!=="INPUT")return;
+    if(woLocked()){renderWorkout();return;} // locked day: put the stored numbers back, write nothing
     var v=t.value.replace(",",".").replace(/[^0-9.]/g,""); if(v!==t.value)t.value=v;
     var w=loadWo(wdate), id=t.dataset.id, s=+t.dataset.s, f=+t.dataset.f;
     w.plan=woPlanFix(w); w.ex[id]=w.ex[id]||{s:[]}; var arr=w.ex[id].s=w.ex[id].s||[];
@@ -2417,7 +2433,9 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   window.addEventListener("hashchange",function(){show(location.hash.slice(1),true);});
 
   function checkDay(){var t=key(new Date()); if(t!==today){var o=today; today=t; bkDaily(); if(view===o)view=t; if(wdate===o)wdate=t; if(mdate===o)mdate=t; if(!L)show(tab);}}
-  document.addEventListener("visibilitychange",function(){if(!document.hidden)checkDay();});
+  var hidAt=0;
+  document.addEventListener("visibilitychange",function(){if(document.hidden){hidAt=Date.now();return;}checkDay();
+    if(hidAt&&Date.now()-hidAt>=20*60000&&(wdate!==today||woUnlock)){woView=null;woUnlock=null;wdate=today;if(tab==="workout"&&!L)renderWorkout();}hidAt=0;});
   window.addEventListener("focus",checkDay);
   setInterval(checkDay,60000);
   // ---- self-update: version.json vs APP_VERSION; reload once per new version (sessionStorage guard). Never touches localStorage. ----
@@ -2441,7 +2459,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
   bkDaily();
   if(syOn()){syUI();updThenSync();window.addEventListener("online",function(){updThenSync();});setInterval(function(){if(!document.hidden)updThenSync();},60000);}
   else checkUpdate();
-  window.__nn={buildReport:buildReport,show:show,setW:setW,mealsText:mealsText,perfOf:perfOf,rotInfo:rotInfo,sessionPid:sessionPid,recordedPid:recordedPid,inferSession:inferSession,loadWo:loadWo,planName:planName,syMerge:syMerge,explicitPid:explicitPid,exIds:function(pid){return exList(pid).map(function(e){return e.id;});}};
+  window.__nn={woLocked:function(){return woLocked();},show:show,setW:setW,mealsText:mealsText,perfOf:perfOf,rotInfo:rotInfo,sessionPid:sessionPid,recordedPid:recordedPid,inferSession:inferSession,loadWo:loadWo,planName:planName,syMerge:syMerge,explicitPid:explicitPid,exIds:function(pid){return exList(pid).map(function(e){return e.id;});}};
 })();
 </script>
 </body>
