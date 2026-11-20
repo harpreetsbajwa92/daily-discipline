@@ -35,8 +35,8 @@ import json
 import sys
 from datetime import datetime, timedelta
 
-ABS = ["lying-leg-raise", "bodyweight-crunch", "plank", "cable-woodchoppers"]
-# cable-crunch and hanging-leg-raises are no longer prescribed. They still count toward abs sessions so old logs do not change the rotation.
+ABS = ["lying-leg-raise", "bodyweight-crunch", "plank", "bicycle-crunch"]
+# cable-crunch, hanging-leg-raises, and cable-woodchoppers are no longer prescribed. They still count toward abs sessions so old logs do not change the rotation.
 # Strength ids only. Steps and the incline walk are active rest, not a lift.
 PLANS = {
     "push": ["incline-db-press", "smith-flat-press", "seated-db-shoulder-press", "lateral-raises", "rope-pushdown", "overhead-triceps-extension"],
@@ -142,6 +142,8 @@ def infer_session(w):
             if "cable-crunch" in have:
                 m += 1
             if "hanging-leg-raises" in have:
+                m += 1
+            if "cable-woodchoppers" in have:
                 m += 1
         return m
     best, bs, tie = None, 0, False
@@ -479,7 +481,7 @@ def self_test():
     # Date split: 5 Legs + 7 Upper on one day infers Upper (the sets are really there).
     # Moving the Upper-only ids off that day, then perfFix on each day, resolves it.
     # v30 already trusts perfFix, so the same split works there too. Sets are copied, not dropped.
-    upper_ids = ["smith-incline-press", "lat-pulldown", "lateral-raises", "cable-reverse-fly", "superset-db-curl", "superset-rope-pushdown", "cable-woodchoppers"]
+    upper_ids = ["smith-incline-press", "lat-pulldown", "lateral-raises", "cable-reverse-fly", "superset-db-curl", "superset-rope-pushdown", "bicycle-crunch"]
     legs_ids = ["smith-squat", "romanian-deadlift", "heels-elevated-goblet-squat", "cable-leg-curl", "smith-calf-raise"]
     mixed = {"plan": "upper", "perf": "upper", "perfAt": 3, "done": False, "ex": {}}
     for eid in upper_ids + legs_ids:
@@ -509,6 +511,12 @@ def self_test():
     tight = {"ex": {"chest-supported-row": {"s": [["40", "8"]], "d": True}, "cable-crunch": {"s": [["50", "12"]], "d": True}}}
     assert infer_session(tight) == "pull"
     assert infer_session({"ex": {"cable-crunch": {"s": [["50", "12"]], "d": True}}}) is None
+    assert "bicycle-crunch" in PLANS["pull"] and "bicycle-crunch" in PLANS["upper"] and "bicycle-crunch" in PLANS["lower"]
+    assert "bicycle-crunch" not in PLANS["push"] and "bicycle-crunch" not in PLANS["legs"] and "bicycle-crunch" not in PLANS["active"]
+    assert "cable-woodchoppers" not in PLANS["pull"] and "cable-woodchoppers" not in PLANS["upper"] and "cable-woodchoppers" not in PLANS["lower"]
+    wood = {"ex": {"chest-supported-row": {"s": [["40", "8"]], "d": True}, "cable-woodchoppers": {"s": [["40", "12"]], "d": True}}}
+    assert infer_session(wood) == "pull"
+    assert infer_session({"ex": {"cable-woodchoppers": {"s": [["40", "12"]], "d": True}}}) is None
     # No history: weekday fallback is the steady week (Sun Lower … Sat Active rest).
     assert [weekday_plan(shift("2026-11-15", i)) for i in range(7)] == ["lower", "none", "push", "pull", "legs", "upper", "active"]
     assert rot_info({}, "2026-11-14", "2026-11-12")["next"] == "active"
