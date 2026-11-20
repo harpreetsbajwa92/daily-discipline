@@ -180,7 +180,7 @@ async function main() {
   if (synced["lat-pulldown"].s[0][0] !== "40") throw new Error("sync dropped another exercise");
 
   if (errors.length) throw new Error(errors.join("\n"));
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-37", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-38", sessions: ["pull", "upper", "lower"], sets: 3, reps: "12-20" }));
   await browser.close();
   server.close();
 }

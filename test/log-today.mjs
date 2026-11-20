@@ -112,6 +112,6 @@ async function main() {
   if (!(await page.evaluate(() => window.__nn.woLocked()))) throw new Error("unlock survived a date change");
   if (errors.length) throw new Error("page errors " + errors.join("\n"));
   await browser.close(); server.close();
-  console.log(JSON.stringify({ ok: true, version: "2026.10.31-37", posts }));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-38", posts }));
 }
 main().catch((e) => { console.error(e); process.exit(1); });

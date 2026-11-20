@@ -1,0 +1,195 @@
+/**
+ * iPhone 13: bicycle crunch replaces prescribed cable woodchoppers.
+ * Old cable-woodchoppers logs stay on that id. Never calls the live sync host.
+ * Run: node test/bicycle-crunch.mjs
+ */
+import { createRequire } from "module";
+import http from "http";
+import fs from "fs";
+import path from "path";
+
+const require = createRequire("/tmp/pw/node_modules/playwright/package.json");
+const { chromium, devices } = require("playwright");
+
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ART = "/opt/cursor/artifacts";
+const PORT = 8771;
+
+function serve() {
+  return new Promise((resolve) => {
+    const server = http.createServer((req, res) => {
+      const url = new URL(req.url, "http://127.0.0.1");
+      const file = path.normalize(path.join(ROOT, decodeURIComponent(url.pathname)));
+      if (!file.startsWith(ROOT)) { res.writeHead(403); res.end(); return; }
+      fs.readFile(file, (err, data) => {
+        if (err) { res.writeHead(404); res.end("no"); return; }
+        const ext = path.extname(file);
+        const type = ext === ".html" ? "text/html" : ext === ".json" ? "application/json" : "application/octet-stream";
+        res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store" });
+        res.end(data);
+      });
+    });
+    server.listen(PORT, "127.0.0.1", () => resolve(server));
+  });
+}
+
+const wood = { s: [["40", "12"], ["40", "12"], ["40", "12"]], d: true };
+const seedWo = JSON.stringify({
+  plan: "pull", perf: "pull", perfFix: true, perfAt: 1, done: false,
+  ex: { "cable-woodchoppers": wood, "lat-pulldown": { s: [["40", "8"]], d: true } }
+});
+
+async function main() {
+  fs.mkdirSync(ART, { recursive: true });
+  const server = await serve();
+  let bin = {
+    _rev: 1,
+    "nn-v1:wo:2026-11-18": { t: 1, v: seedWo },
+    "nn-v1:meals:2026-11-18": { t: 1, v: JSON.stringify({ v: 2, meals: [{ id: "keep", slot: "Breakfast", items: [], u: 1 }] }) }
+  };
+  const browser = await chromium.launch({ channel: "chrome", headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+  const context = await browser.newContext({ ...devices["iPhone 13"] });
+  await context.route("https://api.npoint.io/**", async (route) => {
+    const req = route.request();
+    if (req.method() === "POST") {
+      bin = JSON.parse(req.postData());
+      await route.fulfill({ status: 200, contentType: "application/json", body: req.postData() });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(bin) });
+    }
+  });
+  await context.addInitScript((raw) => {
+    if (sessionStorage.getItem("nn-bike-seeded")) return;
+    localStorage.setItem("nn-v1:wo:2026-11-18", raw);
+    sessionStorage.setItem("nn-bike-seeded", "1");
+  }, seedWo);
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (err) => errors.push(String(err)));
+  await page.goto("http://127.0.0.1:" + PORT + "/index.html#workout", { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__nn && document.getElementById("woSession"));
+
+  const lists = await page.evaluate(() => {
+    const ids = (p) => window.__nn.exIds(p);
+    return { push: ids("push"), pull: ids("pull"), legs: ids("legs"), upper: ids("upper"), lower: ids("lower"), active: ids("active") };
+  });
+  for (const p of ["pull", "upper", "lower"]) {
+    if (!lists[p].includes("bicycle-crunch")) throw new Error(p + " missing bicycle crunch");
+    if (lists[p].includes("cable-woodchoppers")) throw new Error(p + " still prescribes woodchoppers");
+    if (lists[p][lists[p].length - 1] !== "bicycle-crunch") throw new Error(p + " bicycle crunch is not in the woodchopper slot: " + lists[p].join(","));
+    if (lists[p][lists[p].indexOf("bicycle-crunch") - 1] !== "plank") throw new Error(p + " abs order changed: " + lists[p].join(","));
+  }
+  for (const p of ["push", "legs", "active"]) {
+    if (lists[p].includes("bicycle-crunch") || lists[p].includes("cable-woodchoppers")) throw new Error(p + " roster changed: " + lists[p].join(","));
+  }
+
+  await page.evaluate(() => window.__nn.setW("2026-11-18"));
+  await page.waitForSelector("#woRoster .exc[data-id='bicycle-crunch']");
+  const card = await page.evaluate(() => {
+    const roster = [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id);
+    const bike = document.querySelector("#woRoster .exc[data-id='bicycle-crunch']");
+    const inputs = [...bike.querySelectorAll("input")];
+    const body = document.getElementById("woBody").innerText;
+    const storedWood = (window.__nn.loadWo("2026-11-18").ex["cable-woodchoppers"].s[0] || [])[0];
+    return {
+      roster,
+      text: bike.innerText,
+      fields: inputs.map((i) => i.dataset.f),
+      values: inputs.map((i) => i.value),
+      placeholders: inputs.map((i) => i.placeholder),
+      storedWood,
+      bodyHasWood: /Cable woodchopper|also logged|not in this list/i.test(body),
+      how: document.querySelector('#woRoster .how[data-cue="bicycle-crunch"]')?.textContent || "",
+      tgt: document.querySelector('#woRoster .tgt[data-tgt="bicycle-crunch"]')?.textContent || "",
+      recorded: document.getElementById("woSession").innerText
+    };
+  });
+  if (card.roster.join(",") !== lists.pull.join(",")) throw new Error("pull roster drifted");
+  if (!/Bicycle crunch/.test(card.text) || !/Bodyweight/.test(card.text) || !/no added weight/i.test(card.text)) throw new Error("bicycle label: " + card.text);
+  if (!/3 x 15\/side|3 sets x 15\/side/.test(card.text)) throw new Error("missing 3x15/side prescription: " + card.text);
+  if (card.fields.some((f) => f !== "1") || card.fields.length !== 3) throw new Error("expected 3 rep-only boxes, got " + JSON.stringify(card.fields));
+  if (card.values.some((v) => v !== "")) throw new Error("empty bicycle inherited a number: " + card.values.join(","));
+  if (card.placeholders.some((v) => v === "40")) throw new Error("woodchopper load reused as bicycle hint: " + card.placeholders.join(","));
+  if (card.storedWood !== "40") throw new Error("old woodchopper log was deleted: " + card.storedWood);
+  if (card.bodyHasWood) throw new Error("woodchoppers were drawn on the pull list");
+  if (!/elbow toward the opposite knee/.test(card.how) || !/don't pull on your neck/.test(card.how)) throw new Error("cue: " + card.how);
+  if (card.tgt !== "Targets: Obliques and abs") throw new Error("targets: " + card.tgt);
+  await page.locator("#woRoster .exc[data-id='bicycle-crunch']").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: path.join(ART, "bicycle-crunch-iphone13.png") });
+
+  await page.click("#woUnlock");
+  await page.evaluate(() => {
+    const el = document.querySelector("#woRoster input[data-id='bicycle-crunch'][data-s='0']");
+    el.value = "15";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForFunction(() => {
+    const w = JSON.parse(localStorage.getItem("nn-v1:wo:2026-11-18") || "{}");
+    const c = w.ex && w.ex["bicycle-crunch"];
+    const old = w.ex && w.ex["cable-woodchoppers"];
+    return !!(c && c.s && c.s[0] && c.s[0][1] === "15" && old && old.s[0][0] === "40");
+  });
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => window.__nn);
+  await page.evaluate(() => window.__nn.setW("2026-11-18"));
+  await page.waitForSelector("#woRoster input[data-id='bicycle-crunch']");
+  const after = await page.evaluate(() => {
+    const raw = localStorage.getItem("nn-v1:wo:2026-11-18");
+    const w = raw ? JSON.parse(raw) : null;
+    const box = document.querySelector("#woRoster input[data-id='bicycle-crunch'][data-s='0']");
+    return {
+      reps: box ? box.value : null,
+      keys: w && w.ex ? Object.keys(w.ex) : [],
+      wood: w && w.ex && w.ex["cable-woodchoppers"] ? w.ex["cable-woodchoppers"].s : null,
+      bike: w && w.ex && w.ex["bicycle-crunch"] ? w.ex["bicycle-crunch"].s : null,
+      date: document.getElementById("dSub") ? document.getElementById("dSub").dataset.date : null
+    };
+  });
+  if (after.reps !== "15" || after.date !== "2026-11-18") throw new Error("reload lost the new bicycle " + JSON.stringify(after));
+  if (!after.wood || after.wood[0][0] !== "40" || (after.bike[0] && after.bike[0][0])) throw new Error("woodchopper log was rewritten " + JSON.stringify(after));
+
+  await page.locator('.pchip[data-p="upper"]').click();
+  await page.waitForFunction(() => document.getElementById("dSub").dataset.preview === "upper");
+  const upper = await page.evaluate(() => ({
+    recorded: document.getElementById("woSession").innerText,
+    roster: [...document.querySelectorAll("#woRoster .exc")].map((el) => el.dataset.id).join(","),
+    want: window.__nn.exIds("upper").join(","),
+    bike: document.querySelector("#woRoster input[data-id='bicycle-crunch'][data-s='0']").value,
+    woodOnScreen: !!document.querySelector("#woRoster [data-id='cable-woodchoppers']"),
+    woodStored: (window.__nn.loadWo("2026-11-18").ex["cable-woodchoppers"].s[0] || [])[0],
+    off: /also logged|not in this list/i.test(document.getElementById("woBody").innerText)
+  }));
+  if (!/Recorded session:\s*Pull \+ Abs/.test(upper.recorded)) throw new Error("preview relabeled " + upper.recorded);
+  if (upper.roster !== upper.want || !upper.roster.includes("bicycle-crunch") || upper.roster.includes("cable-woodchoppers")) throw new Error("upper roster " + upper.roster);
+  if (upper.bike !== "15" || upper.woodStored !== "40" || upper.woodOnScreen || upper.off) throw new Error("preview mixed values " + JSON.stringify(upper));
+
+  const contextB = await browser.newContext({ ...devices["iPhone 13"] });
+  await contextB.route("https://api.npoint.io/**", async (route) => {
+    const req = route.request();
+    if (req.method() === "POST") {
+      bin = JSON.parse(req.postData());
+      await route.fulfill({ status: 200, contentType: "application/json", body: req.postData() });
+    } else {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(bin) });
+    }
+  });
+  const pageB = await contextB.newPage();
+  await page.evaluate(() => document.getElementById("syNow") && document.getElementById("syNow").click());
+  await page.waitForFunction(() => {
+    try { return JSON.parse(localStorage.getItem("nn-sync:at")); } catch (e) { return false; }
+  });
+  await pageB.goto("http://127.0.0.1:" + PORT + "/index.html#workout", { waitUntil: "domcontentloaded" });
+  await pageB.waitForFunction(() => {
+    try { return JSON.parse(localStorage.getItem("nn-v1:wo:2026-11-18")).ex["cable-woodchoppers"]; } catch (e) { return false; }
+  });
+  const synced = await pageB.evaluate(() => JSON.parse(localStorage.getItem("nn-v1:wo:2026-11-18")).ex);
+  if (synced["cable-woodchoppers"].s[0][0] !== "40" || synced["bicycle-crunch"].s[0][1] !== "15") throw new Error("sync dropped a woodchopper or bicycle log");
+  if (synced["lat-pulldown"].s[0][0] !== "40") throw new Error("sync dropped another exercise");
+
+  if (errors.length) throw new Error(errors.join("\n"));
+  console.log(JSON.stringify({ ok: true, version: "2026.10.31-38", sessions: ["pull", "upper", "lower"], sets: 3, reps: "15/side" }));
+  await browser.close();
+  server.close();
+}
+
+main().catch((err) => { console.error(err); process.exit(1); });

@@ -816,7 +816,7 @@ h2,.sec,.sub,.drg,.fsec{font-family:var(--fc);font-size:14px;font-weight:700;let
 <script>
 // ==== APP VERSION: on EVERY deploy bump APP_VERSION here AND "v" in version.json to the same new value (e.g. 2026.10.31-2). ====
 // The app compares them on open / when it comes back to the foreground and reloads itself once if they differ (fixes stale iPhone Home Screen copies).
-var APP_VERSION="2026.10.31-37";
+var APP_VERSION="2026.10.31-38";
 // ==== CLOUD SYNC: zero setup. Every device syncs all nn-v1:* keys with one public no-auth JSON bin (npoint.io). No tokens/keys anywhere.
 // The bin URL is effectively a shared secret in public code (owner accepted: no sensitive data). Set to null to turn sync off.
 var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
@@ -875,8 +875,8 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     bw:"Bodyweight: log reps only (no weight)",plank:"Bodyweight: log seconds (ab wheel: reps)",plank2:"Bodyweight: log seconds held",
     tread:"Treadmill: log minutes (no weight)",steps:"Tick when you hit 10k steps (no weight)"};
   // [id (kept stable so history carries over), name, sets, reps, equipment, note]
-  // cable-crunch and hanging-leg-raises stay separate retired ids so old logs are not relabeled.
-  var ABS=[["lying-leg-raise","Lying leg raises",3,"12-20","bw","bodyweight, no added weight"],["bodyweight-crunch","Lying bodyweight crunch",3,"12-20","bw","lying on your back, no added weight, controlled reps"],["plank","Plank",3,"45s","plank2"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]];
+  // cable-crunch, hanging-leg-raises, and cable-woodchoppers stay separate retired ids so old logs are not relabeled.
+  var ABS=[["lying-leg-raise","Lying leg raises",3,"12-20","bw","bodyweight, no added weight"],["bodyweight-crunch","Lying bodyweight crunch",3,"12-20","bw","lying on your back, no added weight, controlled reps"],["plank","Plank",3,"45s","plank2"],["bicycle-crunch","Bicycle crunch",3,"15/side","bw","bodyweight, no added weight, 15 reps per side"]];
   var WALK=["incline-walk","Incline walk",1,"15-20 min","tread","10-12% incline, ~5 km/h"];
   var PLANS={
     push:{n:"Push",x:[["incline-db-press","Incline dumbbell press",4,"8-10","db"],["smith-flat-press","Smith machine flat press",3,"8-10","smith","start ~50 lbs plates"],["seated-db-shoulder-press","Seated dumbbell shoulder press",3,"8-10","db"],["lateral-raises","Lateral raises",4,"12-15","db"],["rope-pushdown","Rope pushdown",3,"12","cable"],["overhead-triceps-extension","Overhead cable triceps extension",3,"12","cable"],WALK]},
@@ -886,7 +886,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     lower:{n:"Lower + Abs",abs:1,x:[["bulgarian-split-squat","Bulgarian split squat",3,"10/leg","db"],["hip-thrust","Hip thrust",3,"10","hip"],["cable-leg-extension","Cable leg extension",3,"12","cable1","ankle strap, seated on bench facing away from the stack, extend knee to straight · start 25–30 lbs stack","each leg"],["cable-leg-curl","Cable leg curl",3,"12","cable1","ankle strap, curl heel to glute · start 20–30 lbs stack","each leg"]]},
     active:{n:"Active rest",x:[["steps","Steps",0,"10k","steps"],["incline-walk","Incline walk",1,"30 min","tread"]]},
     // retired exercises: not in any day's plan, kept so their logged history still shows in Trends
-    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"],["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["leg-press","Leg press",3,"10-12","plates"],["calf-raises","Calf raises",4,"15","machine"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["incline-press","Incline barbell press",3,"8-10","bb"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-crunch","Cable crunch",3,"12-15","cable"],["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"]]}
+    retired:{n:"Retired",x:[["leg-curl","Leg curl",3,"12","machine"],["leg-extension","Leg extension",3,"12","machine"],["squat-hack-squat","Barbell squat or hack squat",4,"6-8","squat"],["leg-press","Leg press",3,"10-12","plates"],["calf-raises","Calf raises",4,"15","machine"],["machine-flat-bench-press","Flat bench press",3,"8-10","bbm"],["incline-press","Incline barbell press",3,"8-10","bb"],["rear-delt-fly","Rear delt fly",3,"15","rdf"],["ab-wheel-or-plank","Ab wheel or plank",3,"45s","plank"],["cable-crunch","Cable crunch",3,"12-15","cable"],["hanging-leg-raises","Hanging leg raises",3,"10-15","bw"],["cable-woodchoppers","Cable woodchoppers",3,"12/side","cableside"]]}
   };
   // old exercise ids -> new ids (old data is read under the new name; nothing is deleted)
   var ALIAS={"lat-pulldown-pull-ups":"lat-pulldown","superset-curls-pushdowns":"superset-db-curl"};
@@ -934,6 +934,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     "lying-leg-raise":"Press your lower back into the floor and lower your legs slowly without touching the ground.",
     "bodyweight-crunch":"Lie on your back, curl your shoulders off the floor, and lower slowly without yanking your neck.",
     "plank":"Keep your body in a straight line and hold, without letting your hips sag.",
+    "bicycle-crunch":"Lie on your back, hands by your ears, and slowly bring each elbow toward the opposite knee while the other leg straightens; don't pull on your neck.",
     "cable-woodchoppers":"Pull the handle from high to low across your body, and keep your hips still.",
     "steps":"Walk until you reach 10,000 steps."
   };
@@ -966,6 +967,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     "lying-leg-raise":"Abs (lower emphasis), hip flexors",
     "bodyweight-crunch":"Abs",
     "plank":"Abs, core",
+    "bicycle-crunch":"Obliques and abs",
     "cable-woodchoppers":"Obliques, abs",
     "steps":"Legs"
   };
@@ -1031,7 +1033,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
     w=w||{};var ex=w.ex||{};
     var ids=Object.keys(ex).filter(function(id){return id!=="steps"&&id!=="incline-walk"&&exHasData(ex[id]);});
     if(!ids.length)return didActive(w)?"active":null;
-    function sc(p){var m=0;exList(p).forEach(function(e){if(e.id==="steps"||e.id==="incline-walk")return;if(ids.indexOf(e.id)>=0)m++;});if(PLANS[p]&&PLANS[p].abs){if(ids.indexOf("cable-crunch")>=0)m++;if(ids.indexOf("hanging-leg-raises")>=0)m++;}return m;}
+    function sc(p){var m=0;exList(p).forEach(function(e){if(e.id==="steps"||e.id==="incline-walk")return;if(ids.indexOf(e.id)>=0)m++;});if(PLANS[p]&&PLANS[p].abs){if(ids.indexOf("cable-crunch")>=0)m++;if(ids.indexOf("hanging-leg-raises")>=0)m++;if(ids.indexOf("cable-woodchoppers")>=0)m++;}return m;}
     var best=null,bs=0,tie=false;
     PLAN_ORDER.forEach(function(p){if(p==="active")return;var v=sc(p);if(v>bs){bs=v;best=p;tie=false;}else if(v===bs&&v>0)tie=true;});
     return best&&!tie&&bs*2>ids.length?best:null;
@@ -1687,7 +1689,7 @@ var SYNC_CONFIG={url:"https://api.npoint.io/84f3d4b3816e2dc69b41"};
           for(var s=0;s<nrows;s++){
             var cs=(cur.s&&cur.s[s])||[], ps=hSet(hs,s);
             if(e.kind==="bw"){
-              var repPh=num(ps[1]); if(!repPh&&e.id==="lying-leg-raise")repPh=e.reps||"";
+              var repPh=num(ps[1]); if(!repPh&&(e.id==="lying-leg-raise"||e.id==="bicycle-crunch"))repPh=e.reps||"";
               h+='<div class="set"><span class="sn">'+(s+1)+'</span><input'+ro+' inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+repPh+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
             } else if(e.kind==="w"){
               h+='<div class="set"><span class="sn">'+(s+1)+'</span><input'+ro+' inputmode="decimal" step="2.5" data-id="'+e.id+'" data-s="'+s+'" data-f="0" value="'+num(cs[0])+'" placeholder="'+num(ps[0])+'" aria-label="'+e.name+' set '+(s+1)+' '+e.eq.unit+'"><span class="u">'+e.eq.unit+'</span><input'+ro+' inputmode="numeric" pattern="[0-9]*" data-id="'+e.id+'" data-s="'+s+'" data-f="1" value="'+num(cs[1])+'" placeholder="'+num(ps[1])+'" aria-label="'+e.name+' set '+(s+1)+' reps"><span class="u">reps</span></div>';
